@@ -3,10 +3,15 @@ from shlex import _find_unsafe
 import os
 
 def path_traversal_check(unsafe_path, known_safe_path):
-    known_safe_path = os.path.abspath(known_safe_path)
-    unsafe_path = os.path.abspath(unsafe_path)
+    known_safe_path = os.path.realpath(known_safe_path)
+    unsafe_path = os.path.realpath(unsafe_path)
 
-    if (os.path.commonprefix([known_safe_path, unsafe_path]) != known_safe_path):
+    try:
+        common_path = os.path.commonpath([known_safe_path, unsafe_path])
+    except ValueError:
+        raise SuspiciousFileOperation("{} is not safe".format(unsafe_path))
+
+    if common_path != known_safe_path:
         raise SuspiciousFileOperation("{} is not safe".format(unsafe_path))
 
     # Passes the check
