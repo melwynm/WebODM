@@ -1,6 +1,35 @@
-.project-list{
-    ul.project-list.refreshing{
-        opacity: 0.5;
+.project-list {
+    position: relative;
+
+    .project-grid {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+        gap: 28px;
+        transition: opacity 0.25s ease;
+
+        &.list-group {
+            margin-bottom: 0;
+        }
+
+        &.list-group > .list-group-item {
+            padding: 0;
+            border: none;
+            background: transparent;
+            margin-bottom: 0;
+        }
+    }
+
+    .project-grid.refreshing {
+        opacity: 0.45;
         pointer-events: none;
+    }
+
+    @media (max-width: 576px) {
+        .project-grid {
+            grid-template-columns: 1fr;
+        }
     }
 }
