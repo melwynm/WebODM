@@ -3,8 +3,8 @@
 
   "env": {
     "test": {
-      "plugins": ["@babel/syntax-class-properties",
-                 "@babel/proposal-class-properties"]
+      "plugins": ["@babel/plugin-syntax-class-properties",
+                 "@babel/plugin-proposal-class-properties"]
     }
   }
 }
