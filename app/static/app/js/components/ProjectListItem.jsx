@@ -631,11 +631,12 @@ class ProjectListItem extends React.Component {
     const numTasks = data.tasks.length;
     const canEdit = this.hasPermission("change");
     const userTags = Tags.userTags(data.tags);
+    const showActionBar = this.hasPermission("add") || this.state.upload.uploading || this.state.buttons.length > 0;
     let deleteWarning = _("All tasks, images and models associated with this project will be permanently deleted. Are you sure you want to continue?");
     if (!data.owned) deleteWarning = _("This project was shared with you. It will not be deleted, but simply hidden from your dashboard. Continue?")
 
     return (
-      <li className={"project-list-item list-group-item " + (refreshing ? "refreshing" : "")}
+      <li className={"project-list-item list-group-item project-card " + (refreshing ? "refreshing" : "")}
          href="javascript:void(0);"
          ref={this.setRef("dropzone")}
          >
@@ -660,46 +661,63 @@ class ProjectListItem extends React.Component {
             />
         : ""}
 
-        <div className="row no-margin">
+        <div className="project-card-body">
           <ErrorMessage bind={[this, 'error']} />
-          <div className="btn-group project-buttons">
-            {this.hasPermission("add") ? 
-              <div className={"asset-download-buttons btn-group " + (this.state.upload.uploading ? "hide" : "")}>
-                <button type="button" 
-                      className="btn btn-primary btn-sm"
-                      onClick={this.handleUpload}
-                      ref={this.setRef("uploadButton")}>
-                  <i className="glyphicon glyphicon-upload"></i>
-                  <span className="hidden-xs">{_("Select Images and GCP")}</span>
-                </button>
-                <button type="button" 
-                      className="btn btn-default btn-sm"
-                      onClick={this.handleImportTask}>
-                  <i className="glyphicon glyphicon-import"></i> <span className="hidden-xs">{_("Import")}</span>
-                </button>
-                {this.state.buttons.map((button, i) => <React.Fragment key={i}>{button}</React.Fragment>)}
+
+          <div className="project-header">
+            <div className="project-header__info">
+              <div className="project-name">
+                {data.name}
+                {userTags.length > 0 ?
+                  userTags.map((t, i) => <div key={i} className="tag-badge small-badge" onClick={this.handleTagClick(t)}>{t}</div>)
+                  : ""}
+              </div>
+              <div className="project-description">
+                {data.description}
+              </div>
+            </div>
+
+            {showActionBar ?
+              <div className="project-header__actions">
+                <div className="project-buttons">
+                  {this.hasPermission("add") ?
+                    <div className={"asset-download-buttons btn-group " + (this.state.upload.uploading ? "hide" : "")}>
+                      <button type="button"
+                            className="btn btn-primary btn-modern"
+                            onClick={this.handleUpload}
+                            ref={this.setRef("uploadButton")}>
+                        <span className="btn-modern__icon" aria-hidden="true">
+                          <i className="fas fa-upload"></i>
+                        </span>
+                        <span className="btn-modern__label hidden-xs">{_("Select Images and GCP")}</span>
+                      </button>
+                      <button type="button"
+                            className="btn btn-default btn-modern"
+                            onClick={this.handleImportTask}>
+                        <span className="btn-modern__icon" aria-hidden="true">
+                          <i className="fas fa-file-import"></i>
+                        </span>
+                        <span className="btn-modern__label hidden-xs">{_("Import")}</span>
+                      </button>
+                      {this.state.buttons.map((button, i) => <React.Fragment key={i}>{button}</React.Fragment>)}
+                    </div>
+                  : ""}
+
+                  <button disabled={this.state.upload.error !== ""}
+                          type="button"
+                          className={"btn btn-danger btn-modern " + (!this.state.upload.uploading ? "hide" : "")}
+                          onClick={this.handleCancel}>
+                    <span className="btn-modern__icon" aria-hidden="true">
+                      <i className="fas fa-times-circle"></i>
+                    </span>
+                    <span className="btn-modern__label">{_("Cancel Upload")}</span>
+                  </button>
+                </div>
               </div>
             : ""}
-
-            <button disabled={this.state.upload.error !== ""} 
-                    type="button"
-                    className={"btn btn-danger btn-sm " + (!this.state.upload.uploading ? "hide" : "")} 
-                    onClick={this.handleCancel}>
-              <i className="glyphicon glyphicon-remove-circle"></i>
-              Cancel Upload
-            </button> 
           </div>
 
-          <div className="project-name">
-            {data.name}
-            {userTags.length > 0 ? 
-              userTags.map((t, i) => <div key={i} className="tag-badge small-badge" onClick={this.handleTagClick(t)}>{t}</div>)
-              : ""}
-          </div>
-          <div className="project-description">
-            {data.description}
-          </div>
-          <div className="row project-links">
+          <div className="project-links">
             {numTasks > 0 ? 
               <span>
                 <i className='fa fa-tasks'></i>
@@ -771,7 +789,7 @@ class ProjectListItem extends React.Component {
           </div>
         </div>
         <i className="drag-drop-icon fa fa-inbox"></i>
-        <div className="row">
+        <div className="project-card-footer">
           {this.state.upload.uploading ? <UploadProgressBar {...this.state.upload}/> : ""}
           
           {this.state.upload.error !== "" ? 

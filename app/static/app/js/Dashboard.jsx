@@ -63,24 +63,39 @@ class Dashboard extends React.Component {
     };
 
 
+    const canCreateProjects = this.props.permissions.indexOf("add_project") !== -1;
+
     return (
       <Router basename="/dashboard">
-        <div>
-          {this.props.permissions.indexOf("add_project") !== -1 ? 
-          <div className="text-right add-button">
-             <button type="button" 
-                    className="btn btn-primary btn-sm"
-                    onClick={this.handleAddProject}>
-              <i className="glyphicon glyphicon-plus"></i>
-              {_("Add Project")}
-            </button>
-          </div> : ""}
+        <div className="dashboard-app">
+          <div className="dashboard-hero">
+            <div className="dashboard-hero__text">
+              <h1>{_("Your Projects")}</h1>
+              <p>{_("Track progress, upload new datasets and collaborate with ease from your modernized dashboard.")}</p>
+            </div>
+            {canCreateProjects ?
+              <div className="dashboard-hero__actions">
+                <button
+                  type="button"
+                  className="btn btn-primary btn-modern"
+                  onClick={this.handleAddProject}>
+                  <span className="btn-modern__icon" aria-hidden="true">
+                    <i className="fas fa-plus"></i>
+                  </span>
+                  <span className="btn-modern__label">{_("Add Project")}</span>
+                </button>
+              </div>
+            : ""}
+          </div>
 
-          <EditProjectDialog 
+          <EditProjectDialog
             saveAction={this.addNewProject}
             ref={(domNode) => { this.projectDialog = domNode; }}
             />
-          <Route path="/" component={projectList} />
+
+          <div className="dashboard-list-wrapper">
+            <Route path="/" component={projectList} />
+          </div>
         </div>
       </Router>
     );
