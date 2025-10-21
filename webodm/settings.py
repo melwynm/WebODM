@@ -415,6 +415,8 @@ TASK_OPTIONS_DOCS_LINK = "https://docs.opendronemap.org/arguments/"
 # automatically create a first project on first login
 DASHBOARD_ONBOARDING = True
 
+DEFAULT_AUTO_FIELD = 'django.db.models.AutoField'
+
 if TESTING or FLUSHING:
     CELERY_TASK_ALWAYS_EAGER = True
     EXTERNAL_AUTH_ENDPOINT = 'http://0.0.0.0:5555/auth'

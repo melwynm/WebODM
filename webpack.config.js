@@ -51,8 +51,8 @@ module.exports = {
             loader: 'babel-loader',
             options: {
               plugins: [
-                '@babel/syntax-class-properties',
-                '@babel/proposal-class-properties'
+                '@babel/plugin-syntax-class-properties',
+                '@babel/plugin-proposal-class-properties'
               ],
               presets: [
                 '@babel/preset-env',
