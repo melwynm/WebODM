@@ -6,6 +6,8 @@ volumes:
   appmedia:
 services:
   db:
+    build:
+      context: ./db
     image: opendronemap/webodm_db
     container_name: db
     expose:
