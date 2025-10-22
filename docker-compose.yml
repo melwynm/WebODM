@@ -43,6 +43,11 @@ services:
       - WO_DEV_WATCH_PLUGINS
       - WO_SECRET_KEY
       - WEB_CONCURRENCY
+      - PGUSER=postgres
+      - PGPASSWORD=postgres
+      - PGDATABASE=webodm_dev
+      - PGHOST=db
+      - PGPORT=5432
     restart: unless-stopped
     oom_score_adj: 0
   broker:
@@ -64,5 +69,10 @@ services:
       - WO_DEBUG
       - WO_SECRET_KEY
       - WEB_CONCURRENCY
+      - PGUSER=postgres
+      - PGPASSWORD=postgres
+      - PGDATABASE=webodm_dev
+      - PGHOST=db
+      - PGPORT=5432
     restart: unless-stopped
     oom_score_adj: 250
