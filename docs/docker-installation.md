@@ -98,3 +98,32 @@ docker-compose up -d
 See the [manual installation](../README.md#manual-installation-docker) instructions
 for additional details about configuring processing nodes, enabling MicMac, and
 troubleshooting WebODM-specific issues.
+
+### Resetting an incompatible PostgreSQL volume
+
+If you previously ran WebODM with an older Docker image (for example one that
+bundled PostgreSQL 9.5) you might see the database container fail to start with
+errors similar to:
+
+```
+FATAL:  database files are incompatible with server
+DETAIL: The data directory was initialized by PostgreSQL version 9.5,
+which is not compatible with this version 14.13
+```
+
+This means Docker is still mounting the legacy `webodm_dbdata` volume created by
+the old stack. To recreate the database volume for the newer PostgreSQL release,
+stop the stack, remove the volumes, and start it again:
+
+```bash
+docker-compose down
+docker-compose down -v
+docker volume ls | grep webodm
+docker volume rm webodm_dbdata  # remove any lingering volumes
+docker-compose up -d
+docker-compose logs -f db
+```
+
+Removing the volume deletes any existing projects stored in that database. If
+you need to preserve data, create a backup and perform a proper PostgreSQL
+migration instead of deleting the volume.
