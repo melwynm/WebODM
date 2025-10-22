@@ -16,6 +16,15 @@ import datetime
 
 import tzlocal
 from django.contrib.messages import constants as messages
+from django.utils import encoding as django_encoding
+from django.utils.encoding import smart_str
+
+# Django 4 removed the smart_text helper that some of our third-party
+# dependencies (notably rest_framework_jwt) still import.  Alias the newer
+# smart_str implementation so those imports keep working until the upstream
+# packages are updated.
+if not hasattr(django_encoding, "smart_text"):
+    django_encoding.smart_text = smart_str  # type: ignore[attr-defined]
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
