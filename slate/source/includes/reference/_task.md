@@ -172,7 +172,7 @@ These paths could change in future versions of WebODM. If the asset you need can
 > Console output example:
 
 ```bash
-curl -H "Authorization: JWT <your_token>" http://localhost:8000/api/projects/2/tasks/1/output/?line=5
+curl -H "Authorization: Bearer <your_token>" http://localhost:8000/api/projects/2/tasks/1/output/?line=5
 
 [DEBUG]   /var/www/data/e453747f-5fd4-4654-9622-b02727b29fc5/images\n[DEBUG]   Loaded DJI_0219.JPG | camera: dji fc300s ...
 ```

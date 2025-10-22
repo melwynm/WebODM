@@ -6,7 +6,7 @@ from guardian.shortcuts import assign_perm, get_objects_for_user
 from django.utils import timezone
 from rest_framework import status
 from rest_framework.test import APIClient
-from rest_framework_jwt.settings import api_settings
+from rest_framework_simplejwt.settings import api_settings
 
 from app import pending_actions
 from app.models import Project, Task
@@ -532,6 +532,7 @@ class TestApi(BootTestCase):
         self.assertEqual(res.status_code, status.HTTP_200_OK)
 
         # Can access resources by passing token via header
-        client = APIClient(HTTP_AUTHORIZATION="{0} {1}".format(api_settings.JWT_AUTH_HEADER_PREFIX, token))
+        auth_type = api_settings.AUTH_HEADER_TYPES[0]
+        client = APIClient(HTTP_AUTHORIZATION="{0} {1}".format(auth_type, token))
         res = client.get('/api/processingnodes/')
         self.assertEqual(res.status_code, status.HTTP_200_OK)

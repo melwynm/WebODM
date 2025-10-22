@@ -8,7 +8,7 @@ from .imageuploads import Thumbnail, ImageDownload
 from .processingnodes import ProcessingNodeViewSet, ProcessingNodeOptionsView
 from .admin import AdminUserViewSet, AdminGroupViewSet, AdminProfileViewSet
 from rest_framework_nested import routers
-from rest_framework_jwt.views import obtain_jwt_token
+from .token import ObtainJSONWebTokenView
 from .tiler import TileJson, Bounds, Metadata, Tiles, Export
 from .potree import Scene, CameraView
 from .workers import CheckTask, GetTaskResult
@@ -59,7 +59,7 @@ urlpatterns = [
     re_path(r'workers/get/(?P<celery_task_id>.+)', GetTaskResult.as_view()),
 
     re_path(r'^auth/', include('rest_framework.urls')),
-    re_path(r'^token-auth/', obtain_jwt_token),
+    re_path(r'^token-auth/', ObtainJSONWebTokenView.as_view()),
 
     re_path(r'^plugins/(?P<plugin_name>[^/.]+)/(.*)$', api_view_handler),
 ]

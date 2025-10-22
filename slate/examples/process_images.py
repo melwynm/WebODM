@@ -32,8 +32,8 @@ if 'token' in res:
     print("Logged-in!")
     token = res['token']
 
-    res = requests.post('http://localhost:8000/api/projects/', 
-                        headers={'Authorization': 'JWT {}'.format(token)},
+    res = requests.post('http://localhost:8000/api/projects/',
+                        headers={'Authorization': 'Bearer {}'.format(token)},
                         data={'name': 'Hello WebODM!'}).json()
     if 'id' in res:
         print("Created project: {}".format(res)) 
@@ -43,8 +43,8 @@ if 'token' in res:
         options = json.dumps([
             {'name': "orthophoto-resolution", 'value': 5}
         ])
-        res = requests.post('http://localhost:8000/api/projects/{}/tasks/'.format(project_id), 
-                    headers={'Authorization': 'JWT {}'.format(token)},
+        res = requests.post('http://localhost:8000/api/projects/{}/tasks/'.format(project_id),
+                    headers={'Authorization': 'Bearer {}'.format(token)},
                     files=images,
                     data={
                         'options': options
@@ -55,8 +55,8 @@ if 'token' in res:
 
         while True:
             time.sleep(3)
-            res = requests.get('http://localhost:8000/api/projects/{}/tasks/{}/'.format(project_id, task_id), 
-                        headers={'Authorization': 'JWT {}'.format(token)}).json()
+            res = requests.get('http://localhost:8000/api/projects/{}/tasks/{}/'.format(project_id, task_id),
+                        headers={'Authorization': 'Bearer {}'.format(token)}).json()
             
             if res['status'] == status_codes.COMPLETED:
                 print("Task has completed!")
@@ -64,8 +64,8 @@ if 'token' in res:
             elif res['status'] == status_codes.FAILED:
                 print("Task failed: {}".format(res))
                 print("Cleaning up...")
-                requests.delete("http://localhost:8000/api/projects/{}/".format(project_id), 
-                    headers={'Authorization': 'JWT {}'.format(token)})
+                requests.delete("http://localhost:8000/api/projects/{}/".format(project_id),
+                    headers={'Authorization': 'Bearer {}'.format(token)})
                 sys.exit(1)
             else:
                 seconds = res['processing_time'] / 1000
@@ -76,8 +76,8 @@ if 'token' in res:
                 sys.stdout.write("\rProcessing... [%02d:%02d:%02d]" % (h, m, s))
                 sys.stdout.flush()
 
-        res = requests.get("http://localhost:8000/api/projects/{}/tasks/{}/download/orthophoto.tif".format(project_id, task_id), 
-                        headers={'Authorization': 'JWT {}'.format(token)},
+        res = requests.get("http://localhost:8000/api/projects/{}/tasks/{}/download/orthophoto.tif".format(project_id, task_id),
+                        headers={'Authorization': 'Bearer {}'.format(token)},
                         stream=True)
         with open("orthophoto.tif", 'wb') as f:
             for chunk in res.iter_content(chunk_size=1024): 
@@ -87,8 +87,8 @@ if 'token' in res:
         print("Saved ./orthophoto.tif")
 
         print("Cleaning up...")
-        requests.delete("http://localhost:8000/api/projects/{}/".format(project_id), 
-                        headers={'Authorization': 'JWT {}'.format(token)})
+        requests.delete("http://localhost:8000/api/projects/{}/".format(project_id),
+                        headers={'Authorization': 'Bearer {}'.format(token)})
     else:
         print("Cannot create project: {}".format(res))
 else:
