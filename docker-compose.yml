@@ -76,3 +76,10 @@ services:
       - PGPORT=5432
     restart: unless-stopped
     oom_score_adj: 250
+  yamlnodeodm:
+    image: opendronemap/nodeodm
+    container_name: nodeodm
+    ports:
+      - "3000:3000"
+    environment:
+      - WO_HOST=webapp
