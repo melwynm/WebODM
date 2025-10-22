@@ -70,6 +70,10 @@ To install WebODM manually on your machine with docker:
   - [Git](https://git-scm.com/downloads)
   - [Docker](https://www.docker.com/)
 
+If you need to install Docker on a fresh Linux machine or within a sandboxed
+environment, see the [Docker installation guide](docs/docker-installation.md)
+for step-by-step instructions and troubleshooting tips.
+
 * Windows users should install [Docker Desktop](https://hub.docker.com/editions/community/docker-ce-desktop-windows) and :
     1. make sure Linux containers are enabled (Switch to Linux Containers...)
 
@@ -115,6 +119,46 @@ To update WebODM to the latest version use:
 ```bash
 ./webodm.sh update
 ```
+
+#### Building from a modified checkout
+
+If you are working from a fork or a locally modified copy of WebODM you can use the bundled
+`docker-compose.yml` to build an image from source instead of pulling the pre-built image. This is
+useful when testing local changes or when Docker needs to compile the web application from your
+branch.
+
+1. Ensure that line endings are configured for Docker-friendly LF mode. The repository now ships
+   with a [`.gitattributes`](./.gitattributes) file that enforces LF endings for shell scripts and the
+   Dockerfile. On Windows you should re-normalize files after pulling the latest changes. From
+   PowerShell run:
+
+   ```powershell
+   git add --renormalize .
+   git commit -m "Normalize line endings" # optional but recommended before building
+   ```
+
+   To manually convert existing shell scripts you can run:
+
+   ```powershell
+   Get-ChildItem -Recurse -Filter "*.sh" | ForEach-Object {
+       $content = Get-Content -Path $_.FullName -Raw
+       if ($content) {
+           $content = $content -replace "`r`n", "`n"
+           [System.IO.File]::WriteAllText($_.FullName, $content)
+       }
+   }
+   ```
+
+2. Build the Docker images from the repository root:
+
+   ```bash
+   docker-compose build --no-cache
+   docker-compose up -d
+   ```
+
+   The `webapp` service now uses `build: .` so Docker will compile an image that includes your
+   local changes. The `worker` service automatically reuses the same image, so a single build step
+   is sufficient.
 
 ### Manage Processing Nodes
 
