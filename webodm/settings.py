@@ -19,10 +19,9 @@ from django.contrib.messages import constants as messages
 from django.utils import encoding as django_encoding
 from django.utils.encoding import smart_str
 
-# Django 4 removed the smart_text helper that some of our third-party
-# dependencies (notably rest_framework_jwt) still import.  Alias the newer
-# smart_str implementation so those imports keep working until the upstream
-# packages are updated.
+# Django 4 removed the smart_text helper that some third-party dependencies
+# still import.  Alias the newer smart_str implementation so those imports keep
+# working until the upstream packages are updated.
 if not hasattr(django_encoding, "smart_text"):
     django_encoding.smart_text = smart_str  # type: ignore[attr-defined]
 
@@ -331,15 +330,15 @@ REST_FRAMEWORK = {
   'DEFAULT_AUTHENTICATION_CLASSES': (
     'rest_framework.authentication.SessionAuthentication',
     'rest_framework.authentication.BasicAuthentication',
-    'rest_framework_jwt.authentication.JSONWebTokenAuthentication',
+    'rest_framework_simplejwt.authentication.JWTAuthentication',
     'app.api.authentication.JSONWebTokenAuthenticationQS',
   ),
   'PAGE_SIZE': 10,
   'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
 }
 
-JWT_AUTH = {
-    'JWT_EXPIRATION_DELTA': datetime.timedelta(hours=6),
+SIMPLE_JWT = {
+    'ACCESS_TOKEN_LIFETIME': datetime.timedelta(hours=6),
 }
 
 # Celery

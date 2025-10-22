@@ -34,7 +34,7 @@ First, we <a href="#authenticate">authenticate</a> with WebODM. A `token` is ret
 
 ```python
 res = requests.post('http://localhost:8000/api/projects/', 
-					headers={'Authorization': 'JWT {}'.format(token)},
+                                     headers={'Authorization': 'Bearer {}'.format(token)},
 					data={'name': 'Hello WebODM!'}).json()
 project_id = res['id']
 ```
@@ -53,7 +53,7 @@ options = json.dumps([
 ])
 
 res = requests.post('http://localhost:8000/api/projects/{}/tasks/'.format(project_id), 
-			headers={'Authorization': 'JWT {}'.format(token)},
+                     headers={'Authorization': 'Bearer {}'.format(token)},
 			files=images,
 			data={
 				'options': options
@@ -69,7 +69,7 @@ as soon as a [Processing Node](#processing-node) is available. It is possible to
 ```python
 while True:
 	res = requests.get('http://localhost:8000/api/projects/{}/tasks/{}/'.format(project_id, task_id), 
-				headers={'Authorization': 'JWT {}'.format(token)}).json()
+                             headers={'Authorization': 'Bearer {}'.format(token)}).json()
 	
 	if res['status'] == status_codes.COMPLETED:
 		print("Task has completed!")
@@ -87,7 +87,7 @@ We periodically check for the [Task](#task) status using a loop.
 
 ```python
 res = requests.get("http://localhost:8000/api/projects/{}/tasks/{}/download/orthophoto.tif".format(project_id, task_id), 
-						headers={'Authorization': 'JWT {}'.format(token)},
+                                             headers={'Authorization': 'Bearer {}'.format(token)},
 						stream=True)
 with open("orthophoto.tif", 'wb') as f:
     for chunk in res.iter_content(chunk_size=1024): 

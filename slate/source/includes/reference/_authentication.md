@@ -15,7 +15,7 @@ curl -X POST -d "username=testuser&password=testpass" http://localhost:8000/api/
 > Use authentication token:
 
 ```bash
-curl -H "Authorization: JWT <your_token>" http://localhost:8000/api/projects/
+curl -H "Authorization: Bearer <your_token>" http://localhost:8000/api/projects/
 
 {"count":13, ...}
 ```
@@ -42,7 +42,7 @@ If authentication is successful, you will be issued a token. All API calls shoul
 
 Header |
 ------ |
-Authorization: JWT `your_token` |
+Authorization: Bearer `your_token` |
 
 The token expires after a set amount of time. See [Token Expiration](#token-expiration) for more information.
 
@@ -51,6 +51,6 @@ Since applications sometimes do not allow headers to be modified, you can also a
 
 ### Token Expiration
 
-The token expires after six hours by default. The expiration time is defined in the settings module of Django in WebODM. If building WebODM from sources or running it natively, the expiration time can be changed in the `JWT_AUTH['JWT_EXPIRATION_DELTA']` variable. Otherwise, e.g. using the docker images, you will have to request another token when a token expires.
+The token expires after six hours by default. The expiration time is defined in the settings module of Django in WebODM. If building WebODM from sources or running it natively, the expiration time can be changed in the `SIMPLE_JWT['ACCESS_TOKEN_LIFETIME']` variable. Otherwise, e.g. using the docker images, you will have to request another token when a token expires.
 
 You know that a token has expired if any API call returns a `403` status code with the JSON body `{'detail': 'Signature has expired.'}`.
