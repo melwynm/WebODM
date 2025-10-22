@@ -5,6 +5,7 @@ from __future__ import unicode_literals
 import app.models
 from django.conf import settings
 import django.contrib.postgres.fields.jsonb
+from django.contrib.postgres.operations import CreateExtension
 from django.db import migrations, models
 import django.db.models.deletion
 import django.utils.timezone
@@ -21,6 +22,11 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
+        CreateExtension('postgis'),
+        migrations.RunSQL(
+            sql='CREATE EXTENSION IF NOT EXISTS postgis_raster',
+            reverse_sql=migrations.RunSQL.noop
+        ),
         migrations.CreateModel(
             name='ImageUpload',
             fields=[
