@@ -1,3 +1,5 @@
+import copy
+
 import django_filters
 from django_filters.rest_framework import FilterSet
 from guardian.shortcuts import get_objects_for_user
@@ -81,7 +83,7 @@ class ProcessingNodeOptionsView(APIView):
 
             # First? Just populate
             if len(common_options) == 0 and len(node.available_options) > 0:
-                common_options = node.available_options
+                common_options = copy.deepcopy(node.available_options)
             else:
                 # Remove all options that are in common_options,
                 # but that are not in node.available_options
