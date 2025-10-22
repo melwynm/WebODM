@@ -62,5 +62,5 @@ eventlet==0.32.0 ; sys_platform == "win32"
 pyopenssl==24.0.0 ; sys_platform == "win32"
 numpy==1.26.4
 scipy==1.11.4
-drf-yasg==1.20.0
+drf-yasg==1.21.7
 zipstream-ng==1.8.0
