@@ -67,6 +67,7 @@ class TaskObjDetect(TaskView):
             'athletic': ('aerovision', ['tennis-court', 'track-field', 'soccer-field', 'baseball-field', 'swimming-pool', 'basketball-court']),
             'boats': ('aerovision', ['boat']),
             'planes': ('aerovision', ['plane']),
+            'cattle': ('aerovision', ['cow']),
         }
 
         if not model in model_map:
