@@ -130,12 +130,13 @@ class Map extends React.Component {
   typeToIcon = (type, thermal = false) => {
     switch(type){
         case "orthophoto":
-            return "far fa-image fa-fw"
+            return "fa fa-picture-o fa-fw";
         case "plant":
-            return thermal ? "fa fa-thermometer-half fa-fw" : "fa fa-seedling fa-fw";
+            return thermal ? "fa fa-fire fa-fw" : "fa fa-leaf fa-fw";
         case "dsm":
+            return "fa fa-area-chart fa-fw";
         case "dtm":
-            return "fa fa-chart-area fa-fw";
+            return "fa fa-line-chart fa-fw";
     }
     return "";
   }

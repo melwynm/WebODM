@@ -124,22 +124,22 @@ class MapView extends React.Component {
       {
         label: _("Orthophoto"),
         type: "orthophoto",
-        icon: "far fa-image"
+        icon: "fa fa-picture-o"
       },
       {
         label: isThermal ? _("Thermal") : _("Plant Health"),
         type: "plant",
-        icon: isThermal ? "fa fa-thermometer-half" : "fa fa-seedling"
+        icon: isThermal ? "fa fa-fire" : "fa fa-leaf"
       },
       {
         label: _("Surface Model"),
         type: "dsm",
-        icon: "fa fa-chart-area"
+        icon: "fa fa-area-chart"
       },
       {
         label: _("Terrain Model"),
         type: "dtm",
-        icon: "fa fa-chart-area"
+        icon: "fa fa-line-chart"
       }
     ].filter(mapType => this.hasTilesOfType(mapType.type));
 
