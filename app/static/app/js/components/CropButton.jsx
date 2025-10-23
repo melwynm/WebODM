@@ -305,7 +305,7 @@ class CropButton extends React.Component {
             <a href="javascript:void(0);"
                 onClick={this.toggleCrop} 
                 title={this.props.title}
-                className={"leaflet-control-crop-button leaflet-bar-part theme-secondary " + (this.state.cropping ? "selected" : "")}><i className="fa fa-crop-alt"></i></a>
+                className={"leaflet-control-crop-button leaflet-bar-part theme-secondary " + (this.state.cropping ? "selected" : "")}><i className="fa fa-crop"></i></a>
         </div>);
     }
 }

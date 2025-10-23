@@ -824,7 +824,7 @@ class TaskListItem extends React.Component {
               : ""}
           </div>
           <div className="col-md-1 hidden-xs hidden-sm details">
-            <i className="far fa-image"></i> {task.images_count}
+            <i className="fa fa-picture-o"></i> {task.images_count}
           </div>
           <div className="col-md-2 hidden-xs hidden-sm details">
             <i className="far fa-clock"></i> {this.hoursMinutesSecs(this.state.time)}
