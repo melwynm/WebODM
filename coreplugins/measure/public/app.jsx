@@ -51,6 +51,12 @@ export default class App{
           secondaryAreaUnit: 'acres'
         }).addTo(map);
 
+        // Prevent Leaflet from auto-panning the map when showing measurement
+        // popups. Auto-pan causes the basemap to move just after clicking,
+        // which makes the marker appear in a different on-screen position than
+        // the original click.
+        measure.options.popupOptions.autoPan = false;
+
         // measure.options.labels.
 
         measure._getMeasurementDisplayStrings = measurement => {
