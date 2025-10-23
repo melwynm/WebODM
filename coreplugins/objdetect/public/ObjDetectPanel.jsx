@@ -175,11 +175,12 @@ export default class ObjDetectPanel extends React.Component {
   render(){
     const { loading, permanentError, objLayer, detecting, model, progress } = this.state;
     const models = [
-      {label: _('Cars'), value: 'cars'}, 
+      {label: _('Cars'), value: 'cars'},
       // {label: _('Trees'), value: 'trees'},
       {label: _('Athletic Facilities'), value: 'athletic'},
       {label: _('Boats'), value: 'boats'},
-      {label: _('Planes'), value: 'planes'}
+      {label: _('Planes'), value: 'planes'},
+      {label: _('Cattle'), value: 'cattle'}
     ]
     
     let content = "";
