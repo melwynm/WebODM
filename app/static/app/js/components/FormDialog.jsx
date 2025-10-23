@@ -1,9 +1,12 @@
 import React from 'react';
+import ReactDOM from 'ReactDOM';
 import ErrorMessage from './ErrorMessage';
 import '../css/FormDialog.scss';
 import PropTypes from 'prop-types';
 import $ from 'jquery';
 import { _ } from '../classes/gettext';
+
+const portalContainerPropType = typeof Element !== 'undefined' ? PropTypes.instanceOf(Element) : PropTypes.any;
 
 class FormDialog extends React.Component {
     static defaultProps = {
@@ -12,7 +15,8 @@ class FormDialog extends React.Component {
         savingLabel: _("Saving…"),
         saveIcon: "glyphicon glyphicon-plus",
         deleteWarning: _("Are you sure?"),
-        show: false
+        show: false,
+        portalContainer: null
     };
 
     static propTypes = {
@@ -31,7 +35,8 @@ class FormDialog extends React.Component {
             PropTypes.string,
             PropTypes.bool
         ]),
-        show: PropTypes.bool
+        show: PropTypes.bool,
+        portalContainer: portalContainerPropType
     };
 
     constructor(props){
@@ -177,7 +182,7 @@ class FormDialog extends React.Component {
             leftButtons = leftButtons.concat(this.props.leftButtons);
         } 
 
-        return (
+        const modal = (
             <div ref={this.setModal}
                 className="modal form-dialog" tabIndex="-1"
                 data-backdrop="static"
@@ -218,6 +223,10 @@ class FormDialog extends React.Component {
               </div>
             </div>
         );
+
+        const container = this.props.portalContainer || (typeof document !== 'undefined' ? document.body : null);
+
+        return container ? ReactDOM.createPortal(modal, container) : modal;
     }
 }
 
