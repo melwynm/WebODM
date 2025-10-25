@@ -331,6 +331,7 @@ class TestApi(BootTestCase):
         self.assertTrue(task.created_at != 0)
         self.assertTrue(task.pending_action != 0)
         self.assertTrue(len(res.data['can_rerun_from']) == 0)
+        self.assertIn('estimated_time_remaining', res.data)
 
     def test_processingnodes(self):
         client = APIClient()

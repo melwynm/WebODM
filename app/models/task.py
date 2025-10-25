@@ -466,6 +466,34 @@ class Task(models.Model):
         else:
             return {}
 
+    def get_estimated_time_remaining(self):
+        """Estimate the remaining processing time in milliseconds or -1 if unknown."""
+        if self.status != status_codes.RUNNING:
+            return -1
+
+        if self.processing_time is None or self.processing_time <= 0:
+            return -1
+
+        progress = self.running_progress or 0.0
+        if progress <= 0:
+            return -1
+
+        if self.TASK_PROGRESS_LAST_VALUE > 0:
+            progress = progress / self.TASK_PROGRESS_LAST_VALUE
+
+        progress = min(max(progress, 0.0), 1.0)
+
+        if progress <= 0:
+            return -1
+
+        estimated_total = self.processing_time / progress
+        remaining = estimated_total - self.processing_time
+
+        if remaining < 0:
+            return 0
+
+        return int(remaining)
+
     def duplicate(self, set_new_name=True):
         try:
             with transaction.atomic():
