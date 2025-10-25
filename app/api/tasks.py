@@ -52,13 +52,14 @@ class TaskIDsSerializer(serializers.BaseSerializer):
 
 class TaskSerializer(serializers.ModelSerializer):
     project = serializers.PrimaryKeyRelatedField(queryset=models.Project.objects.all())
-    processing_node = serializers.PrimaryKeyRelatedField(queryset=ProcessingNode.objects.all()) 
+    processing_node = serializers.PrimaryKeyRelatedField(queryset=ProcessingNode.objects.all())
     processing_node_name = serializers.SerializerMethodField()
     can_rerun_from = serializers.SerializerMethodField()
     statistics = serializers.SerializerMethodField()
     extent = serializers.SerializerMethodField()
     tags = TagsField(required=False)
     crop = PolygonGeometryField(required=False, allow_null=True)
+    estimated_time_remaining = serializers.SerializerMethodField()
 
     def get_processing_node_name(self, obj):
         if obj.processing_node is not None:
@@ -90,6 +91,9 @@ class TaskSerializer(serializers.ModelSerializer):
 
     def get_extent(self, obj):
         return obj.get_extent()
+
+    def get_estimated_time_remaining(self, obj):
+        return obj.get_estimated_time_remaining()
 
     class Meta:
         model = models.Task

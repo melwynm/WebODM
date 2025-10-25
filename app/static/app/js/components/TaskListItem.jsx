@@ -39,6 +39,7 @@ class TaskListItem extends React.Component {
       expanded: this.historyNav.isValueInQSList("project_task_expanded", props.data.id),
       task: {},
       time: props.data.processing_time,
+      eta: props.data.estimated_time_remaining !== undefined ? props.data.estimated_time_remaining : -1,
       actionError: "",
       actionButtonsDisabled: false,
       editing: false,
@@ -78,13 +79,23 @@ class TaskListItem extends React.Component {
             (!this.state.task.uuid && this.state.task.processing_node && !this.state.task.last_error));
   }
 
-  loadTimer(startTime){
+  loadTimer(startTime, eta){
     if (!this.processingTimeInterval){
-      this.setState({time: startTime});
-
+      const nextState = {time: typeof startTime === 'number' ? startTime : 0};
+      if (eta !== undefined) nextState.eta = eta;
+      this.setState(nextState);
       this.processingTimeInterval = setInterval(() => {
-        this.setState({time: this.state.time += 1000});
+        this.setState(prevState => {
+          const updatedTime = (typeof prevState.time === 'number' ? prevState.time : 0) + 1000;
+          let updatedEta = prevState.eta;
+          if (typeof updatedEta === 'number' && updatedEta > 0){
+            updatedEta = Math.max(0, updatedEta - 1000);
+          }
+          return {time: updatedTime, eta: updatedEta};
+        });
       }, 1000);
+    }else if (eta !== undefined){
+      this.setState({eta});
     }
   }
 
@@ -99,14 +110,16 @@ class TaskListItem extends React.Component {
         clearInterval(this.processingTimeInterval);
         this.processingTimeInterval = null;
     }
-    if (this.state.task.processing_time) this.setState({time: this.state.task.processing_time});
   }
 
   componentDidMount(){
     if (this.shouldRefresh()) this.refreshTimeout = setTimeout(() => this.refresh(), this.props.refreshInterval || 3000);
 
     // Load timer if we are in running state
-    if (this.state.task.status === statusCodes.RUNNING) this.loadTimer(this.state.task.processing_time);
+    if (this.state.task.status === statusCodes.RUNNING){
+      const eta = this.state.task.estimated_time_remaining !== undefined ? this.state.task.estimated_time_remaining : -1;
+      this.loadTimer(this.state.task.processing_time, eta);
+    }
   }
 
   refresh(){
@@ -115,22 +128,32 @@ class TaskListItem extends React.Component {
       if (json.id){
         let oldStatus = this.state.task.status;
 
-        this.setState({task: json, actionButtonsDisabled: false});
+        this.setState({
+          task: json,
+          actionButtonsDisabled: false,
+          eta: json.estimated_time_remaining !== undefined ? json.estimated_time_remaining : -1
+        });
 
         // Update timer if we switched to running
-        if (oldStatus !== this.state.task.status){
-          if (this.state.task.status === statusCodes.RUNNING){
+        if (oldStatus !== json.status){
+          if (json.status === statusCodes.RUNNING){
             if (this.console) this.console.clear();
             if (this.basicView) this.basicView.reset();
-            this.loadTimer(this.state.task.processing_time);
+            const eta = json.estimated_time_remaining !== undefined ? json.estimated_time_remaining : -1;
+            this.loadTimer(json.processing_time, eta);
           }else{
-            this.setState({time: this.state.task.processing_time});
             this.unloadTimer();
+            this.setState({
+              time: json.processing_time,
+              eta: json.estimated_time_remaining !== undefined ? json.estimated_time_remaining : -1
+            });
           }
 
-          if (this.state.task.status !== statusCodes.FAILED){
+          if (json.status !== statusCodes.FAILED){
             this.setState({memoryError: false, friendlyTaskError: ""});
           }
+        }else if (json.status === statusCodes.RUNNING){
+          this.setState({eta: json.estimated_time_remaining !== undefined ? json.estimated_time_remaining : -1});
         }
       }else{
         console.warn("Cannot refresh task: " + json);
@@ -828,6 +851,9 @@ class TaskListItem extends React.Component {
           </div>
           <div className="col-md-2 hidden-xs hidden-sm details">
             <i className="far fa-clock"></i> {this.hoursMinutesSecs(this.state.time)}
+            {this.state.task.status === statusCodes.RUNNING && typeof this.state.eta === 'number' && this.state.eta > 0 ?
+              <div className="eta"><i className="fa fa-hourglass-half"></i> {_("ETA")} {this.hoursMinutesSecs(this.state.eta)}</div>
+            : ""}
           </div>
           <div className="col-xs-5 col-sm-6 col-md-4 col-lg-3 actions">
             {showEditLink ?
