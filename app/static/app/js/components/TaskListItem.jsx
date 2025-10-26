@@ -17,6 +17,14 @@ import Trans from './Trans';
 import Utils from '../classes/Utils';
 import { _, interpolate } from '../classes/gettext';
 
+const ETA_INCREASE_INTERVAL = 30000; // milliseconds between allowing ETA increases
+const ETA_MIN_INCREASE_STEP = 60000; // minimum increase step when we need to lengthen ETA
+const ETA_INCREASE_STEP_RATIO = 0.5; // increase step uses up to 50% of the remaining delta
+const ETA_DECREASE_BASE_WEIGHT = 0.25; // minimum fraction applied when ETA should shrink
+const ETA_DECREASE_PROGRESS_WEIGHT = 0.75; // additional weight based on task progress
+const ETA_SAMPLE_SIZE = 20; // number of progress samples kept for rate estimation
+const ETA_MIN_DIFF = 1000; // ignore eta adjustments below 1 second
+
 class TaskListItem extends React.Component {
   static propTypes = {
       history: PropTypes.object.isRequired,
@@ -56,6 +64,8 @@ class TaskListItem extends React.Component {
       this.state.task[k] = props.data[k];
     }
 
+    this.initializeEtaTracking(this.state.eta);
+
     this.toggleExpanded = this.toggleExpanded.bind(this);
     this.consoleOutputUrl = this.consoleOutputUrl.bind(this);
     this.stopEditing = this.stopEditing.bind(this);
@@ -69,6 +79,158 @@ class TaskListItem extends React.Component {
     this.backgroundFailedColor = Css.getValue('theme-background-failed', 'backgroundColor');
   }
 
+  initializeEtaTracking(initialEta){
+    this.etaProgressSamples = [];
+    this.lastKnownProgress = 0;
+    if (typeof initialEta === 'number' && initialEta >= 0){
+      this.etaTarget = initialEta;
+      const now = Date.now();
+      this.lastEtaIncrease = now;
+      this.lastEtaDecrease = now;
+    }else{
+      this.etaTarget = null;
+      this.lastEtaIncrease = null;
+      this.lastEtaDecrease = null;
+    }
+  }
+
+  resetEtaTracking(){
+    this.initializeEtaTracking(-1);
+  }
+
+  recordEtaSample(progress, processingTime){
+    if (typeof progress !== 'number' || typeof processingTime !== 'number') return;
+
+    const clampedProgress = Math.min(Math.max(progress, 0), 1);
+    if (!this.etaProgressSamples) this.etaProgressSamples = [];
+
+    if (this.etaProgressSamples.length){
+      const lastSample = this.etaProgressSamples[this.etaProgressSamples.length - 1];
+      if (clampedProgress + 0.05 < lastSample.progress){
+        this.etaProgressSamples = [];
+      }
+      if (processingTime <= lastSample.time){
+        this.etaProgressSamples = this.etaProgressSamples.filter(sample => sample.time < processingTime);
+      }
+    }
+
+    this.etaProgressSamples.push({progress: clampedProgress, time: processingTime});
+    if (this.etaProgressSamples.length > ETA_SAMPLE_SIZE){
+      this.etaProgressSamples.shift();
+    }
+  }
+
+  computeAverageProgressRate(){
+    if (!this.etaProgressSamples || this.etaProgressSamples.length < 2) return null;
+
+    let weightedRateSum = 0;
+    let totalWeight = 0;
+
+    for (let i = 1; i < this.etaProgressSamples.length; i++){
+      const prev = this.etaProgressSamples[i - 1];
+      const curr = this.etaProgressSamples[i];
+      const dt = curr.time - prev.time;
+      const dp = curr.progress - prev.progress;
+
+      if (dt <= 0 || dp <= 0) continue;
+
+      const rate = dp / dt;
+      const weight = i / this.etaProgressSamples.length;
+      weightedRateSum += rate * weight;
+      totalWeight += weight;
+    }
+
+    if (totalWeight === 0) return null;
+    return weightedRateSum / totalWeight;
+  }
+
+  computeRefinedEta(taskData, rawEta){
+    const task = taskData || this.state.task;
+    const progress = task && typeof task.running_progress === 'number' ? Math.min(Math.max(task.running_progress, 0), 1) : null;
+    const processingTime = task && typeof task.processing_time === 'number' ? task.processing_time : null;
+
+    const candidates = [];
+
+    if (progress !== null && processingTime !== null && progress > 0 && processingTime > 0){
+      this.recordEtaSample(progress, processingTime);
+
+      const remainingFromCurrent = Math.max(0, Math.round((processingTime / progress) - processingTime));
+      candidates.push({value: remainingFromCurrent, weight: 1 + progress});
+
+      const averageRate = this.computeAverageProgressRate();
+      if (averageRate && averageRate > 0){
+        const remainingFromTrend = Math.max(0, Math.round((1 - progress) / averageRate));
+        candidates.push({value: remainingFromTrend, weight: 2 + progress});
+      }
+    }
+
+    if (typeof rawEta === 'number' && rawEta >= 0){
+      const weight = progress !== null ? Math.max(0.5, 1 - (progress * 0.5)) : 1;
+      candidates.push({value: rawEta, weight});
+    }
+
+    if (!candidates.length){
+      if (typeof rawEta === 'number' && rawEta >= 0){
+        if (progress !== null) this.lastKnownProgress = progress;
+        return rawEta;
+      }
+      return null;
+    }
+
+    let weightedSum = 0;
+    let totalWeight = 0;
+
+    candidates.forEach(candidate => {
+      weightedSum += candidate.value * candidate.weight;
+      totalWeight += candidate.weight;
+    });
+
+    if (totalWeight === 0) return null;
+
+    let refined = weightedSum / totalWeight;
+
+    if (typeof rawEta === 'number' && rawEta >= 0){
+      const maxDeviation = rawEta * 4;
+      refined = Math.min(refined, maxDeviation);
+    }
+
+    if (progress !== null) this.lastKnownProgress = progress;
+
+    return Math.round(refined);
+  }
+
+  updateEtaEstimate(taskData, rawEta){
+    const refinedEta = this.computeRefinedEta(taskData, rawEta);
+
+    if (typeof refinedEta !== 'number' || isNaN(refinedEta) || refinedEta < 0){
+      this.etaTarget = null;
+      return;
+    }
+
+    this.etaTarget = refinedEta;
+    const now = Date.now();
+
+    this.setState(prevState => {
+      if (typeof prevState.eta !== 'number' || prevState.eta < 0){
+        this.lastEtaIncrease = now;
+        this.lastEtaDecrease = now;
+        return {eta: refinedEta};
+      }
+
+      const diff = refinedEta - prevState.eta;
+      if (diff < -ETA_MIN_DIFF){
+        const progress = this.lastKnownProgress || 0;
+        const weight = Math.max(ETA_DECREASE_BASE_WEIGHT, Math.min(1, ETA_DECREASE_BASE_WEIGHT + progress * ETA_DECREASE_PROGRESS_WEIGHT));
+        const adjustment = diff * weight;
+        const nextEta = Math.max(0, Math.round(prevState.eta + adjustment));
+        this.lastEtaDecrease = now;
+        return {eta: nextEta};
+      }
+
+      return null;
+    });
+  }
+
   shouldRefresh(){
     if (this.state.task.pending_action !== null) return true;
 
@@ -79,23 +241,56 @@ class TaskListItem extends React.Component {
             (!this.state.task.uuid && this.state.task.processing_node && !this.state.task.last_error));
   }
 
-  loadTimer(startTime, eta){
+  loadTimer(startTime, eta, taskData){
     if (!this.processingTimeInterval){
+      this.initializeEtaTracking(typeof eta === 'number' ? eta : this.state.eta);
+
       const nextState = {time: typeof startTime === 'number' ? startTime : 0};
       if (eta !== undefined) nextState.eta = eta;
-      this.setState(nextState);
+
+      this.setState(nextState, () => {
+        if (eta !== undefined){
+          this.updateEtaEstimate(taskData || this.state.task, eta);
+        }
+      });
+
       this.processingTimeInterval = setInterval(() => {
         this.setState(prevState => {
           const updatedTime = (typeof prevState.time === 'number' ? prevState.time : 0) + 1000;
           let updatedEta = prevState.eta;
-          if (typeof updatedEta === 'number' && updatedEta > 0){
-            updatedEta = Math.max(0, updatedEta - 1000);
+
+          if (typeof updatedEta === 'number' && updatedEta >= 0){
+            let nextEta = Math.max(0, updatedEta - 1000);
+
+            if (typeof this.etaTarget === 'number'){ // apply smoothing adjustments towards the latest target
+              const now = Date.now();
+              const diff = this.etaTarget - nextEta;
+
+              if (diff > ETA_MIN_DIFF){
+                if (!this.lastEtaIncrease || now - this.lastEtaIncrease >= ETA_INCREASE_INTERVAL){
+                  const step = Math.min(diff, Math.max(ETA_MIN_INCREASE_STEP, Math.round(diff * ETA_INCREASE_STEP_RATIO)));
+                  nextEta += step;
+                  this.lastEtaIncrease = now;
+                }
+              }else if (diff < -ETA_MIN_DIFF){
+                const progress = this.lastKnownProgress || 0;
+                const weight = Math.max(ETA_DECREASE_BASE_WEIGHT, Math.min(1, ETA_DECREASE_BASE_WEIGHT + progress * ETA_DECREASE_PROGRESS_WEIGHT));
+                const step = Math.min(-diff * weight, Math.abs(diff));
+                if (step > 0){
+                  nextEta -= step;
+                  this.lastEtaDecrease = now;
+                }
+              }
+            }
+
+            updatedEta = Math.max(0, Math.round(nextEta));
           }
+
           return {time: updatedTime, eta: updatedEta};
         });
       }, 1000);
     }else if (eta !== undefined){
-      this.setState({eta});
+      this.updateEtaEstimate(taskData || this.state.task, eta);
     }
   }
 
@@ -110,6 +305,7 @@ class TaskListItem extends React.Component {
         clearInterval(this.processingTimeInterval);
         this.processingTimeInterval = null;
     }
+    this.resetEtaTracking();
   }
 
   componentDidMount(){
@@ -118,7 +314,7 @@ class TaskListItem extends React.Component {
     // Load timer if we are in running state
     if (this.state.task.status === statusCodes.RUNNING){
       const eta = this.state.task.estimated_time_remaining !== undefined ? this.state.task.estimated_time_remaining : -1;
-      this.loadTimer(this.state.task.processing_time, eta);
+      this.loadTimer(this.state.task.processing_time, eta, this.state.task);
     }
   }
 
@@ -127,34 +323,41 @@ class TaskListItem extends React.Component {
     this.refreshRequest = $.getJSON(`/api/projects/${this.state.task.project}/tasks/${this.state.task.id}/`, json => {
       if (json.id){
         let oldStatus = this.state.task.status;
+        const rawEta = json.estimated_time_remaining !== undefined ? json.estimated_time_remaining : -1;
 
-        this.setState({
-          task: json,
-          actionButtonsDisabled: false,
-          eta: json.estimated_time_remaining !== undefined ? json.estimated_time_remaining : -1
+        this.setState(prevState => {
+          const nextState = {
+            task: json,
+            actionButtonsDisabled: false
+          };
+
+          if (json.status !== statusCodes.RUNNING){
+            nextState.time = json.processing_time;
+            nextState.eta = rawEta;
+          }
+
+          return nextState;
+        }, () => {
+          // Update timer if we switched to running
+          if (oldStatus !== json.status){
+            if (json.status === statusCodes.RUNNING){
+              if (this.console) this.console.clear();
+              if (this.basicView) this.basicView.reset();
+              this.loadTimer(json.processing_time, rawEta, json);
+            }else{
+              this.unloadTimer();
+            }
+
+            if (json.status !== statusCodes.FAILED){
+              this.setState({memoryError: false, friendlyTaskError: ""});
+            }
+          }else if (json.status === statusCodes.RUNNING){
+            this.updateEtaEstimate(json, rawEta);
+          }else{
+            this.resetEtaTracking();
+          }
         });
 
-        // Update timer if we switched to running
-        if (oldStatus !== json.status){
-          if (json.status === statusCodes.RUNNING){
-            if (this.console) this.console.clear();
-            if (this.basicView) this.basicView.reset();
-            const eta = json.estimated_time_remaining !== undefined ? json.estimated_time_remaining : -1;
-            this.loadTimer(json.processing_time, eta);
-          }else{
-            this.unloadTimer();
-            this.setState({
-              time: json.processing_time,
-              eta: json.estimated_time_remaining !== undefined ? json.estimated_time_remaining : -1
-            });
-          }
-
-          if (json.status !== statusCodes.FAILED){
-            this.setState({memoryError: false, friendlyTaskError: ""});
-          }
-        }else if (json.status === statusCodes.RUNNING){
-          this.setState({eta: json.estimated_time_remaining !== undefined ? json.estimated_time_remaining : -1});
-        }
       }else{
         console.warn("Cannot refresh task: " + json);
       }
