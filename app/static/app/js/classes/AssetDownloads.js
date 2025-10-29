@@ -40,13 +40,15 @@ class AssetDownloadSeparator extends AssetDownload{
 const tiffExportFormats = ["gtiff", "gtiff-rgb", "jpg", "png", "kmz"];
 const elevationExportParams = {'hillshade': 6, "color_map": "viridis"};
 
+const vectorExportFormats = ["dxf", "shp", "geojson", "gpkg"];
+
 const api = {
   all: function() {
     return [
       new AssetDownload(_("Orthophoto"),"orthophoto.tif","far fa-image", tiffExportFormats),
       new AssetDownload(_("Orthophoto (MBTiles)"),"orthophoto.mbtiles","far fa-image"),
       new AssetDownload(_("Orthophoto (Tiles)"),"orthophoto_tiles.zip","fa fa-table"),
-      new AssetDownload(_("Orthophoto Cutline"),"cutline.gpkg","fa fa-image"),
+      new AssetDownload(_("Orthophoto Cutline"),"cutline.gpkg","fa fa-image", vectorExportFormats),
       new AssetDownload(_("Terrain Model"),"dtm.tif","fa fa-chart-area", tiffExportFormats, elevationExportParams),
       new AssetDownload(_("Terrain Model (Tiles)"),"dtm_tiles.zip","fa fa-table"),
       new AssetDownload(_("Surface Model"),"dsm.tif","fa fa-chart-area", tiffExportFormats, elevationExportParams),
@@ -57,8 +59,8 @@ const api = {
       new AssetDownload(_("Textured Model (3D Tiles)"),"3d_tiles_model.zip","fab fa-connectdevelop"),
       new AssetDownload(_("Textured Model (glTF)"),"textured_model.glb","fab fa-connectdevelop"),
       new AssetDownload(_("Camera Parameters"),"cameras.json","fa fa-camera"),
-      new AssetDownload(_("Camera Shots"),"shots.geojson","fa fa-camera"),
-      new AssetDownload(_("Ground Control Points"),"ground_control_points.geojson","far fa-dot-circle"),
+      new AssetDownload(_("Camera Shots"),"shots.geojson","fa fa-camera", vectorExportFormats),
+      new AssetDownload(_("Ground Control Points"),"ground_control_points.geojson","far fa-dot-circle", vectorExportFormats),
       new AssetDownload(_("Quality Report"),"report.pdf","far fa-file-pdf"),
       
       

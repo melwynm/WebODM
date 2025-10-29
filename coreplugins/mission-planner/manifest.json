@@ -1,0 +1,13 @@
+{
+    "name": "Mission Planner",
+    "webodmMinVersion": "2.0.0",
+    "description": "Plan flights and attach capture logs to projects.",
+    "version": "1.0.0",
+    "author": "OpenAI Assistant",
+    "email": "",
+    "repository": "https://github.com/OpenDroneMap/WebODM",
+    "tags": ["mission", "planning", "logs"],
+    "homepage": "https://github.com/OpenDroneMap/WebODM",
+    "experimental": false,
+    "deprecated": false
+}
