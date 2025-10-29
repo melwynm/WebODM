@@ -16,6 +16,7 @@ import Tags from '../classes/Tags';
 import Trans from './Trans';
 import Utils from '../classes/Utils';
 import { _, interpolate } from '../classes/gettext';
+import TaskQAPanel from './TaskQAPanel';
 
 const ETA_INCREASE_INTERVAL = 30000; // milliseconds between allowing ETA increases
 const ETA_MIN_INCREASE_STEP = 60000; // minimum increase step when we need to lengthen ETA
@@ -57,7 +58,8 @@ class TaskListItem extends React.Component {
       view: "basic",
       showMoveDialog: false,
       actionLoading: false,
-      thumbLoadFailed: false
+      thumbLoadFailed: false,
+      showQaPanel: false
     }
 
     for (let k in props.data){
@@ -411,7 +413,19 @@ class TaskListItem extends React.Component {
   }
 
   thumbnailUrl = () => {
-    return `/api/projects/${this.state.task.project}/tasks/${this.state.task.id}/thumbnail?size=164`;  
+    return `/api/projects/${this.state.task.project}/tasks/${this.state.task.id}/thumbnail?size=164`;
+  }
+
+  toggleQaPanel = (e) => {
+    if (e && typeof e.preventDefault === 'function') e.preventDefault();
+    this.setState(prevState => ({showQaPanel: !prevState.showQaPanel}));
+  }
+
+  formatQaValue(value, units){
+    if (value === null || value === undefined) return '';
+    const absValue = Math.abs(value);
+    const decimals = absValue >= 1 ? 2 : 3;
+    return `${absValue.toFixed(decimals)} ${units || 'm'}`;
   }
 
   hoursMinutesSecs(t){
@@ -819,7 +833,10 @@ class TaskListItem extends React.Component {
           </div>);
 
       const stats = task.statistics;
-    
+      const qaStats = stats && stats.gcp_errors ? stats.gcp_errors : null;
+      const qaAverage = qaStats ? this.formatQaValue(qaStats.average_error, qaStats.units) : '';
+      const qaRmseTotal = qaStats && qaStats.rmse ? this.formatQaValue(qaStats.rmse.total, qaStats.units) : '';
+
       expanded = (
         <div className="expanded-panel">
           <div className="row">
@@ -860,11 +877,27 @@ class TaskListItem extends React.Component {
                       <td><strong>{_("Spatial Reference:")}</strong></td>
                       <td>{this.spatialRefsToHuman(stats.spatial_refs)}</td>
                     </tr>}
-                    {task.size > 0 && 
+                    {task.size > 0 &&
                     <tr>
                       <td><strong>{_("Disk Usage:")}</strong></td>
                       <td>{Utils.bytesToSize(task.size * 1024 * 1024)}</td>
                     </tr>}
+                    {qaStats && qaStats.points && qaStats.points.length ?
+                    <tr>
+                      <td><strong>{_("Quality Assurance:")}</strong></td>
+                      <td>
+                        <a href="javascript:void(0);" onClick={this.toggleQaPanel}>
+                          {this.state.showQaPanel ? _("Hide GCP residuals") : _("Show GCP residuals")}
+                        </a>
+                        {qaAverage ?
+                          <span className="task-qa-inline-summary">{` • ${qaAverage}`}</span>
+                        : ""}
+                        {qaRmseTotal ?
+                          <span className="task-qa-inline-summary">{` • ${_("RMSE")}: ${qaRmseTotal}`}</span>
+                        : ""}
+                      </td>
+                    </tr>
+                    : ""}
                     <tr>
                       <td><strong>{_("Task ID:")}</strong></td>
                       <td>{task.id}</td>
@@ -913,6 +946,10 @@ class TaskListItem extends React.Component {
                   <Trans params={{link: `<a href="${window.__taskOptionsDocsLink}" target="_blank">${window.__taskOptionsDocsLink.replace("https://", "")}</a>` }}>{_("\"Process exited with code 1\" means that part of the processing failed. Sometimes it's a problem with the dataset, sometimes it can be solved by tweaking the Task Options. Check the documentation at %(link)s")}</Trans>
                 </div>
               </div>
+              : ""}
+
+              {this.state.showQaPanel && stats && stats.gcp_errors ?
+                <TaskQAPanel data={stats.gcp_errors} />
               : ""}
             </div>
           </div>

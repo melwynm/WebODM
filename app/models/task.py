@@ -1,4 +1,5 @@
 import logging
+import math
 import os
 import shutil
 import time
@@ -439,11 +440,117 @@ class Task(models.Model):
                 logger.warning("Malformed JSON {}: {}".format(stats_json, str(e)))
                 return {}
 
-            points = None
+            def safe_float(value):
+                if value is None or value == '':
+                    return None
+                try:
+                    return float(value)
+                except (TypeError, ValueError):
+                    return None
+
+            def component_from_sequence(seq, index):
+                if isinstance(seq, (list, tuple)) and len(seq) > index:
+                    return safe_float(seq[index])
+                return None
+
+            def parse_error_collection(raw):
+                if not isinstance(raw, dict):
+                    return None
+
+                units = raw.get('units') or raw.get('unit')
+                average_error = safe_float(raw.get('average_error') or raw.get('mean_error') or raw.get('average'))
+
+                rmse_raw = raw.get('rmse') or raw.get('rmse_xyz') or raw.get('rms') or raw.get('rmse_error')
+                rmse = {
+                    'x': None,
+                    'y': None,
+                    'z': None,
+                    'horizontal': None,
+                    'vertical': None,
+                    'total': None
+                }
+
+                if isinstance(rmse_raw, dict):
+                    rmse['x'] = safe_float(rmse_raw.get('x') or rmse_raw.get('east') or rmse_raw.get('lon'))
+                    rmse['y'] = safe_float(rmse_raw.get('y') or rmse_raw.get('north') or rmse_raw.get('lat'))
+                    rmse['z'] = safe_float(rmse_raw.get('z') or rmse_raw.get('up') or rmse_raw.get('alt'))
+                    rmse['horizontal'] = safe_float(rmse_raw.get('horizontal'))
+                    rmse['vertical'] = safe_float(rmse_raw.get('vertical'))
+                    rmse['total'] = safe_float(rmse_raw.get('total') or rmse_raw.get('rmse'))
+                elif isinstance(rmse_raw, (list, tuple)):
+                    rmse['x'] = component_from_sequence(rmse_raw, 0)
+                    rmse['y'] = component_from_sequence(rmse_raw, 1)
+                    rmse['z'] = component_from_sequence(rmse_raw, 2)
+                elif rmse_raw is not None:
+                    rmse['total'] = safe_float(rmse_raw)
+
+                if rmse['horizontal'] is None and rmse['x'] is not None and rmse['y'] is not None:
+                    rmse['horizontal'] = math.sqrt(rmse['x'] ** 2 + rmse['y'] ** 2)
+                if rmse['vertical'] is None and rmse['z'] is not None:
+                    rmse['vertical'] = abs(rmse['z'])
+                if rmse['total'] is None and rmse['horizontal'] is not None and rmse['vertical'] is not None:
+                    rmse['total'] = math.sqrt(rmse['horizontal'] ** 2 + rmse['vertical'] ** 2)
+
+                points_raw = raw.get('errors') or raw.get('gcp_errors') or raw.get('points') or raw.get('entries') or []
+                formatted = []
+                for entry in points_raw:
+                    if not isinstance(entry, dict):
+                        continue
+
+                    components = entry.get('error') if isinstance(entry.get('error'), (list, tuple)) else None
+                    err_x = safe_float(entry.get('error_x') or entry.get('x') or entry.get('dx') or component_from_sequence(components, 0))
+                    err_y = safe_float(entry.get('error_y') or entry.get('y') or entry.get('dy') or component_from_sequence(components, 1))
+                    err_z = safe_float(entry.get('error_z') or entry.get('z') or entry.get('dz') or component_from_sequence(components, 2))
+                    total = safe_float(entry.get('error_total') or entry.get('total') or entry.get('rmse') or entry.get('residual'))
+                    if total is None and isinstance(entry.get('error'), (int, float, str)):
+                        total = safe_float(entry.get('error'))
+                    if total is None and err_x is not None and err_y is not None and err_z is not None:
+                        total = math.sqrt(err_x ** 2 + err_y ** 2 + err_z ** 2)
+
+                    horizontal = None
+                    if err_x is not None and err_y is not None:
+                        horizontal = math.sqrt(err_x ** 2 + err_y ** 2)
+                    vertical = abs(err_z) if err_z is not None else None
+
+                    label = entry.get('name') or entry.get('id') or entry.get('label') or entry.get('identifier')
+                    if not label:
+                        label = "%s %d" % (gettext('Point'), len(formatted) + 1)
+
+                    used_value = entry.get('enabled', entry.get('use', True))
+                    if isinstance(used_value, str):
+                        used = used_value.lower() not in ('false', '0', 'no')
+                    else:
+                        used = bool(used_value)
+                    checkpoint = str(entry.get('type', '')).lower() in ('check', 'checkpoint') or bool(entry.get('checkpoint'))
+
+                    formatted.append({
+                        'id': entry.get('id') or entry.get('identifier') or label,
+                        'label': label,
+                        'error_x': err_x,
+                        'error_y': err_y,
+                        'error_z': err_z,
+                        'error_horizontal': horizontal,
+                        'error_vertical': vertical,
+                        'error_total': total,
+                        'used': used,
+                        'checkpoint': checkpoint
+                    })
+
+                if not formatted and average_error is None and not any(v for v in rmse.values() if v is not None):
+                    return None
+
+                return {
+                    'units': units or 'm',
+                    'average_error': average_error,
+                    'rmse': rmse,
+                    'points': formatted
+                }
+
+            point_count = None
             if j.get('point_cloud_statistics', {}).get('dense', False):
-                points = j.get('point_cloud_statistics', {}).get('stats', {}).get('statistic', [{}])[0].get('count')
+                point_count = j.get('point_cloud_statistics', {}).get('stats', {}).get('statistic', [{}])[0].get('count')
             else:
-                points = j.get('reconstruction_statistics', {}).get('reconstructed_points_count')
+                point_count = j.get('reconstruction_statistics', {}).get('reconstructed_points_count')
 
             spatial_refs = []
             if j.get('reconstruction_statistics', {}).get('has_gps'):
@@ -453,9 +560,9 @@ class Task(models.Model):
             if 'align' in j:
                 spatial_refs.append("alignment")
 
-            return {
-                'pointcloud':{
-                    'points': points,
+            result = {
+                'pointcloud': {
+                    'points': point_count,
                 },
                 'gsd': j.get('odm_processing_statistics', {}).get('average_gsd'),
                 'area': j.get('processing_statistics', {}).get('area'),
@@ -463,6 +570,20 @@ class Task(models.Model):
                 'end_date': j.get('processing_statistics', {}).get('end_date'),
                 'spatial_refs': spatial_refs,
             }
+
+            gcp_stats = parse_error_collection(j.get('gcp_errors', {}))
+            if gcp_stats:
+                result['gcp_errors'] = gcp_stats
+
+            checkpoint_stats = parse_error_collection(j.get('checkpoints', {}))
+            if checkpoint_stats:
+                result['checkpoints'] = checkpoint_stats
+
+            reprojection_error = safe_float(j.get('reconstruction_statistics', {}).get('average_reprojection_error') or j.get('reconstruction_statistics', {}).get('reprojection_error'))
+            if reprojection_error is not None:
+                result['reprojection_error'] = reprojection_error
+
+            return result
         else:
             return {}
 

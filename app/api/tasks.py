@@ -1,6 +1,9 @@
 import os
 import re
 import shutil
+import subprocess
+import tempfile
+import zipfile
 from wsgiref.util import FileWrapper
 
 import mimetypes
@@ -45,6 +48,122 @@ def flatten_files(request_files):
         lambda key: request_files.getlist(key),
         [keys for keys in request_files])
      for file in filesList]
+
+VECTOR_EXPORT_FORMATS = {
+    'geojson': ('GeoJSON', '.geojson'),
+    'gpkg': ('GPKG', '.gpkg'),
+    'shp': ('ESRI Shapefile', '.zip'),
+    'dxf': ('DXF', '.dxf'),
+}
+
+VECTOR_ASSETS = {
+    'ground_control_points.geojson': {
+        'download_label': 'ground_control_points',
+    },
+    'shots.geojson': {
+        'download_label': 'camera_shots',
+    },
+    'cutline.gpkg': {
+        'download_label': 'cutline',
+        'layer': 'cutline',
+        'layer_name': 'cutline'
+    }
+}
+
+
+def convert_vector_asset(request, task, asset, export_format):
+    meta = VECTOR_ASSETS.get(asset)
+    if meta is None:
+        return None
+
+    export_format = (export_format or '').lower()
+    if export_format not in VECTOR_EXPORT_FORMATS:
+        raise exceptions.ValidationError(_("Unsupported format: %(value)s") % {'value': export_format})
+
+    epsg_param = request.GET.get('epsg')
+    epsg = None
+    if epsg_param not in (None, ''):
+        try:
+            epsg = int(epsg_param)
+        except ValueError:
+            raise exceptions.ValidationError(_("Invalid EPSG code: %(value)s") % {'value': epsg_param})
+
+        if task.epsg is None:
+            raise exceptions.ValidationError(_("Cannot use epsg on non-georeferenced dataset"))
+
+    try:
+        source_path = task.get_asset_download_path(asset)
+    except FileNotFoundError:
+        raise exceptions.NotFound()
+
+    if not os.path.isfile(source_path):
+        raise exceptions.NotFound()
+
+    original_ext = os.path.splitext(asset)[1].lower().lstrip('.')
+    if export_format == original_ext and epsg is None:
+        download_filename = f"{get_asset_download_filename(task, meta['download_label'])}.{original_ext}"
+        return download_file_response(request, source_path, 'attachment', download_filename=download_filename)
+
+    ogr2ogr_bin = shutil.which('ogr2ogr')
+    if ogr2ogr_bin is None:
+        raise exceptions.ValidationError(_("ogr2ogr is required to export %(asset)s") % {'asset': asset})
+
+    tmpdir = tempfile.mkdtemp('_vector_export', dir=settings.MEDIA_TMP)
+
+    format_name, extension = VECTOR_EXPORT_FORMATS[export_format]
+    layer_name = meta.get('layer_name', meta['download_label'])
+
+    args = [ogr2ogr_bin, '-f', format_name, '-nln', layer_name]
+    if epsg is not None:
+        args.extend(['-t_srs', f'EPSG:{epsg}'])
+
+    if export_format == 'shp':
+        destination = os.path.join(tmpdir, 'shapefile')
+        os.makedirs(destination, exist_ok=True)
+    else:
+        destination = os.path.join(tmpdir, f"{meta['download_label']}{extension}")
+
+    args.append(destination)
+    args.append(source_path)
+    if meta.get('layer'):
+        args.append(meta['layer'])
+
+    process = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    out, err = process.communicate()
+    if process.returncode != 0:
+        shutil.rmtree(tmpdir, ignore_errors=True)
+        message = err.decode('utf-8').strip() or out.decode('utf-8').strip() or 'ogr2ogr failed'
+        raise exceptions.ValidationError(message)
+
+    if export_format == 'shp':
+        zip_path = os.path.join(tmpdir, f"{meta['download_label']}.zip")
+        with zipfile.ZipFile(zip_path, 'w', zipfile.ZIP_DEFLATED) as archive:
+            for root, _dirs, files in os.walk(destination):
+                for filename in files:
+                    file_path = os.path.join(root, filename)
+                    arcname = os.path.join(meta['download_label'], filename)
+                    archive.write(file_path, arcname)
+        shutil.rmtree(destination, ignore_errors=True)
+        final_path = zip_path
+    else:
+        final_path = destination
+
+    download_name = f"{get_asset_download_filename(task, meta['download_label'])}{extension}"
+    response = download_file_response(request, final_path, 'attachment', download_filename=download_name)
+
+    original_close = response.close
+
+    def cleanup():
+        try:
+            original_close()
+        finally:
+            try:
+                shutil.rmtree(tmpdir, ignore_errors=True)
+            except Exception:
+                pass
+
+    response.close = cleanup
+    return response
 
 class TaskIDsSerializer(serializers.BaseSerializer):
     def to_representation(self, obj):
@@ -494,6 +613,12 @@ class TaskDownloads(TaskNestedView):
         Downloads a task asset (if available)
         """
         task = self.get_and_check_task(request, pk)
+
+        export_format = request.GET.get('format')
+        if export_format:
+            response = convert_vector_asset(request, task, asset, export_format)
+            if response is not None:
+                return response
 
         # Check and download
         try:

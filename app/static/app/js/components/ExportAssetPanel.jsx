@@ -67,7 +67,23 @@ export default class ExportAssetPanel extends React.Component {
         'csv': {
             label: "CSV",
             icon: "fas fa-file-alt"
-        }        
+        },
+        'geojson': {
+            label: "GeoJSON",
+            icon: "fa fa-globe"
+        },
+        'gpkg': {
+            label: "GeoPackage",
+            icon: "fa fa-database"
+        },
+        'shp': {
+            label: "ESRI Shapefile (ZIP)",
+            icon: "fa fa-object-group"
+        },
+        'dxf': {
+            label: "DXF",
+            icon: "fa fa-ruler"
+        }
     };
 
     this.state = {
@@ -126,13 +142,38 @@ export default class ExportAssetPanel extends React.Component {
     return this.props.asset == "georeferenced_model";
   }
 
+  isVector = () => {
+    return ["ground_control_points", "shots", "cutline"].indexOf(this.props.asset) !== -1;
+  }
+
+  getVectorAssetFilename = () => {
+    if (this.props.asset === "ground_control_points") return "ground_control_points.geojson";
+    if (this.props.asset === "shots") return "shots.geojson";
+    if (this.props.asset === "cutline") return "cutline.gpkg";
+    return null;
+  }
+
   handleExport = (format) => {
     if (!format) format = this.state.format;
 
     return (cb) => {
         if (typeof cb !== 'function') cb = undefined;
-        
+
         const { task } = this.props;
+        if (this.isVector()){
+            const exportParams = this.getExportParams(format);
+            if (this.state.epsg === "custom") Storage.setItem("last_export_custom_epsg", exportParams.epsg);
+            const assetFilename = this.getVectorAssetFilename();
+            if (assetFilename){
+                const searchParams = new URLSearchParams();
+                if (exportParams.format) searchParams.set('format', exportParams.format);
+                if (exportParams.epsg) searchParams.set('epsg', exportParams.epsg);
+                const query = searchParams.toString();
+                window.location.href = `/api/projects/${task.project}/tasks/${task.id}/download/${assetFilename}${query ? `?${query}` : ''}`;
+                if (cb !== undefined) cb();
+            }
+            return;
+        }
         this.setState({exporting: true, error: "", progress: null});
         const data = this.getExportParams(format);
 
