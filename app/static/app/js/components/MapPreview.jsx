@@ -506,11 +506,25 @@ _('Example:'),
       const parts = line.split(/\s+/);
       if (parts.length < 3) return;
 
-      const coords = this.convertToLatLng(srs, parts[0], parts[1]);
+      let coordStart = 0;
+      let label = `GCP ${index + 1}`;
+      const firstNumber = this.toNumber(parts[0]);
+      const secondNumber = parts.length > 1 ? this.toNumber(parts[1]) : null;
+
+      if (firstNumber === null || secondNumber === null){
+        if (parts.length < 4) return;
+        coordStart = 1;
+        label = parts[0];
+      }else if (parts.length >= 6){
+        label = parts[5];
+      }
+
+      if (parts.length <= coordStart + 2) return;
+
+      const coords = this.convertToLatLng(srs, parts[coordStart], parts[coordStart + 1]);
       if (!coords) return;
 
-      const altitude = this.parseAltitude(parts[2]);
-      const label = parts.length >= 6 ? parts[5] : `GCP ${index + 1}`;
+      const altitude = this.parseAltitude(parts[coordStart + 2]);
 
       points.push({
         gps: {
