@@ -4,7 +4,7 @@ import PropTypes from 'prop-types';
 import ErrorMessage from './ErrorMessage';
 import Utils from '../classes/Utils';
 import ClipboardInput from './ClipboardInput';
-import QRCode from 'qrcode.react';
+import { QRCodeSVG } from 'qrcode.react';
 import update from 'immutability-helper';
 import $ from 'jquery';
 import PluginsAPI from '../classes/plugins/API';
@@ -262,7 +262,7 @@ class SharePopup extends React.Component{
               </label>
             </div>
             <div className={(this.state.showQR ? "" : "hide") + " text-center"}>
-              <QRCode
+              <QRCodeSVG
                 value={shareLink}
                 size={164}
                 bgColor={"#ffffff"}
