@@ -41,12 +41,21 @@ def read_platform_from_files():
 
 def assert_all_platforms_are_called_differently(platforms):
     platform_names = []
+    duplicates = set()
     for platform in platforms:
         if platform.name in platform_names:
-            # ToDo: throw an error
-            logger.warning('Found multiple platforms with the name {}. This will cause problems...'.format(platform.name))
+            duplicates.add(platform.name)
         else:
             platform_names.append(platform.name)
+
+    if duplicates:
+        duplicate_list = ", ".join(sorted(duplicates))
+        message = (
+            "Found multiple cloud import platforms with the following names: {}. "
+            "Platform names must be unique."
+        ).format(duplicate_list)
+        logger.error(message)
+        raise ValueError(message)
 
 def get_platforms_path():
     current_path = path.dirname(path.realpath(__file__))
