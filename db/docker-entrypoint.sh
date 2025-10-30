@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
-set -Eeo pipefail
-# TODO swap to -Eeuo pipefail above (after handling all potentially-unset variables)
+set -Eeuo pipefail
+
+: "${PGDATA:=/var/lib/postgresql/data}"
 
 # usage: file_env VAR [DEFAULT]
 #    ie: file_env 'XYZ_DB_PASSWORD' 'example'
@@ -45,12 +46,12 @@ docker_create_db_directories() {
 	chmod 775 /var/run/postgresql || :
 
 	# Create the transaction log directory before initdb is run so the directory is owned by the correct user
-	if [ -n "$POSTGRES_INITDB_XLOGDIR" ]; then
-		mkdir -p "$POSTGRES_INITDB_XLOGDIR"
-		if [ "$user" = '0' ]; then
-			find "$POSTGRES_INITDB_XLOGDIR" \! -user postgres -exec chown postgres '{}' +
-		fi
-		chmod 700 "$POSTGRES_INITDB_XLOGDIR"
+	if [ -n "${POSTGRES_INITDB_XLOGDIR:-}" ]; then
+	        mkdir -p "$POSTGRES_INITDB_XLOGDIR"
+	        if [ "$user" = '0' ]; then
+	                find "$POSTGRES_INITDB_XLOGDIR" \! -user postgres -exec chown postgres '{}' +
+	        fi
+	        chmod 700 "$POSTGRES_INITDB_XLOGDIR"
 	fi
 
 	# allow the container to be started with `--user`
@@ -75,8 +76,8 @@ docker_init_database_dir() {
 		echo "postgres:x:$(id -g):" > "$NSS_WRAPPER_GROUP"
 	fi
 
-	if [ -n "$POSTGRES_INITDB_XLOGDIR" ]; then
-		set -- --xlogdir "$POSTGRES_INITDB_XLOGDIR" "$@"
+	if [ -n "${POSTGRES_INITDB_XLOGDIR:-}" ]; then
+	        set -- --xlogdir "$POSTGRES_INITDB_XLOGDIR" "$@"
 	fi
 
 	eval 'initdb --username="$POSTGRES_USER" --pwfile=<(echo "$POSTGRES_PASSWORD") '"$POSTGRES_INITDB_ARGS"' "$@"'
@@ -213,6 +214,7 @@ docker_setup_env() {
 	file_env 'POSTGRES_INITDB_ARGS'
 	# default authentication method is md5
 	: "${POSTGRES_HOST_AUTH_METHOD:=md5}"
+	: "${POSTGRES_ALLOW_HOST:=all}"
 
 	declare -g DATABASE_ALREADY_EXISTS
 	# look specifically for PG_VERSION, as it is expected in the DB dir
@@ -225,20 +227,21 @@ docker_setup_env() {
 # set POSTGRES_ALLOW_HOST to limit trusted hosts, can be ip or domain, default is "all"
 pg_setup_hba_conf() {
 	{
-		echo
-		if [ 'trust' = "$POSTGRES_HOST_AUTH_METHOD" ]; then
-			echo '# warning trust is enabled for all connections'
-			echo '# see https://www.postgresql.org/docs/12/auth-trust.html'
-		fi
-		echo "host all all $POSTGRES_ALLOW_HOST $POSTGRES_HOST_AUTH_METHOD"
+	        echo
+	        if [ 'trust' = "$POSTGRES_HOST_AUTH_METHOD" ]; then
+	                echo '# warning trust is enabled for all connections'
+	                echo '# see https://www.postgresql.org/docs/12/auth-trust.html'
+	        fi
+	        local allow_host="${POSTGRES_ALLOW_HOST:-all}"
+	        echo "host all all $allow_host $POSTGRES_HOST_AUTH_METHOD"
 	} >> "$PGDATA/pg_hba.conf"
 }
 
 # start socket-only postgresql server for setting up or running scripts
 # all arguments will be passed along as arguments to `postgres` (via pg_ctl)
 docker_temp_server_start() {
-	if [ "$1" = 'postgres' ]; then
-		shift
+	if [ "${1:-}" = 'postgres' ]; then
+	        shift
 	fi
 
 	# internal start of server in order to allow setup using psql client
@@ -275,13 +278,15 @@ _pg_want_help() {
 }
 
 _main() {
+	local firstArg="${1:-}"
 	# if first arg looks like a flag, assume we want to run postgres server
-	if [ "${1:0:1}" = '-' ]; then
-		set -- postgres "$@"
+	if [ "${firstArg:0:1}" = '-' ]; then
+	        set -- postgres "$@"
+	        firstArg='postgres'
 	fi
 
-	if [ "$1" = 'postgres' ] && ! _pg_want_help "$@"; then
-		docker_setup_env
+	if [ "${1:-}" = 'postgres' ] && ! _pg_want_help "$@"; then
+	        docker_setup_env
 		# setup data directories and permissions (when run as root)
 		docker_create_db_directories
 		if [ "$(id -u)" = '0' ]; then

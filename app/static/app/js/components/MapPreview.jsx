@@ -16,6 +16,7 @@ import { _, interpolate } from '../classes/gettext';
 import CropButton from './CropButton';
 import 'leaflet-fullscreen/dist/Leaflet.fullscreen';
 import 'leaflet-fullscreen/dist/leaflet.fullscreen.css';
+import proj4 from 'proj4';
 
 class MapPreview extends React.Component {
   static defaultProps = {
@@ -41,8 +42,12 @@ class MapPreview extends React.Component {
     this.basemaps = {};
     this.mapBounds = null;
     this.exifData = [];
+    this.gcpData = [];
+    this.geoData = [];
     this.hasTimestamp = true;
     this.MaxImagesPlot = 10000;
+    this.gcpLayer = null;
+    this.geoLayer = null;
   }
 
   componentDidMount() {
@@ -198,8 +203,23 @@ _('Example:'),
       this.imagesGroup = null;
     }
 
+    if (this.gcpLayer){
+      this.map.removeLayer(this.gcpLayer);
+      this.gcpLayer = null;
+    }
+
+    if (this.geoLayer){
+      this.map.removeLayer(this.geoLayer);
+      this.geoLayer = null;
+    }
+
+    this.exifData = [];
+    this.gcpData = [];
+    this.geoData = [];
+    this.hasTimestamp = true;
+
     this.readExifData().then(() => {
-      let images = this.sampled(this.exifData, this.MaxImagesPlot).map(exif => {
+      const images = this.sampled(this.exifData, this.MaxImagesPlot).map(exif => {
         let layer = L.circleMarker([exif.gps.latitude, exif.gps.longitude], {
           radius: 8,
           fillOpacity: 1,
@@ -214,14 +234,14 @@ _('Example:'),
         if (this.hasTimestamp) layer.feature.properties["Timestamp"] = exif.timestamp;
         return layer;
       });
-      
+
       if (this.capturePath){
         this.map.removeLayer(this.capturePath);
         this.capturePath = null;
       }
 
       // Only show line if we have reliable date/time info
-      if (this.hasTimestamp){
+      if (this.hasTimestamp && this.exifData.length > 0){
         let coords = this.exifData.map(exif => [exif.gps.latitude, exif.gps.longitude]);
         this.capturePath = L.polyline(coords, {
           color: "#4b96f3",
@@ -229,13 +249,76 @@ _('Example:'),
         });
         this.capturePath.addTo(this.map);
       }
-      
+
       if (images.length > 0){
         this.imagesGroup = L.featureGroup(images).addTo(this.map);
-        this.map.fitBounds(this.imagesGroup.getBounds());
       }
 
-      this.props.onImagesBboxChanged(this.computeBbox(this.exifData));
+      const gcpMarkers = this.gcpData.map((entry, index) => {
+        const marker = L.circleMarker([entry.gps.latitude, entry.gps.longitude], {
+          radius: 7,
+          fillOpacity: 1,
+          color: "#d9480f",
+          fillColor: "#ffa94d",
+          weight: 1.5,
+        }).bindPopup(entry.label);
+        marker.feature = marker.feature || {};
+        marker.feature.type = "Feature";
+        marker.feature.properties = marker.feature.properties || {};
+        marker.feature.properties["Type"] = "GCP";
+        marker.feature.properties["Label"] = entry.label;
+        if (entry.source) marker.feature.properties["Source"] = entry.source;
+        if (entry.gps.altitude !== null) marker.feature.properties["Altitude"] = entry.gps.altitude;
+        return marker;
+      });
+
+      if (gcpMarkers.length > 0){
+        this.gcpLayer = L.featureGroup(gcpMarkers).addTo(this.map);
+        this.gcpLayer.bringToFront();
+      }
+
+      const geoMarkers = this.geoData.map((entry, index) => {
+        const marker = L.circleMarker([entry.gps.latitude, entry.gps.longitude], {
+          radius: 7,
+          fillOpacity: 1,
+          color: "#2f9e44",
+          fillColor: "#51cf66",
+          weight: 1.5,
+        }).bindPopup(entry.label);
+        marker.feature = marker.feature || {};
+        marker.feature.type = "Feature";
+        marker.feature.properties = marker.feature.properties || {};
+        marker.feature.properties["Type"] = "Geo";
+        marker.feature.properties["Label"] = entry.label;
+        if (entry.source) marker.feature.properties["Source"] = entry.source;
+        if (entry.gps.altitude !== null) marker.feature.properties["Altitude"] = entry.gps.altitude;
+        return marker;
+      });
+
+      if (geoMarkers.length > 0){
+        this.geoLayer = L.featureGroup(geoMarkers).addTo(this.map);
+        this.geoLayer.bringToFront();
+      }
+
+      const bboxData = this.computeBbox([
+        ...this.exifData,
+        ...this.gcpData,
+        ...this.geoData
+      ]);
+
+      if (bboxData){
+        const bounds = L.latLngBounds(
+          [
+            [bboxData[1], bboxData[0]],
+            [bboxData[3], bboxData[2]]
+          ]
+        );
+        if (bounds.isValid()){
+          this.map.fitBounds(bounds);
+        }
+      }
+
+      this.props.onImagesBboxChanged(bboxData);
 
       this.setState({showLoading: false});
 
@@ -244,44 +327,56 @@ _('Example:'),
     });
   }
 
-  computeBbox = exifData => {
+  computeBbox = data => {
     // minx, miny, maxx, maxy
     let bbox = [Infinity, Infinity, -Infinity, -Infinity];
-    exifData.forEach(ed => {
-      if (ed.gps){
+    let hasPoints = false;
+    data.forEach(ed => {
+      if (ed && ed.gps && this.isValidLatLon(ed.gps.latitude, ed.gps.longitude)){
+        hasPoints = true;
         bbox[0] = Math.min(bbox[0], ed.gps.longitude);
         bbox[1] = Math.min(bbox[1], ed.gps.latitude);
         bbox[2] = Math.max(bbox[2], ed.gps.longitude);
         bbox[3] = Math.max(bbox[3], ed.gps.latitude);
       }
     });
-    return bbox;
+    return hasPoints ? bbox : null;
   }
 
   readExifData = () => {
-    return new Promise((resolve, reject) => {
-      const files = this.props.getFiles();
-      const images = [];
-      // TODO: gcps? geo files?
+    const files = this.props.getFiles();
+    const images = [];
+    const gcpFiles = [];
+    const geoFiles = [];
 
-      for (let i = 0; i < files.length; i++){
-        const f = files[i];
-        if (f.type.indexOf("image") === 0) images.push(f);
+    for (let i = 0; i < files.length; i++){
+      const f = files[i];
+      const mime = f.type || "";
+      const name = (f.name || "").toLowerCase();
+
+      if (mime.indexOf("image") === 0) images.push(f);
+
+      if (name){
+        if (name === 'gcp_list.txt' || name === 'gcp.txt' || name === 'ground_control_points.txt' || name.endsWith('_gcp.txt')){
+          gcpFiles.push(f);
+        }else if (name === 'geo.txt' || name.endsWith('_geo.txt') || name === 'coords.txt'){
+          geoFiles.push(f);
+        }
       }
+    }
 
-      // Parse EXIF
-      const options = {
-        ifd0: false,
-        exif: [0x9003],
-        gps: [0x0001, 0x0002, 0x0003, 0x0004, 0x0005, 0x0006],
-        interop: false,
-        ifd1: false // thumbnail
-      };
+    const options = {
+      ifd0: false,
+      exif: [0x9003],
+      gps: [0x0001, 0x0002, 0x0003, 0x0004, 0x0005, 0x0006],
+      interop: false,
+      ifd1: false // thumbnail
+    };
 
+    const imagePromise = new Promise((resolve) => {
       const next = (i) => {
-        if (i < images.length - 1) parseImage(i+1);
+        if (i < images.length - 1) parseImage(i + 1);
         else{
-          // Sort by date/time
           if (this.hasTimestamp){
             this.exifData.sort((a, b) => {
               if (a.timestamp < b.timestamp) return -1;
@@ -289,18 +384,16 @@ _('Example:'),
               else return 0;
             });
           }
-
           resolve();
         }
       };
-      
+
       const parseImage = i => {
         const img = images[i];
         exifr.parse(img, options).then(exif => {
           if (!exif.latitude || !exif.longitude){
-              // reject(new Error(interpolate(_("Cannot extract GPS data from %(file)s"), {file: img.name})));
-              next(i);
-              return;
+            next(i);
+            return;
           }
 
           let dateTime = exif.DateTimeOriginal;
@@ -328,7 +421,172 @@ _('Example:'),
       if (images.length > 0) parseImage(0);
       else resolve();
     });
+
+    const gcpPromise = Promise.all(gcpFiles.map(this.parseGcpFile)).then(results => {
+      this.gcpData = results.reduce((acc, current) => acc.concat(current), []);
+    });
+
+    const geoPromise = Promise.all(geoFiles.map(this.parseGeoFile)).then(results => {
+      this.geoData = results.reduce((acc, current) => acc.concat(current), []);
+    });
+
+    return Promise.all([imagePromise, gcpPromise, geoPromise]);
   }
+
+  looksLikeSrsLine = (line) => {
+    if (!line) return false;
+    const upper = line.trim().toUpperCase();
+    return upper.startsWith('EPSG:') || upper.startsWith('+PROJ=') || upper === 'WGS84' || upper.includes('LONG/LAT') || upper.includes('LAT/LONG') || upper.includes('LATLONG');
+  };
+
+  splitSrsAndData = (text) => {
+    const lines = text.split(/\r?\n/).map(line => line.trim());
+    let srs = '';
+    const data = [];
+
+    for (let i = 0; i < lines.length; i++){
+      const line = lines[i];
+      if (line === '' || line[0] === '#') continue;
+      if (!srs && this.looksLikeSrsLine(line)){
+        srs = line;
+        continue;
+      }
+      data.push(line);
+    }
+
+    return { srs, data };
+  };
+
+  toNumber = (value) => {
+    const parsed = Number(value);
+    return Number.isFinite(parsed) ? parsed : null;
+  };
+
+  parseAltitude = (value) => {
+    const parsed = this.toNumber(value);
+    return parsed !== null ? parsed : null;
+  };
+
+  isValidLatLon = (lat, lon) => Number.isFinite(lat) && Number.isFinite(lon) && Math.abs(lat) <= 90 && Math.abs(lon) <= 180;
+
+  guessLonLat = (x, y) => {
+    if (this.isValidLatLon(y, x)) return [x, y];
+    if (this.isValidLatLon(x, y)) return [y, x];
+    return null;
+  };
+
+  convertToLatLng = (srs, x, y) => {
+    const coordX = this.toNumber(x);
+    const coordY = this.toNumber(y);
+    if (coordX === null || coordY === null) return null;
+
+    if (srs){
+      let fromSrs = srs.trim();
+      if (fromSrs.toUpperCase() === 'WGS84'){
+        fromSrs = 'EPSG:4326';
+      }
+      try{
+        const [lon, lat] = proj4(fromSrs, 'EPSG:4326', [coordX, coordY]);
+        if (this.isValidLatLon(lat, lon)){
+          return [lon, lat];
+        }
+      }catch (error){
+        console.warn(`Unable to convert coordinates using ${fromSrs}: ${error.message}`);
+      }
+    }
+
+    return this.guessLonLat(coordX, coordY);
+  };
+
+  extractGcpsFromText = (text, sourceName) => {
+    const { srs, data } = this.splitSrsAndData(text);
+    const points = [];
+
+    data.forEach((line, index) => {
+      const parts = line.split(/\s+/);
+      if (parts.length < 3) return;
+
+      const coords = this.convertToLatLng(srs, parts[0], parts[1]);
+      if (!coords) return;
+
+      const altitude = this.parseAltitude(parts[2]);
+      const label = parts.length >= 6 ? parts[5] : `GCP ${index + 1}`;
+
+      points.push({
+        gps: {
+          latitude: coords[1],
+          longitude: coords[0],
+          altitude
+        },
+        label,
+        source: sourceName,
+        type: 'gcp'
+      });
+    });
+
+    return points;
+  };
+
+  parseGcpFile = async (file) => {
+    try{
+      const text = await file.text();
+      return this.extractGcpsFromText(text, file.name);
+    }catch (error){
+      console.warn(`Unable to parse ${file.name}: ${error.message}`);
+      return [];
+    }
+  };
+
+  extractGeoPointsFromText = (text, sourceName) => {
+    const { srs, data } = this.splitSrsAndData(text);
+    const points = [];
+
+    data.forEach((line, index) => {
+      const parts = line.split(/\s+/);
+      if (parts.length < 2) return;
+
+      let coordStart = 0;
+      let label = `${sourceName || 'Geo'} ${index + 1}`;
+      const firstNumber = this.toNumber(parts[0]);
+      const secondNumber = this.toNumber(parts[1]);
+
+      if (firstNumber === null || secondNumber === null){
+        if (parts.length < 4) return;
+        coordStart = 1;
+        label = parts[0];
+      }
+
+      if (parts.length <= coordStart + 1) return;
+
+      const coords = this.convertToLatLng(srs, parts[coordStart], parts[coordStart + 1]);
+      if (!coords) return;
+
+      const altitude = parts.length > coordStart + 2 ? this.parseAltitude(parts[coordStart + 2]) : null;
+
+      points.push({
+        gps: {
+          latitude: coords[1],
+          longitude: coords[0],
+          altitude
+        },
+        label,
+        source: sourceName,
+        type: 'geo'
+      });
+    });
+
+    return points;
+  };
+
+  parseGeoFile = async (file) => {
+    try{
+      const text = await file.text();
+      return this.extractGeoPointsFromText(text, file.name);
+    }catch (error){
+      console.warn(`Unable to parse ${file.name}: ${error.message}`);
+      return [];
+    }
+  };
 
   componentWillUnmount() {
     this.map.remove();

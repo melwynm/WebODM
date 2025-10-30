@@ -138,6 +138,8 @@ camera_filters = [
     'NGB',
     'NRG',
     'NRB',
+    'BN',
+    'NB',
 
     'RGBN',
     'RGNRe',
@@ -157,7 +159,7 @@ camera_filters = [
     'L', # FLIR camera has a single LWIR band
 
     # more?
-    # TODO: certain cameras have only two bands? eg. MAPIR NDVI BLUE+NIR
+    # Includes two-band filters such as MAPIR NDVI Blue+NIR
 ]
 
 @lru_cache(maxsize=20)

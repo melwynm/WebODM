@@ -77,8 +77,13 @@ def sync_plugin_db():
 
 
 def clear_plugins_cache():
-    global plugins
+    global plugins, _active_plugins_cache, _plugin_lookup_cache
     plugins = None
+    _active_plugins_cache = None
+    _plugin_lookup_cache = {
+        'active': {},
+        'all': {}
+    }
 
 
 def build_plugins():
@@ -170,6 +175,11 @@ def valid_plugin(plugin_path):
     return os.path.isfile(initpy_path) and os.path.isfile(manifest_path) and os.path.isfile(pluginpy_path)
 
 plugins = None
+_active_plugins_cache = None
+_plugin_lookup_cache = {
+    'active': {},
+    'all': {}
+}
 def get_plugins():
     """
     :return: all plugins instances (enabled or not)
@@ -246,35 +256,47 @@ def get_plugins():
 
 
 def get_active_plugins():
-    if settings.MIGRATING: return []
+    global _active_plugins_cache
+    if settings.MIGRATING:
+        return []
 
-    plugins = []
+    if _active_plugins_cache is not None:
+        return list(_active_plugins_cache)
+
+    active = []
     try:
         enabled_plugins = [p.name for p in Plugin.objects.filter(enabled=True).all()]
         for plugin in get_plugins():
             if plugin.get_name() in enabled_plugins:
-                plugins.append(plugin)
+                active.append(plugin)
     except Exception as e:
         logger.warning("Cannot get active plugins. If running a migration this is expected: %s" % str(e))
 
-    return plugins
+    _active_plugins_cache = tuple(active)
+    return list(_active_plugins_cache)
 
 
 def get_plugin_by_name(name, only_active=True, refresh_cache_if_none=False):
+    global _plugin_lookup_cache
+    cache_key = 'active' if only_active else 'all'
+    cache_bucket = _plugin_lookup_cache[cache_key]
+
+    if not refresh_cache_if_none and name in cache_bucket:
+        return cache_bucket[name]
+
     if only_active:
         plugins = get_active_plugins()
     else:
         plugins = get_plugins()
 
-    res = list(filter(lambda p: p.get_name() == name, plugins))
-    res = res[0] if res else None
+    res = next((p for p in plugins if p.get_name() == name), None)
+    cache_bucket[name] = res
 
     if refresh_cache_if_none and res is None:
         # Retry after clearing the cache
         clear_plugins_cache()
         return get_plugin_by_name(name, only_active=only_active, refresh_cache_if_none=False)
-    else:
-        return res
+    return res
 
 def get_current_plugin(only_active=False):
     """
@@ -333,6 +355,7 @@ def enable_plugin(plugin_name):
         logger.warning(f"Plugin: {plugin_name} enable error: {str(e)}")
         raise  # Propagate error to UI
     Plugin.objects.get(pk=plugin_name).enable()
+    clear_plugins_cache()
     return p
 
 def disable_plugin(plugin_name):
@@ -344,6 +367,7 @@ def disable_plugin(plugin_name):
         Plugin.objects.get(pk=plugin_name).disable()
         raise # Propagate error to UI
     Plugin.objects.get(pk=plugin_name).disable()
+    clear_plugins_cache()
     return p
 
 def delete_plugin(plugin_name):

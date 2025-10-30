@@ -177,7 +177,7 @@ class NewTaskPanel extends React.Component {
   }
 
   handleImagesBboxChange = (bbox) => {
-    if (this.props.showAlign){
+    if (this.props.showAlign && bbox){
       this.loadAlignTasks(bbox);
     }
   }

@@ -1,5 +1,8 @@
 from django.urls import include, re_path
 from django.views.i18n import JavaScriptCatalog
+from django.views.decorators.cache import cache_page
+from django.utils.cache import patch_vary_headers
+from django.utils.translation import get_language_from_request
 
 from .views import app as app_views, public as public_views, dev as dev_views
 from .plugins.views import app_view_handler, root_url_patterns
@@ -18,6 +21,14 @@ if not settings.WORKER_RUNNING and not settings.TESTING:
 # routes via urlpatterns.
 if settings.TESTING:
     sync_plugin_db()
+
+def cached_javascript_catalog(request, *args, **kwargs):
+    language = request.GET.get('language') or get_language_from_request(request)
+    key_prefix = f"jsi18n-{language}"
+    view = cache_page(60 * 60, key_prefix=key_prefix)(JavaScriptCatalog.as_view(packages=['app']))
+    response = view(request, *args, **kwargs)
+    patch_vary_headers(response, ('Accept-Language',))
+    return response
 
 urlpatterns = [
     re_path(r'^$', app_views.index, name='index'),
@@ -42,8 +53,7 @@ urlpatterns = [
     re_path(r'^about/$', app_views.about, name='about'),
     re_path(r'^dev-tools/(?P<action>.*)$', dev_views.dev_tools, name='dev_tools'),
 
-    # TODO: add caching: https://docs.djangoproject.com/en/3.1/topics/i18n/translation/#note-on-performance
-    re_path(r'^jsi18n/', JavaScriptCatalog.as_view(packages=['app']), name='javascript-catalog'),
+    re_path(r'^jsi18n/', cached_javascript_catalog, name='javascript-catalog'),
     re_path(r'^i18n/', include('django.conf.urls.i18n')),
 ] + root_url_patterns()
 
