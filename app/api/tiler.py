@@ -304,8 +304,14 @@ class Metadata(TaskNestedView):
             for b in info['statistics']:
                 info['statistics'][b]['min'] = hrange[0]
                 info['statistics'][b]['max'] = hrange[1]
-                info['statistics'][b]['percentiles'][0] = max(hrange[0], info['statistics'][b]['percentiles'][0])
-                info['statistics'][b]['percentiles'][1] = min(hrange[1], info['statistics'][b]['percentiles'][1])
+                p0 = info['statistics'][b]['percentiles'][0]
+                p1 = info['statistics'][b]['percentiles'][1]
+                info['statistics'][b]['percentiles'][0] = (
+                    hrange[0] if p0 is None else max(hrange[0], p0)
+                )
+                info['statistics'][b]['percentiles'][1] = (
+                    hrange[1] if p1 is None else min(hrange[1], p1)
+                )
 
         cmap_labels = {
             "viridis": "Viridis",
