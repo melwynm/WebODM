@@ -5,7 +5,7 @@ LABEL maintainer="Piero Toffanin <pt@masseranolabs.com>"
 # Build-time variables
 ARG DEBIAN_FRONTEND=noninteractive
 ARG NODE_MAJOR=20
-ARG PYTHON_VERSION=3.9
+ARG PYTHON_VERSION=3.10
 ARG RELEASE_CODENAME=jammy
 ARG WORKDIR=/webodm
 
@@ -42,7 +42,7 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     # Build-time dependencies
     apt-get update
     apt-get install -y --no-install-recommends curl ca-certificates gnupg
-    # Python 3.9 support
+    # Python 3.10 support
     curl -fsSL 'https://keyserver.ubuntu.com/pks/lookup?op=get&search=0xf23c5a6cf475977595c89f51ba6932366a755776' | gpg --dearmor -o /etc/apt/trusted.gpg.d/deadsnakes.gpg
     echo "deb http://ppa.launchpadcontent.net/deadsnakes/ppa/ubuntu $RELEASE_CODENAME main" > /etc/apt/sources.list.d/deadsnakes.list
     # Node.js deb source
@@ -52,7 +52,7 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     apt-get update
     # Install common deps, starting with NodeJS
     apt-get -qq install -y nodejs
-    # Python3.9, GDAL, PDAL, nginx, letsencrypt, psql
+    # Python3.10, GDAL, PDAL, nginx, letsencrypt, psql
     apt-get install -y --no-install-recommends \
         python$PYTHON_VERSION python$PYTHON_VERSION-venv python$PYTHON_VERSION-dev libpq-dev build-essential git libproj-dev gdal-bin pdal \
         libgdal-dev nginx certbot gettext-base cron postgresql-client gettext tzdata
