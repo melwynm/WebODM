@@ -229,8 +229,15 @@ class Metadata(TaskNestedView):
                 info_model = src.info()
                 if expr is not None:
                     image = src.preview(expression=expr, vrt_options=vrt_options)
+                    data = image.array
+                    if image.mask is not None:
+                        mask = np.expand_dims(image.mask == 0, axis=0)
+                        data = np.ma.array(
+                            data,
+                            mask=np.broadcast_to(mask, data.shape),
+                        )
                     stats_list = get_array_statistics(
-                        image.array,
+                        data,
                         percentiles=[pmin, pmax],
                         **histogram_options,
                     )
