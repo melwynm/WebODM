@@ -41,7 +41,7 @@ psycopg2-binary==2.9.9
 PyJWT==2.8.0
 
 # rio-tiler 6.x requires Pydantic 2.x
-pydantic==2.9.2
+pydantic~=2.9.0
 pyodm==1.5.11
 pyparsing==3.1.2
 pytz==2024.1
