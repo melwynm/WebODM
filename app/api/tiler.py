@@ -50,14 +50,24 @@ for custom_colormap in custom_colormaps:
     colormap = colormap.register(custom_colormap)
 
 
+def _make_json_safe(value):
+    if isinstance(value, CRS):
+        return value.to_string() or value.to_epsg() or value.to_wkt()
+    if isinstance(value, dict):
+        return {k: _make_json_safe(v) for k, v in value.items()}
+    if isinstance(value, (list, tuple)):
+        return [_make_json_safe(v) for v in value]
+    return value
+
+
 def _serialize_model(model):
     if hasattr(model, "model_dump"):
-        return model.model_dump()
+        return _make_json_safe(model.model_dump())
     if hasattr(model, "dict"):
-        return model.dict()
+        return _make_json_safe(model.dict())
     if hasattr(model, "json"):
-        return json.loads(model.json())
-    return model
+        return _make_json_safe(json.loads(model.json()))
+    return _make_json_safe(model)
 
 
 def _ensure_percentiles(stat_dict):
@@ -348,7 +358,11 @@ class Metadata(TaskNestedView):
             info['maxzoom'] = info['minzoom']
         info['maxzoom'] += ZOOM_EXTRA_LEVELS
         info['minzoom'] -= ZOOM_EXTRA_LEVELS
-        info['bounds'] = {'value': bounds if bounds is not None else src.bounds, 'crs': src.dataset.crs}
+        bounds_value = bounds if bounds is not None else src.bounds
+        info['bounds'] = {
+            'value': list(bounds_value) if bounds_value is not None else None,
+            'crs': _make_json_safe(src.dataset.crs),
+        }
 
         return Response(info)
 
