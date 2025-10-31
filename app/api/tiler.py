@@ -1,4 +1,6 @@
 import json
+import math
+import numbers
 from rasterio.enums import ColorInterp
 from rasterio.crs import CRS
 from rasterio.features import bounds as featureBounds
@@ -53,6 +55,11 @@ for custom_colormap in custom_colormaps:
 def _make_json_safe(value):
     if isinstance(value, CRS):
         return value.to_string() or value.to_epsg() or value.to_wkt()
+    if isinstance(value, numbers.Real) and not isinstance(value, numbers.Integral):
+        float_value = float(value)
+        if not math.isfinite(float_value):
+            return None
+        return float_value
     if isinstance(value, dict):
         return {k: _make_json_safe(v) for k, v in value.items()}
     if isinstance(value, (list, tuple)):
