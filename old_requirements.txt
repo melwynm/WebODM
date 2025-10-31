@@ -30,16 +30,10 @@ openapi-codec==1.1.7
 packaging==24.1
 piexif==1.0.13
 pilkit==2.0
-
-# Pillow 8.x → not Py3.12-compatible
-Pillow==10.3.0
-
+Pillow==8.4.0
 pip-autoremove==0.9.0
 psycopg2-binary==2.9.9
-
-# JWT 1.x → obsolete
-PyJWT==2.8.0
-
+PyJWT==1.7.1
 pydantic==1.10.8
 pyodm==1.5.11
 pyparsing==3.1.2
@@ -57,13 +51,15 @@ tzlocal==2.1
 uritemplate==3.0.0
 vine>=5.1.0,<6.0
 webcolors==1.5
-
-# --- Modern Geo Stack (Py3.12-ready, prebuilt wheels) --------------------
-rio-tiler==6.5.2
-rio-color==3.0.3
-rio-cogeo==5.3.0
-rasterio==1.3.10
-Shapely==2.0.4
+rio-tiler==2.1.2
+rio-color==1.0.4
+rio-cogeo==2.3.1
+rasterio==1.2.9 ; sys_platform == 'linux' or sys_platform == 'darwin'
+https://github.com/OpenDroneMap/WebODM/releases/download/v1.9.7/rasterio-1.2.10-cp39-cp39-win_amd64.whl ; sys_platform == "win32"
+https://github.com/OpenDroneMap/WebODM/releases/download/v1.9.7/GDAL-3.3.3-cp39-cp39-win_amd64.whl ; sys_platform == "win32"
+Shapely==1.8.0 ; sys_platform == "win32"
+eventlet==0.32.0 ; sys_platform == "win32"
+pyopenssl==24.0.0 ; sys_platform == "win32"
 numpy==1.26.4
 scipy==1.11.4
 drf-yasg==1.21.7
