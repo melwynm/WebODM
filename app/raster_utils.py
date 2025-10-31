@@ -216,8 +216,33 @@ def export_raster(input, output, progress_callback=None, **opts):
             nodata = None
             if asset_type == 'orthophoto':
                 nodata = 0
-            md = ds_src.metadata(pmin=2.0, pmax=98.0, hist_options={"bins": 255}, nodata=nodata)
-            rescale = [md['statistics']['1']['min'], md['statistics']['1']['max']]
+            statistics = ds_src.statistics(
+                percentiles=[2.0, 98.0],
+                hist_options={"bins": 255},
+                nodata=nodata,
+            )
+
+            band_stats = statistics.get("1")
+            if band_stats is None:
+                band_stats = statistics.get("b1")
+            if band_stats is not None:
+                if hasattr(band_stats, "model_dump"):
+                    band_stats = band_stats.model_dump()
+                elif hasattr(band_stats, "dict"):
+                    band_stats = band_stats.dict()
+                elif hasattr(band_stats, "json"):
+                    band_stats = json.loads(band_stats.json())
+                elif isinstance(band_stats, dict):
+                    band_stats = dict(band_stats)
+                percentiles = [
+                    key
+                    for key in band_stats
+                    if isinstance(key, str) and key.startswith("percentile_")
+                ]
+                if percentiles and "percentiles" not in band_stats:
+                    percentiles.sort(key=lambda key: float(key.split("_")[1]))
+                    band_stats["percentiles"] = [band_stats[key] for key in percentiles]
+                rescale = [band_stats.get("min"), band_stats.get("max")]
 
         ci = src.colorinterp
         alpha_index = None
