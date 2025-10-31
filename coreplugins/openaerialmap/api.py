@@ -32,12 +32,33 @@ def get_task_info(task_id):
     return ds.get_json(get_key_for(task_id, "info"), {
         'sharing': False,
         'shared': False,
-        'error': ''
+        'error': '',
+        'tags': []
     })
 
 
 def set_task_info(task_id, json):
     return ds.set_json(get_key_for(task_id, "info"), json)
+
+
+def normalize_tags(raw_tags):
+    if raw_tags is None:
+        return []
+
+    if isinstance(raw_tags, str):
+        candidates = raw_tags.split(',')
+    elif isinstance(raw_tags, (list, tuple, set)):
+        candidates = raw_tags
+    else:
+        candidates = [raw_tags]
+
+    normalized = []
+    for candidate in candidates:
+        text = str(candidate).strip()
+        if text:
+            normalized.append(text)
+
+    return normalized
 
 
 @receiver(plugin_signals.task_removed, dispatch_uid="oam_on_task_removed")
@@ -110,11 +131,18 @@ class Share(TaskView):
         serializer.is_valid(raise_exception=True)
 
         oam_params = serializer['oamParams'].value
+        tags = normalize_tags(oam_params.get('tags'))
+
+        if tags:
+            oam_params['tags'] = tags
+        else:
+            oam_params.pop('tags', None)
 
         task_info = get_task_info(task.id)
         task_info['sharing'] = True
         task_info['oam_upload_id'] = ''
         task_info['error'] = ''
+        task_info['tags'] = tags
         set_task_info(task.id, task_info)
 
         upload_orthophoto_to_oam.delay(task.id,
@@ -142,7 +170,7 @@ def upload_orthophoto_to_oam(task_id, orthophoto_path, oam_params):
         logger.info("Orthophoto uploaded to intermediary public URL " + orthophoto_public_url)
 
         # That's OK... we :heart: dronedeploy
-        res = requests.post('https://api.openaerialmap.org/dronedeploy?{}'.format(urlencode(oam_params)),
+        res = requests.post('https://api.openaerialmap.org/dronedeploy?{}'.format(urlencode(oam_params, doseq=True)),
                             json={
                                 'download_path': orthophoto_public_url
                             }).json()

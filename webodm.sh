@@ -112,11 +112,6 @@ case $key in
     shift # past argument
     shift # past value
     ;;
-    --no-default-node)
-    echo "ATTENTION: --no-default-node is deprecated. Use --default-nodes instead."
-    export WO_DEFAULT_NODES=0
-    shift # past argument
-    ;;
     --with-micmac)
     load_micmac_node=true
     shift # past argument
@@ -160,6 +155,13 @@ case $key in
 esac
 done
 set -- "${POSITIONAL[@]}" # restore positional parameter
+
+for arg in "$@"; do
+    if [[ "$arg" = "--no-default-node" ]]; then
+        echo "Error: --no-default-node has been removed. Use --default-nodes 0 instead." >&2
+        exit 1
+    fi
+done
 
 usage(){
   echo "Usage: $0 <command>"

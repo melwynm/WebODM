@@ -38,13 +38,14 @@ class ShareDialog extends React.Component {
     }
 
     getInitialState = (props) => {
+        const tags = props.taskInfo.tags;
         return {
           sensor: props.taskInfo.sensor,
           startDate: this.toDatetimeLocal(new Date(props.taskInfo.startDate)),
           endDate: this.toDatetimeLocal(new Date(props.taskInfo.endDate)),
           title: props.taskInfo.title,
           provider: props.taskInfo.provider,
-          tags: ""
+          tags: Array.isArray(tags) ? tags.join(', ') : (tags || '')
         };
     }
 
@@ -94,9 +95,6 @@ class ShareDialog extends React.Component {
     }
 
     render(){
-        // TODO: tags are currently not being parsed properly
-        // by the OAM endpoint, so we'll leave them out.
-
         return (
             <FormDialog {...this.props} 
                 getFormData={this.getFormData} 
@@ -132,12 +130,12 @@ class ShareDialog extends React.Component {
                   <input type="datetime-local" className="form-control" ref={(domNode) => { this.endDateInput = domNode; }} value={this.state.endDate} onChange={this.handleChange('endDate')} />
                 </div>
               </div>
-{/*              <div className="form-group">
+              <div className="form-group">
                 <label className="col-sm-3 control-label">Tags (comma separated)</label>
                 <div className="col-sm-9">
                   <input type="text" className="form-control" ref={(domNode) => { this.tagsInput = domNode; }} value={this.state.tags} onChange={this.handleChange('tags')} />
                 </div>
-              </div>*/}
+              </div>
             </FormDialog>
         );
     }

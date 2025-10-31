@@ -39,10 +39,17 @@
 		<td>{% trans "Label" %}</td>
 		<td>{{ processing_node.label|default:"None" }}</td>
 	</tr>
-	<tr>
-		<td>{% trans "Last Refreshed" %}</td>
-		<td>{{ processing_node.last_refreshed|timesince }} {% trans 'ago' context '5 minutes ago' %} ({{ processing_node.last_refreshed|localtime }})</td> <!-- TODO: timezone? -->
-	</tr>
+        <tr>
+                <td>{% trans "Last Refreshed" %}</td>
+                <td>
+                        {% if processing_node.last_refreshed %}
+                                {{ processing_node.last_refreshed|timesince }} {% trans 'ago' context '5 minutes ago' %}
+                                ({{ processing_node.last_refreshed|localtime|date:"Y-m-d H:i:s T" }})
+                        {% else %}
+                                {% trans "Never" %}
+                        {% endif %}
+                </td>
+        </tr>
 	<tr>
 		<td>{% trans "Options (JSON)" %}</td>
 		<td><div data-console data-console-lang="js" data-console-height="300">{{ available_options_json}}</div></td>

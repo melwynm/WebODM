@@ -168,7 +168,7 @@ Adding more processing nodes will allow you to run multiple jobs in parallel.
 
 You can also setup a [ClusterODM](https://github.com/OpenDroneMap/ClusterODM) node to run a single task across multiple machines with [distributed split-merge](https://docs.opendronemap.org/large/?highlight=distributed#getting-started-with-distributed-split-merge) and process dozen of thousands of images more quickly, with less memory.
 
-If you don't need the default "node-odm-1" node, simply pass `--default-nodes 0` flag when starting WebODM:
+If you don't need the default "node-odm-1" node, simply pass `--default-nodes 0` flag when starting WebODM. The legacy `--no-default-node` flag has been retired and will now fail fast to highlight the new syntax:
 
 `./webodm.sh restart --default-nodes 0`.
 

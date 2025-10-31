@@ -69,15 +69,23 @@ export default class ShareButton extends React.Component{
     shareToOAM = (formData) => {
         const { task } = this.props;
 
+        const tags = (formData.tags || '')
+          .split(',')
+          .map(tag => tag.trim())
+          .filter(tag => tag.length > 0);
+
         const oamParams = {
           token: this.props.token,
           sensor: formData.sensor,
           acquisition_start: formData.startDate,
           acquisition_end: formData.endDate,
           title: formData.title,
-          provider: formData.provider,
-          tags: formData.tags
+          provider: formData.provider
         };
+
+        if (tags.length > 0){
+          oamParams.tags = tags;
+        }
 
         return $.ajax({
             url: `/api/plugins/openaerialmap/task/${task.id}/share`,
