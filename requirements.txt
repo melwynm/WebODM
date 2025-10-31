@@ -40,7 +40,8 @@ psycopg2-binary==2.9.9
 # JWT 1.x → obsolete
 PyJWT==2.8.0
 
-pydantic==1.10.8
+# rio-tiler 6.x requires Pydantic 2.x
+pydantic==2.9.2
 pyodm==1.5.11
 pyparsing==3.1.2
 pytz==2024.1
