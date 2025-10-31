@@ -30,6 +30,7 @@ export default class ObjDetectPanel extends React.Component {
         detecting: false,
         progress: null,
         objLayer: null,
+        classSummary: [],
     };
   }
 
@@ -80,13 +81,34 @@ export default class ObjDetectPanel extends React.Component {
     };
   }
 
+  buildClassSummary = geojson => {
+    const summary = {};
+    const unknownLabel = _("Unknown");
+
+    if (geojson && Array.isArray(geojson.features)){
+      geojson.features.forEach(feature => {
+        const props = feature && feature.properties ? feature.properties : {};
+        const label = props['class'] !== undefined && props['class'] !== null && `${props['class']}`.trim() !== ""
+          ? props['class']
+          : unknownLabel;
+
+        if (!summary[label]) summary[label] = 0;
+        summary[label] += 1;
+      });
+    }
+
+    return Object.keys(summary)
+      .sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }))
+      .map(label => ({ label, count: summary[label] }));
+  }
+
   addGeoJSON = (geojson, cb) => {
     const { map } = this.props;
 
     try{
       this.handleRemoveObjLayer();
 
-      this.setState({objLayer: L.geoJSON(geojson, {
+      const objLayer = L.geoJSON(geojson, {
         onEachFeature: (feature, layer) => {
             if (feature.properties && feature.properties['class'] !== undefined) {
                 layer.bindPopup(`<div style="margin-right: 32px;">
@@ -100,9 +122,15 @@ export default class ObjDetectPanel extends React.Component {
             // TODO: different colors for different elevations?
             return {color: "red"};
         }
-      })});
-      this.state.objLayer.addTo(map);
-      this.state.objLayer.label = this.state.model;
+      });
+
+      objLayer.addTo(map);
+      objLayer.label = this.state.model;
+
+      this.setState({
+        objLayer,
+        classSummary: this.buildClassSummary(geojson)
+      });
 
       cb();
     }catch(e){
@@ -115,7 +143,7 @@ export default class ObjDetectPanel extends React.Component {
 
     if (this.state.objLayer){
       map.removeLayer(this.state.objLayer);
-      this.setState({objLayer: null});
+      this.setState({objLayer: null, classSummary: []});
     }
   }
 
@@ -173,10 +201,10 @@ export default class ObjDetectPanel extends React.Component {
   }
 
   render(){
-    const { loading, permanentError, objLayer, detecting, model, progress } = this.state;
+    const { loading, permanentError, objLayer, detecting, model, progress, classSummary } = this.state;
     const models = [
       {label: _('Cars'), value: 'cars'},
-      // {label: _('Trees'), value: 'trees'},
+      {label: _('Trees'), value: 'trees'},
       {label: _('Athletic Facilities'), value: 'athletic'},
       {label: _('Boats'), value: 'boats'},
       {label: _('Planes'), value: 'planes'},
@@ -193,7 +221,7 @@ export default class ObjDetectPanel extends React.Component {
         <ErrorMessage bind={[this, "error"]} />
         <div className="row model-selector">
             <select className="form-control" value={model} onChange={this.handleSelectModel}>
-              {models.map(m => <option value={m.value}>{m.label}</option>)}
+              {models.map(m => <option value={m.value} key={m.value}>{m.label}</option>)}
             </select>
             <button onClick={this.handleDetect}
                     disabled={detecting} type="button" className="btn btn-sm btn-primary btn-detect">
@@ -213,6 +241,13 @@ export default class ObjDetectPanel extends React.Component {
                 <i className="fa fa-trash fa-fw"/>
               </button>
             </div>
+        </div> : ""}
+
+        {classSummary.length > 0 ? <div className="class-summary">
+            <strong>{_("Detected classes:")}</strong>
+            <ul>
+              {classSummary.map(item => <li key={item.label}>{item.label} ({item.count})</li>)}
+            </ul>
         </div> : ""}
       </div>);
     }
