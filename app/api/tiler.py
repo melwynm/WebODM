@@ -377,7 +377,14 @@ class Metadata(TaskNestedView):
             'crs': _make_json_safe(src.dataset.crs),
         }
 
-        return Response(info)
+        # Ensure all metadata values are JSON serializable. Certain raster
+        # datasets may include NaN/Inf values (for example in statistics or
+        # bounds). Django's JSON renderer will raise a ValueError when
+        # attempting to serialize those. Recursively sanitize the payload so we
+        # always return a valid JSON document instead of triggering a 500.
+        safe_info = _make_json_safe(info)
+
+        return Response(safe_info)
 
 
 class Tiles(TaskNestedView):
