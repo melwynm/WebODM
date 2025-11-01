@@ -19,11 +19,26 @@ from django.utils.translation import gettext_lazy as _
 
 
 def _get_store():
+    return GlobalDataStore('mission_planner')
+
+
+def _get_legacy_store():
+    """Return the legacy data store used before the plugin package rename."""
     return GlobalDataStore('mission-planner')
 
 
 def _load_project_missions(project_id):
     store = _get_store()
+
+    # Transparently migrate data saved with the legacy namespace the first time we
+    # access the store. This keeps existing mission data intact for users that ran
+    # a previous build of the plugin where the package name used a hyphen.
+    if not store.has_key('projects'):
+        legacy_store = _get_legacy_store()
+        if legacy_store.has_key('projects'):
+            store.set_json('projects', legacy_store.get_json('projects', {}))
+            legacy_store.del_key('projects')
+
     data = store.get_json('projects', {})
     project_key = str(project_id)
     missions = data.get(project_key, [])
