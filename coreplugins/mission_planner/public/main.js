@@ -102,7 +102,7 @@
         const projectId = this.state.projectId;
         if (!projectId) return;
         this.setState({loading: true});
-        fetch(`/api/plugins/mission-planner/project/${projectId}/missions`, {
+        fetch(`/api/plugins/mission_planner/project/${projectId}/missions`, {
           credentials: 'same-origin'
         }).then(response => {
           if (!response.ok){
@@ -177,7 +177,7 @@
           credentials: 'same-origin'
         };
 
-        let url = `/api/plugins/mission-planner/project/${projectId}/missions`;
+        let url = `/api/plugins/mission_planner/project/${projectId}/missions`;
         if (this.state.editingId){
           url += `/${this.state.editingId}`;
         }
@@ -216,7 +216,7 @@
         if (csrf) headers['X-CSRFToken'] = csrf;
 
         this.setState({deleting: true, error: ''});
-        fetch(`/api/plugins/mission-planner/project/${projectId}/missions/${mission.id}`, {
+        fetch(`/api/plugins/mission_planner/project/${projectId}/missions/${mission.id}`, {
           method: 'DELETE',
           headers: headers,
           credentials: 'same-origin'
