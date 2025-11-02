@@ -1,0 +1,15 @@
+{% extends 'app/registration/registration_base.html' %}
+{% load i18n %}
+
+{% block registration_content %}
+<div class="panel panel-default">
+    <div class="panel-body text-center">
+        <h3 class="theme-secondary">{% trans "Starting WebODM" %}</h3>
+        <p>{% trans "WebODM is still preparing the database. This page will become available as soon as the setup is complete." %}</p>
+        <p class="text-muted small">{% blocktrans %}If this message does not go away after a few moments, please ensure that the database service is running and that migrations have finished applying.{% endblocktrans %}</p>
+        <form method="get">
+            <button type="submit" class="btn btn-primary">{% trans "Retry" %}</button>
+        </form>
+    </div>
+</div>
+{% endblock %}
