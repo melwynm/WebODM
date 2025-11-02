@@ -830,11 +830,22 @@ class Task(models.Model):
         with a processing node or executing a pending action.
         """
 
+        logger.debug(
+            "Task %s entering process() with status=%s pending_action=%s auto_processing_node=%s processing_node=%s",
+            self.id,
+            self.status,
+            self.pending_action,
+            self.auto_processing_node,
+            self.processing_node_id,
+        )
+
         try:
             if self.pending_action == pending_actions.IMPORT:
+                logger.debug("Task %s handling IMPORT pending action", self.id)
                 self.handle_import()
 
             if self.pending_action == pending_actions.RESIZE:
+                logger.debug("Task %s handling RESIZE pending action", self.id)
                 resized_images = self.resize_images()
                 self.refresh_from_db()
                 self.resize_gcp(resized_images)
@@ -845,6 +856,7 @@ class Task(models.Model):
                 # No processing node assigned and need to auto assign
                 if self.processing_node is None:
                     # Assign first online node with lowest queue count
+                    logger.debug("Task %s selecting best available processing node", self.id)
                     self.processing_node = ProcessingNode.find_best_available_node(self.project.owner)
                     if self.processing_node:
                         self.processing_node.queue_count += 1 # Doesn't have to be accurate, it will get overridden later
@@ -855,6 +867,12 @@ class Task(models.Model):
 
                 # Processing node assigned, but is offline and no errors
                 if self.processing_node and not self.processing_node.is_online():
+                    logger.debug(
+                        "Processing node %s offline for task %s (status=%s)",
+                        self.processing_node_id,
+                        self.id,
+                        self.status,
+                    )
                     # If we are queued up
                     # detach processing node, and reassignment
                     # will be processed at the next tick
@@ -880,7 +898,14 @@ class Task(models.Model):
                     logger.info("Processing... {}".format(self))
 
                     images_path = self.task_path()
-                    images = [os.path.join(images_path, i) for i in self.scan_images()]
+                    image_names = self.scan_images()
+                    logger.debug(
+                        "Task %s preparing to send %s images to processing node %s",
+                        self.id,
+                        len(image_names),
+                        self.processing_node_id,
+                    )
+                    images = [os.path.join(images_path, i) for i in image_names]
 
                     # Track upload progress, but limit the number of DB updates
                     # to every 2 seconds (and always record the 100% progress)
@@ -897,7 +922,14 @@ class Task(models.Model):
 
                     # This takes a while
                     try:
+                        logger.debug(
+                            "Task %s sending process request to node %s with options=%s",
+                            self.id,
+                            self.processing_node_id,
+                            json.dumps(self.options),
+                        )
                         uuid = self.processing_node.process_new_task(images, self.name, self.options, callback)
+                        logger.debug("Task %s received processing UUID %s", self.id, uuid)
                     except NodeConnectionError as e:
                         # If we can't create a task because the node is offline
                         # We want to fail instead of trying again
@@ -1103,6 +1135,8 @@ class Task(models.Model):
         except TaskInterruptedException as e:
             # Task was interrupted during image resize / upload
             logger.warning("{} interrupted: {}".format(self, str(e)))
+
+        logger.debug("Task %s completed process() cycle", self.id)
 
     def extract_assets_and_complete(self):
         """

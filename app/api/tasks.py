@@ -1,3 +1,4 @@
+import logging
 import os
 import re
 import shutil
@@ -41,6 +42,8 @@ from django.utils.translation import gettext_lazy as _
 from .fields import PolygonGeometryField
 from app.geoutils import geom_transform_wkt_bbox
 from webodm import settings
+
+logger = logging.getLogger('app.logger')
 
 def flatten_files(request_files):
     # MultiValueDict in, flat array of files out
@@ -251,12 +254,20 @@ class TaskViewSet(viewsets.ViewSet):
         except (ObjectDoesNotExist, ValidationError):
             raise exceptions.NotFound()
 
+        logger.debug(
+            "User %s set pending action %s on task %s in project %s",
+            getattr(request.user, 'username', 'anonymous'),
+            pending_action,
+            task.id,
+            project_pk,
+        )
         task.pending_action = pending_action
         task.partial = False # Otherwise this will not be processed
         task.last_error = None
         task.save()
 
         # Process task right away
+        logger.debug("Queueing task %s for background processing", task.id)
         worker_tasks.process_task.delay(task.id)
 
         return Response({'success': True})
@@ -533,6 +544,12 @@ class TaskViewSet(viewsets.ViewSet):
         serializer.save()
 
         # Process task right away
+        logger.debug(
+            "Task %s updated (partial=%s) by %s; scheduling processing",
+            task.id,
+            partial,
+            getattr(request.user, 'username', 'anonymous'),
+        )
         worker_tasks.process_task.delay(task.id)
 
         return Response(serializer.data)
@@ -556,15 +573,29 @@ class TaskNestedView(APIView):
         if not (task.public or task.project.public):
             get_and_check_project(request, task.project.id)
 
+        logger.debug(
+            "Task %s retrieved for project %s by %s",
+            task.id,
+            task.project_id,
+            getattr(request.user, 'username', 'anonymous'),
+        )
         return task
 
 
 def download_file_response(request, filePath, content_disposition, download_filename=None):
     filename = os.path.basename(filePath)
-    if download_filename is None: 
+    if download_filename is None:
         download_filename = filename
     filesize = os.stat(filePath).st_size
     file = open(filePath, "rb")
+
+    logger.debug(
+        "Preparing %s response for %s (size=%s bytes) requested by %s",
+        content_disposition,
+        download_filename,
+        filesize,
+        getattr(request.user, 'username', 'anonymous'),
+    )
 
     # More than 100mb, normal http response, otherwise stream
     # Django docs say to avoid streaming when possible
