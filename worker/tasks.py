@@ -149,11 +149,13 @@ def process_task(taskId):
     delete_lock = True
 
     try:
+        logger.debug("Worker received request to process task %s", taskId)
         task_lock_last_update = redis_client.getset(lock_id, time.time())
         if task_lock_last_update is not None:
             # Check if lock has expired
             if time.time() - float(task_lock_last_update) <= 30:
                 # Locked
+                logger.debug("Task %s is already locked for processing; skipping", taskId)
                 delete_lock = False
                 return
             else:
@@ -172,7 +174,9 @@ def process_task(taskId):
             return
 
         try:
+            logger.debug("Invoking Task.process() for task %s", taskId)
             task.process()
+            logger.debug("Completed Task.process() for task %s", taskId)
         except Exception as e:
             logger.error(
                 "Uncaught error! This is potentially bad. Please report it to http://github.com/OpenDroneMap/WebODM/issues: {} {}".format(
@@ -188,6 +192,8 @@ def process_task(taskId):
             except redis.exceptions.RedisError:
                 # Ignore errors, the lock will expire at some point
                 pass
+
+        logger.debug("Released worker resources for task %s", taskId)
 
 
 

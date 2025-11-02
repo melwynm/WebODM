@@ -1,3 +1,4 @@
+import logging
 import os
 import io
 import math
@@ -10,6 +11,8 @@ from django.http import HttpResponse
 from .tasks import download_file_response
 from .common import hex2rgb
 import numpy as np
+
+logger = logging.getLogger('app.logger')
 
 def normalize(img):
     """
@@ -76,6 +79,17 @@ class Thumbnail(TaskNestedView):
 
         except ValueError:
             raise exceptions.ValidationError("Invalid query parameters")
+
+        logger.debug(
+            "Thumbnail requested for task %s image %s by %s (size=%s, zoom=%s, center=(%s,%s))",
+            task.id,
+            image_filename,
+            getattr(request.user, 'username', 'anonymous'),
+            thumb_size,
+            zoom,
+            center_x,
+            center_y,
+        )
 
         with Image.open(image_path) as img:
             if img.mode != 'RGB':
@@ -144,4 +158,10 @@ class ImageDownload(TaskNestedView):
         if not os.path.isfile(image_path):
             raise exceptions.NotFound()
 
+        logger.debug(
+            "Image download requested for task %s image %s by %s",
+            task.id,
+            image_filename,
+            getattr(request.user, 'username', 'anonymous'),
+        )
         return download_file_response(request, image_path, 'attachment')
