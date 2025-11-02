@@ -1,23 +1,46 @@
 import json
+import logging
 
+from django import forms
+from django.contrib import messages
 from django.contrib.auth import login
+from django.contrib.auth.decorators import login_required
 from django.contrib.auth.hashers import make_password
 from django.contrib.auth.models import User
+from django.db import DatabaseError, connection
 from django.http import Http404
-from django.shortcuts import render, redirect, get_object_or_404
+from django.shortcuts import get_object_or_404, redirect, render
+from django.utils.translation import gettext as _
 from guardian.shortcuts import get_objects_for_user
 
-from nodeodm.models import ProcessingNode
 from app.models import Project, Task
-from django.contrib import messages
-from django.contrib.auth.decorators import login_required
-from django.utils.translation import gettext as _
-from django import forms
 from app.views.utils import get_permissions
+from nodeodm.models import ProcessingNode
 from webodm import settings
+
+
+logger = logging.getLogger(__name__)
+
+
+def _user_table_ready():
+    try:
+        with connection.cursor() as cursor:
+            tables = connection.introspection.table_names(cursor)
+    except DatabaseError as exc:
+        logger.warning("User table is not ready yet: %s", exc)
+        return False
+
+    return User._meta.db_table in tables
+
+
+def _render_database_setup_pending(request):
+    return render(request, 'app/database_setup_pending.html', status=503)
 
 def index(request):
     # Check first access
+    if not _user_table_ready():
+        return _render_database_setup_pending(request)
+
     if User.objects.filter(is_superuser=True).count() == 0:
         if settings.SINGLE_USER_MODE:
             # Automatically create a default account
@@ -141,6 +164,9 @@ class FirstUserForm(forms.ModelForm):
 
 
 def welcome(request):
+    if not _user_table_ready():
+        return _render_database_setup_pending(request)
+
     if User.objects.filter(is_superuser=True).count() > 0:
         return redirect('index')
 
