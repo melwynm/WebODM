@@ -5,6 +5,7 @@ import time
 from django import template
 from webodm import settings
 from django.utils.translation import gettext as _
+from app.models import Theme
 
 register = template.Library()
 logger = logging.getLogger('app.logger')
@@ -113,14 +114,35 @@ def get_footer(context):
            footer + \
             "</footer>"
 
+_DEFAULT_THEME = Theme()
+
+
+def _get_default_theme_value(color):
+    try:
+        return getattr(_DEFAULT_THEME, color)
+    except AttributeError:
+        return "#0000FF"
+
+
 @register.simple_tag(takes_context=True)
 def theme(context, color):
     """Return a theme color from the currently selected theme"""
+    settings_obj = None
     try:
-        return getattr(context['SETTINGS'].theme, color)
+        settings_obj = context.get('SETTINGS') if hasattr(context, 'get') else context['SETTINGS']
+    except KeyError:
+        pass
     except Exception as e:
         logger.warning("Cannot load configuration from theme(): " + str(e))
-        return "#0000FF" # dah buh dih ah buh daa..
+    else:
+        theme_obj = getattr(settings_obj, 'theme', None) if settings_obj is not None else None
+        if theme_obj is not None:
+            try:
+                return getattr(theme_obj, color)
+            except Exception as e:
+                logger.warning("Cannot load configuration from theme(): " + str(e))
+
+    return _get_default_theme_value(color)
 
 @register.simple_tag
 def complementary(hexcolor):
