@@ -2,6 +2,8 @@
 {% load i18n %}
 {% load settings %}
 
+{% block title %}{% trans 'Login' %}{% endblock %}
+
 {% block registration_content %}
     {% if form.errors %}
         <div class="alert alert-warning">
