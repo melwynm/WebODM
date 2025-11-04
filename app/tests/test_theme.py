@@ -1,8 +1,11 @@
 from django.test import Client
+from django.template import Context
 from django.core.cache import cache
 
 from .classes import BootTestCase
 from app.contexts.settings import load as load_settings
+from app.templatetags import settings as settings_tags
+from app.models import Theme, Setting
 
 class TestSettings(BootTestCase):
 
@@ -46,6 +49,18 @@ class TestSettings(BootTestCase):
 
         # Purple is in body also
         self.assertIn(purple, body.lower())
+
+    def test_default_theme_used_when_settings_missing(self):
+        Setting.objects.all().delete()
+        Theme.objects.all().delete()
+
+        ctx = Context({})
+        default_theme = Theme()
+
+        self.assertEqual(
+            settings_tags.theme(ctx, "primary"),
+            default_theme.primary
+        )
 
 
 
