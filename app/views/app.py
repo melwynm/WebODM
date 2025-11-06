@@ -86,19 +86,52 @@ def dashboard(request):
 def map(request, project_pk=None, task_pk=None):
     title = _("Map")
 
+    logger.info(
+        "Rendering map view | user=%s project_pk=%s task_pk=%s",
+        getattr(request.user, "username", request.user),
+        project_pk,
+        task_pk
+    )
+
     if project_pk is not None:
         project = get_object_or_404(Project, pk=project_pk)
         if not request.user.has_perm('app.view_project', project):
             raise Http404()
-        
+
         if task_pk is not None:
             task = get_object_or_404(Task.objects.defer('orthophoto_extent', 'dsm_extent', 'dtm_extent'), pk=task_pk, project=project)
             title = task.name or task.id
-            mapItems = [task.get_map_items()]
+            try:
+                mapItems = [task.get_map_items()]
+            except Exception:
+                logger.exception(
+                    "Unhandled error while building map items | project_pk=%s task_pk=%s",
+                    project_pk,
+                    task_pk
+                )
+                raise
+            logger.debug(
+                "Prepared map items for task | project_pk=%s task_pk=%s item_types=%s",
+                project_pk,
+                task_pk,
+                [item.get('type') if isinstance(item, dict) else item for item in mapItems[0].get('tiles', [])]
+            )
             projectInfo = None
         else:
             title = project.name or project.id
-            mapItems = project.get_map_items()
+            try:
+                mapItems = project.get_map_items()
+            except Exception:
+                logger.exception(
+                    "Unhandled error while building project map items | project_pk=%s",
+                    project_pk
+                )
+                raise
+            logger.debug(
+                "Prepared map items for project | project_pk=%s tasks=%s",
+                project_pk,
+                [item.get('meta', {}).get('task', {}).get('id') for item in mapItems]
+            )
             projectInfo = project.get_public_info()
 
     return render(request, 'app/map.html', {
