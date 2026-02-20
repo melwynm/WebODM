@@ -1,6 +1,5 @@
 import json
-import math
-import numbers
+import rio_tiler.utils
 from rasterio.enums import ColorInterp
 from rasterio.crs import CRS
 from rasterio.features import bounds as featureBounds
@@ -10,18 +9,15 @@ import os
 from .common import get_asset_download_filename
 from django.http import HttpResponse
 from rio_tiler.errors import TileOutsideBounds
-from rio_tiler.models import BandStatistics
+from rio_tiler.utils import has_alpha_band, \
+    non_alpha_indexes, render, create_cutline
+from rio_tiler.utils import _stats as raster_stats
+from rio_tiler.models import ImageStatistics, ImageData
+from rio_tiler.models import Metadata as RioMetadata
 from rio_tiler.profiles import img_profiles
 from rio_tiler.colormap import cmap as colormap, apply_cmap
 from rio_tiler.io import COGReader
 from rio_tiler.errors import InvalidColorMapName, AlphaBandWarning
-from rio_tiler.utils import (
-    create_cutline,
-    get_array_statistics,
-    has_alpha_band,
-    non_alpha_indexes,
-    render,
-)
 import numpy as np
 from .custom_colormaps_helper import custom_colormaps
 from app.raster_utils import extension_for_export_format, ZOOM_EXTRA_LEVELS
@@ -50,48 +46,6 @@ warnings.filterwarnings("ignore", category=RuntimeWarning)
 
 for custom_colormap in custom_colormaps:
     colormap = colormap.register(custom_colormap)
-
-
-def _make_json_safe(value):
-    if isinstance(value, CRS):
-        return value.to_string() or value.to_epsg() or value.to_wkt()
-    if isinstance(value, numbers.Real) and not isinstance(value, numbers.Integral):
-        float_value = float(value)
-        if not math.isfinite(float_value):
-            return None
-        return float_value
-    if isinstance(value, dict):
-        return {k: _make_json_safe(v) for k, v in value.items()}
-    if isinstance(value, (list, tuple)):
-        return [_make_json_safe(v) for v in value]
-    return value
-
-
-def _serialize_model(model):
-    if hasattr(model, "model_dump"):
-        return _make_json_safe(model.model_dump())
-    if hasattr(model, "dict"):
-        return _make_json_safe(model.dict())
-    if hasattr(model, "json"):
-        return _make_json_safe(json.loads(model.json()))
-    return _make_json_safe(model)
-
-
-def _ensure_percentiles(stat_dict):
-    stat = dict(stat_dict)
-    percentile_keys = [
-        key for key in stat.keys() if isinstance(key, str) and key.startswith("percentile_")
-    ]
-    if percentile_keys and "percentiles" not in stat:
-        percentile_keys.sort(key=lambda key: float(key.split("_")[1]))
-        stat["percentiles"] = [stat[key] for key in percentile_keys]
-    return stat
-
-
-def _normalize_band_name(name):
-    if isinstance(name, str) and name.startswith("b") and name[1:].isdigit():
-        return name[1:]
-    return name
 
 
 def get_zoom_safe(src_dst):
@@ -240,55 +194,21 @@ class Metadata(TaskNestedView):
                 # Workaround for https://github.com/OpenDroneMap/WebODM/issues/894
                 if tile_type == 'orthophoto':
                     nodata = 0
-                histogram_options = {"bins": 255}
-                if hrange is not None:
-                    histogram_options["range"] = hrange
-                info_model = src.info()
+                histogram_options = {"bins": 255, "range": hrange}
                 if expr is not None:
-                    image = src.preview(expression=expr, vrt_options=vrt_options)
-                    data = image.array
-                    if image.mask is not None:
-                        mask = np.expand_dims(image.mask == 0, axis=0)
-                        data = np.ma.array(
-                            data,
-                            mask=np.broadcast_to(mask, data.shape),
-                        )
-                    stats_list = get_array_statistics(
-                        data,
-                        percentiles=[pmin, pmax],
-                        **histogram_options,
-                    )
+                    data, mask = src.preview(expression=expr, vrt_options=vrt_options)
+                    data = np.ma.array(data)
+                    data.mask = mask == 0
                     stats = {
-                        str(b + 1): _ensure_percentiles(
-                            _serialize_model(BandStatistics(**stats_list[b]))
-                        )
-                        for b in range(len(stats_list))
+                        str(b + 1): raster_stats(data[b], percentiles=(pmin, pmax), bins=255, range=hrange)
+                        for b in range(data.shape[0])
                     }
+                    stats = {b: ImageStatistics(**s) for b, s in stats.items()}
+                    metadata = RioMetadata(statistics=stats, **src.info().dict())
                 else:
-                    stats = {}
-                    statistics = src.statistics(
-                        percentiles=[pmin, pmax],
-                        hist_options=histogram_options,
-                        nodata=nodata,
-                        vrt_options=vrt_options,
-                    )
-                    for band, stat in statistics.items():
-                        stats[_normalize_band_name(band)] = _ensure_percentiles(
-                            _serialize_model(stat)
-                        )
-                stats = {
-                    _normalize_band_name(band): value for band, value in stats.items()
-                }
-                info = _serialize_model(info_model)
-                info["band_metadata"] = [
-                    (_normalize_band_name(b), meta)
-                    for b, meta in info.get("band_metadata", [])
-                ]
-                info["band_descriptions"] = [
-                    (_normalize_band_name(b), desc)
-                    for b, desc in info.get("band_descriptions", [])
-                ]
-                info["statistics"] = stats
+                    metadata = src.metadata(pmin=pmin, pmax=pmax, hist_options=histogram_options, nodata=nodata,
+                                            bounds=bounds, vrt_options=vrt_options)
+                info = json.loads(metadata.json())
         except IndexError as e:
             # Caught when trying to get an invalid raster metadata
             # or when the crop area is defined improperly. In order
@@ -304,14 +224,8 @@ class Metadata(TaskNestedView):
             for b in info['statistics']:
                 info['statistics'][b]['min'] = hrange[0]
                 info['statistics'][b]['max'] = hrange[1]
-                p0 = info['statistics'][b]['percentiles'][0]
-                p1 = info['statistics'][b]['percentiles'][1]
-                info['statistics'][b]['percentiles'][0] = (
-                    hrange[0] if p0 is None else max(hrange[0], p0)
-                )
-                info['statistics'][b]['percentiles'][1] = (
-                    hrange[1] if p1 is None else min(hrange[1], p1)
-                )
+                info['statistics'][b]['percentiles'][0] = max(hrange[0], info['statistics'][b]['percentiles'][0])
+                info['statistics'][b]['percentiles'][1] = min(hrange[1], info['statistics'][b]['percentiles'][1])
 
         cmap_labels = {
             "viridis": "Viridis",
@@ -371,20 +285,9 @@ class Metadata(TaskNestedView):
             info['maxzoom'] = info['minzoom']
         info['maxzoom'] += ZOOM_EXTRA_LEVELS
         info['minzoom'] -= ZOOM_EXTRA_LEVELS
-        bounds_value = bounds if bounds is not None else src.bounds
-        info['bounds'] = {
-            'value': list(bounds_value) if bounds_value is not None else None,
-            'crs': _make_json_safe(src.dataset.crs),
-        }
+        info['bounds'] = {'value': bounds if bounds is not None else src.bounds, 'crs': src.dataset.crs}
 
-        # Ensure all metadata values are JSON serializable. Certain raster
-        # datasets may include NaN/Inf values (for example in statistics or
-        # bounds). Django's JSON renderer will raise a ValueError when
-        # attempting to serialize those. Recursively sanitize the payload so we
-        # always return a valid JSON document instead of triggering a 500.
-        safe_info = _make_json_safe(info)
-
-        return Response(safe_info)
+        return Response(info)
 
 
 class Tiles(TaskNestedView):

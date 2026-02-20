@@ -60,7 +60,7 @@ class Map extends React.Component {
 
   constructor(props) {
     super(props);
-
+    
     this.state = {
       error: "",
       singleTask: null, // When this is set to a task, show a switch mode button to view the 3d model
@@ -85,28 +85,6 @@ class Map extends React.Component {
     this.updatePopupFor = this.updatePopupFor.bind(this);
     this.handleMapMouseDown = this.handleMapMouseDown.bind(this);
   }
-
-  normalizeBounds = (boundsData, fallbackExtent) => {
-    const extract = candidate => {
-      if (!candidate) return null;
-      if (Array.isArray(candidate)) return candidate;
-      if (Array.isArray(candidate.value)) return candidate.value;
-      return null;
-    };
-
-    let coords = extract(boundsData);
-    if (!coords) coords = extract(fallbackExtent);
-
-    if (!coords || coords.length !== 4) return null;
-
-    const numericCoords = coords.map(c => Number(c));
-    if (numericCoords.some(c => Number.isNaN(c))) return null;
-
-    return Leaflet.latLngBounds([
-      numericCoords.slice(0, 2).reverse(),
-      numericCoords.slice(2, 4).reverse()
-    ]);
-  };
 
   countTasks = () => {
     let tasks = {};
@@ -318,8 +296,9 @@ class Map extends React.Component {
           .done(mres => {
             const { scheme, name, maxzoom, statistics } = mres;
 
-            const bounds = this.normalizeBounds(mres.bounds, meta && meta.task ? meta.task.extent : null);
-            const layerBounds = bounds || Leaflet.latLngBounds([[-90, -180], [90, 180]]);
+            const bounds = Leaflet.latLngBounds(
+                [mres.bounds.value.slice(0, 2).reverse(), mres.bounds.value.slice(2, 4).reverse()]
+              );
 
             // Build URL
             let tileUrl = mres.tiles[0];
@@ -362,7 +341,7 @@ class Map extends React.Component {
             }
 
             const layer = Leaflet.tileLayer(tileUrl, {
-                  bounds: layerBounds,
+                  bounds,
                   minZoom: 0,
                   maxZoom: maxzoom + 99,
                   maxNativeZoom: maxzoom - 1,
@@ -444,13 +423,11 @@ class Map extends React.Component {
 
             var popup = L.DomUtil.create('div', 'infoWindow');
 
-            const boundsForDisplay = bounds ? `[${bounds.toBBoxString().split(",").join(", ")}]` : _("Unavailable");
-
             popup.innerHTML = `<div class="title">
                                     ${name}
                                 </div>
                                 <div class="popup-opacity-slider">Opacity: <input id="layerOpacity" class="opacity" type="range" value="${layer.options.opacity}" min="0" max="1" step="0.01" /></div>
-                                <div>Bounds: ${boundsForDisplay}</div>
+                                <div>Bounds: [${layer.options.bounds.toBBoxString().split(",").join(", ")}]</div>
                                 <div class="popup-download-assets loading">
                                   <i class="fa loading fa-spin fa-sync fa-spin fa-fw"></i>
                                 </div>
@@ -472,11 +449,9 @@ class Map extends React.Component {
                 imageryLayers: {$push: [layer]}
             }));
 
-            if (bounds){
-              let mapBounds = this.mapBounds || Leaflet.latLngBounds();
-              mapBounds.extend(bounds);
-              this.mapBounds = mapBounds;
-            }
+            let mapBounds = this.mapBounds || Leaflet.latLngBounds();
+            mapBounds.extend(bounds);
+            this.mapBounds = mapBounds;
 
             // Add camera shots layer if available
             if (meta.task && meta.task.camera_shots && !this.addedCameraShots[meta.task.id]){

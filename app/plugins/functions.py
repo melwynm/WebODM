@@ -2,7 +2,6 @@ import os
 import sys
 import logging
 import importlib
-import importlib.util
 import subprocess
 import traceback
 import platform
@@ -25,44 +24,6 @@ logger = logging.getLogger('app.logger')
 # Add additional python path to discover plugins
 if not settings.MEDIA_ROOT in sys.path:
     sys.path.append(settings.MEDIA_ROOT)
-
-
-def _import_plugin_module(base_package, dir_name, plugin_path):
-    module_name = f"{base_package}.{dir_name}"
-
-    try:
-        return importlib.import_module(module_name)
-    except ModuleNotFoundError as exc:
-        if exc.name != module_name:
-            raise
-
-        module = _load_module_from_path(module_name, plugin_path)
-        if module is None:
-            raise
-        return module
-
-
-def _load_module_from_path(module_name, plugin_path):
-    init_path = os.path.join(plugin_path, "__init__.py")
-    if not os.path.isfile(init_path):
-        return None
-
-    if module_name in sys.modules:
-        return sys.modules[module_name]
-
-    spec = importlib.util.spec_from_file_location(
-        module_name,
-        init_path,
-        submodule_search_locations=[plugin_path],
-    )
-
-    if spec is None or spec.loader is None:
-        return None
-
-    module = importlib.util.module_from_spec(spec)
-    sys.modules[module_name] = module
-    spec.loader.exec_module(module)
-    return module
 
 def init_plugins():
     # Make sure app/media/plugins exists
@@ -254,32 +215,16 @@ def get_plugins():
             try:
                 try:
                     if settings.TESTING:
-                        module = _import_plugin_module(
-                            "app.media_test.plugins", dir, plugin_path
-                        )
+                        module = importlib.import_module("app.media_test.plugins.{}".format(dir))
                     else:
-                        module = _import_plugin_module("plugins", dir, plugin_path)
+                        module = importlib.import_module("plugins.{}".format(dir))
 
                     plugin = (getattr(module, "Plugin"))()
                 except (ImportError, AttributeError) as plugin_error:
-                    logger.warning(
-                        "Failed to load plugin module plugins.%s from %s: %s",
-                        dir,
-                        plugin_path,
-                        plugin_error,
-                        exc_info=True,
-                    )
                     try:
-                        module = _import_plugin_module("coreplugins", dir, plugin_path)
+                        module = importlib.import_module("coreplugins.{}".format(dir))
                         plugin = (getattr(module, "Plugin"))()
                     except (ImportError, AttributeError) as coreplugin_error:
-                        logger.warning(
-                            "Failed to load core plugin module coreplugins.%s from %s: %s",
-                            dir,
-                            plugin_path,
-                            coreplugin_error,
-                            exc_info=True,
-                        )
                         raise coreplugin_error from plugin_error
 
                 # Check version
@@ -305,14 +250,7 @@ def get_plugins():
 
                 plugins.append(plugin)
             except Exception as e:
-                logger.warning(
-                    "Failed to instantiate plugin %s from %s: %s: %s\nTraceback:\n%s",
-                    dir,
-                    plugin_path,
-                    e,
-                    e.__cause__,
-                    traceback.format_exc(),
-                )
+                logger.warning("Failed to instantiate plugin {}: {}: {}".format(dir, e, e.__cause__))
 
     return plugins
 

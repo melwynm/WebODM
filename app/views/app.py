@@ -1,46 +1,23 @@
 import json
-import logging
 
-from django import forms
-from django.contrib import messages
 from django.contrib.auth import login
-from django.contrib.auth.decorators import login_required
 from django.contrib.auth.hashers import make_password
 from django.contrib.auth.models import User
-from django.db import DatabaseError, connection
 from django.http import Http404
-from django.shortcuts import get_object_or_404, redirect, render
-from django.utils.translation import gettext as _
+from django.shortcuts import render, redirect, get_object_or_404
 from guardian.shortcuts import get_objects_for_user
 
-from app.models import Project, Task
-from app.views.utils import get_permissions
 from nodeodm.models import ProcessingNode
+from app.models import Project, Task
+from django.contrib import messages
+from django.contrib.auth.decorators import login_required
+from django.utils.translation import gettext as _
+from django import forms
+from app.views.utils import get_permissions
 from webodm import settings
-
-
-logger = logging.getLogger(__name__)
-
-
-def _user_table_ready():
-    try:
-        with connection.cursor() as cursor:
-            tables = connection.introspection.table_names(cursor)
-    except DatabaseError as exc:
-        logger.warning("User table is not ready yet: %s", exc)
-        return False
-
-    return User._meta.db_table in tables
-
-
-def _render_database_setup_pending(request):
-    return render(request, 'app/database_setup_pending.html', status=503)
 
 def index(request):
     # Check first access
-    if not _user_table_ready():
-        return _render_database_setup_pending(request)
-
     if User.objects.filter(is_superuser=True).count() == 0:
         if settings.SINGLE_USER_MODE:
             # Automatically create a default account
@@ -86,52 +63,19 @@ def dashboard(request):
 def map(request, project_pk=None, task_pk=None):
     title = _("Map")
 
-    logger.info(
-        "Rendering map view | user=%s project_pk=%s task_pk=%s",
-        getattr(request.user, "username", request.user),
-        project_pk,
-        task_pk
-    )
-
     if project_pk is not None:
         project = get_object_or_404(Project, pk=project_pk)
         if not request.user.has_perm('app.view_project', project):
             raise Http404()
-
+        
         if task_pk is not None:
             task = get_object_or_404(Task.objects.defer('orthophoto_extent', 'dsm_extent', 'dtm_extent'), pk=task_pk, project=project)
             title = task.name or task.id
-            try:
-                mapItems = [task.get_map_items()]
-            except Exception:
-                logger.exception(
-                    "Unhandled error while building map items | project_pk=%s task_pk=%s",
-                    project_pk,
-                    task_pk
-                )
-                raise
-            logger.debug(
-                "Prepared map items for task | project_pk=%s task_pk=%s item_types=%s",
-                project_pk,
-                task_pk,
-                [item.get('type') if isinstance(item, dict) else item for item in mapItems[0].get('tiles', [])]
-            )
+            mapItems = [task.get_map_items()]
             projectInfo = None
         else:
             title = project.name or project.id
-            try:
-                mapItems = project.get_map_items()
-            except Exception:
-                logger.exception(
-                    "Unhandled error while building project map items | project_pk=%s",
-                    project_pk
-                )
-                raise
-            logger.debug(
-                "Prepared map items for project | project_pk=%s tasks=%s",
-                project_pk,
-                [item.get('meta', {}).get('task', {}).get('id') for item in mapItems]
-            )
+            mapItems = project.get_map_items()
             projectInfo = project.get_public_info()
 
     return render(request, 'app/map.html', {
@@ -197,9 +141,6 @@ class FirstUserForm(forms.ModelForm):
 
 
 def welcome(request):
-    if not _user_table_ready():
-        return _render_database_setup_pending(request)
-
     if User.objects.filter(is_superuser=True).count() > 0:
         return redirect('index')
 
