@@ -1,5 +1,4 @@
 import json
-import rio_tiler.utils
 from rasterio.enums import ColorInterp
 from rasterio.crs import CRS
 from rasterio.features import bounds as featureBounds
@@ -10,10 +9,7 @@ from .common import get_asset_download_filename
 from django.http import HttpResponse
 from rio_tiler.errors import TileOutsideBounds
 from rio_tiler.utils import has_alpha_band, \
-    non_alpha_indexes, render, create_cutline
-from rio_tiler.utils import _stats as raster_stats
-from rio_tiler.models import ImageStatistics, ImageData
-from rio_tiler.models import Metadata as RioMetadata
+    non_alpha_indexes, render, create_cutline, get_array_statistics
 from rio_tiler.profiles import img_profiles
 from rio_tiler.colormap import cmap as colormap, apply_cmap
 from rio_tiler.io import COGReader
@@ -46,6 +42,53 @@ warnings.filterwarnings("ignore", category=RuntimeWarning)
 
 for custom_colormap in custom_colormaps:
     colormap = colormap.register(custom_colormap)
+
+try:
+    from rio_tiler.utils import _stats as rio_legacy_stats
+except ImportError:
+    rio_legacy_stats = None
+
+
+def to_dict(model):
+    if isinstance(model, dict):
+        return model
+    if hasattr(model, "model_dump"):
+        return model.model_dump()
+    if hasattr(model, "dict"):
+        return model.dict()
+    if hasattr(model, "json"):
+        return json.loads(model.json())
+    return model
+
+
+def percentile_key(percentile):
+    return "percentile_{}".format(int(percentile) if float(percentile).is_integer() else percentile)
+
+
+def ensure_percentiles(stats, pmin, pmax):
+    if "percentiles" in stats:
+        return stats
+
+    pmin_key = percentile_key(pmin)
+    pmax_key = percentile_key(pmax)
+    if pmin_key in stats and pmax_key in stats:
+        stats["percentiles"] = [stats[pmin_key], stats[pmax_key]]
+    else:
+        stats["percentiles"] = [stats.get("min"), stats.get("max")]
+    return stats
+
+
+def compute_raster_stats(data, percentiles=(2, 98), bins=255, range=None):
+    if rio_legacy_stats is not None:
+        stats = rio_legacy_stats(data, percentiles=percentiles, bins=bins, range=range)
+    else:
+        stats = get_array_statistics(
+            data,
+            percentiles=list(percentiles),
+            bins=bins,
+            range=range,
+        )[0]
+    return ensure_percentiles(stats, percentiles[0], percentiles[1])
 
 
 def get_zoom_safe(src_dst):
@@ -200,15 +243,39 @@ class Metadata(TaskNestedView):
                     data = np.ma.array(data)
                     data.mask = mask == 0
                     stats = {
-                        str(b + 1): raster_stats(data[b], percentiles=(pmin, pmax), bins=255, range=hrange)
+                        str(b + 1): compute_raster_stats(
+                            data[b],
+                            percentiles=(pmin, pmax),
+                            bins=255,
+                            range=hrange,
+                        )
                         for b in range(data.shape[0])
                     }
-                    stats = {b: ImageStatistics(**s) for b, s in stats.items()}
-                    metadata = RioMetadata(statistics=stats, **src.info().dict())
+                    info = to_dict(src.info())
+                    info["statistics"] = stats
                 else:
-                    metadata = src.metadata(pmin=pmin, pmax=pmax, hist_options=histogram_options, nodata=nodata,
-                                            bounds=bounds, vrt_options=vrt_options)
-                info = json.loads(metadata.json())
+                    if hasattr(src, "metadata"):
+                        metadata = src.metadata(
+                            pmin=pmin,
+                            pmax=pmax,
+                            hist_options=histogram_options,
+                            nodata=nodata,
+                            bounds=bounds,
+                            vrt_options=vrt_options,
+                        )
+                        info = to_dict(metadata)
+                    else:
+                        info = to_dict(src.info())
+                        stats = src.statistics(
+                            percentiles=[pmin, pmax],
+                            hist_options=histogram_options,
+                            nodata=nodata,
+                            bounds=bounds,
+                            vrt_options=vrt_options,
+                        )
+                        info["statistics"] = {b: to_dict(s) for b, s in stats.items()}
+                for b in info.get("statistics", {}):
+                    ensure_percentiles(info["statistics"][b], pmin, pmax)
         except IndexError as e:
             # Caught when trying to get an invalid raster metadata
             # or when the crop area is defined improperly. In order
@@ -660,3 +727,4 @@ class Export(TaskNestedView):
                                                             crop=task.crop.wkt if task.crop is not None else None,
                                                             crop_reference=task.get_reference_raster() if task.crop is not None else None).task_id
                 return Response({'celery_task_id': celery_task_id, 'filename': filename})
+
