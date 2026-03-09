@@ -76,10 +76,11 @@ EOT
 COPY package.json ./
 RUN --mount=type=cache,target=/root/.npm \
     <<EOT
-    npm install --quiet
+    npm config set fund false
+    npm config set audit false
+    npm install --no-fund --no-audit --progress=false --loglevel=error
     # Install webpack, webpack CLI
-    npm install --quiet -g webpack@5.89.0
-    npm install --quiet -g webpack-cli@5.1.4
+    npm install --no-fund --no-audit --progress=false --loglevel=error -g webpack@5.89.0 webpack-cli@5.1.4
 EOT
 
 # Copy remaining files
@@ -136,9 +137,10 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     apt-get install -y --no-install-recommends \
         python$PYTHON_VERSION python$PYTHON_VERSION-distutils gdal-bin pdal \
         nginx certbot gettext-base cron postgresql-client gettext tzdata git
+    npm config set fund false
+    npm config set audit false
     # Install webpack, webpack CLI
-    npm install --quiet -g webpack@5.89.0
-    npm install --quiet -g webpack-cli@5.1.4
+    npm install --no-fund --no-audit --progress=false --loglevel=error -g webpack@5.89.0 webpack-cli@5.1.4
     # Cleanup of build requirements
     apt-get autoremove -y
     apt-get clean
@@ -150,3 +152,4 @@ EOT
 COPY --from=build $WORKDIR ./
 
 VOLUME /webodm/app/media
+

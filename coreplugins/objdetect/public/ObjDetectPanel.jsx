@@ -208,11 +208,12 @@ export default class ObjDetectPanel extends React.Component {
       {label: _('Athletic Facilities'), value: 'athletic'},
       {label: _('Boats'), value: 'boats'},
       {label: _('Planes'), value: 'planes'},
-      {label: _('Cattle'), value: 'cattle'}
+      {label: _('Cattle'), value: 'cattle'},
+      {label: _('Dogs'), value: 'dogs'}
     ]
     
     let content = "";
-    if (loading) content = (<span><i className="fa fa-circle-notch fa-spin"></i> {_("Loading…")}</span>);
+    if (loading) content = (<span><i className="fa fa-circle-notch fa-spin"></i> {_("Loading...")}</span>);
     else if (permanentError) content = (<div className="alert alert-warning">{permanentError}</div>);
     else{
       const featCount = objLayer ? objLayer.getLayers().length : 0;
@@ -260,3 +261,4 @@ export default class ObjDetectPanel extends React.Component {
     </div>);
   }
 }
+
