@@ -1,4 +1,5 @@
 import json
+import math
 from rasterio.enums import ColorInterp
 from rasterio.crs import CRS
 from rasterio.features import bounds as featureBounds
@@ -89,10 +90,39 @@ def compute_raster_stats(data, percentiles=(2, 98), bins=255, range=None):
             range=range,
         )[0]
     return ensure_percentiles(stats, percentiles[0], percentiles[1])
+def make_json_safe(value):
+    if isinstance(value, CRS):
+        return value.to_string() if value is not None else None
+    if isinstance(value, (float, np.floating)):
+        value = float(value)
+        return value if math.isfinite(value) else None
+    if isinstance(value, np.integer):
+        return int(value)
+    if isinstance(value, np.bool_):
+        return bool(value)
+    if isinstance(value, dict):
+        return {k: make_json_safe(v) for k, v in value.items()}
+    if isinstance(value, (list, tuple)):
+        return [make_json_safe(v) for v in value]
+    if isinstance(value, np.generic):
+        return value.item()
+    return value
+
 
 
 def get_zoom_safe(src_dst):
-    minzoom, maxzoom = src_dst.spatial_info["minzoom"], src_dst.spatial_info["maxzoom"]
+    if hasattr(src_dst, "spatial_info"):
+        minzoom, maxzoom = src_dst.spatial_info["minzoom"], src_dst.spatial_info["maxzoom"]
+    else:
+        minzoom = getattr(src_dst, "minzoom", None)
+        maxzoom = getattr(src_dst, "maxzoom", None)
+        if minzoom is None or maxzoom is None:
+            info = to_dict(src_dst.info()) if hasattr(src_dst, "info") else {}
+            minzoom = info.get("minzoom", 0)
+            maxzoom = info.get("maxzoom", minzoom)
+
+    minzoom = int(minzoom)
+    maxzoom = int(maxzoom)
     if maxzoom < minzoom:
         maxzoom = minzoom
     return minzoom, maxzoom
@@ -215,7 +245,11 @@ class Metadata(TaskNestedView):
         if not os.path.isfile(raster_path):
             raise exceptions.NotFound()
         try:
+            source_bounds = None
+            source_crs = None
             with COGReader(raster_path) as src:
+                source_bounds = list(getattr(src, 'geographic_bounds', src.bounds))
+                source_crs = 'EPSG:4326'
                 band_count = src.dataset.meta['count']
                 if boundaries_feature is not None:
                     cutline = create_cutline(src.dataset, boundaries_feature, CRS.from_string('EPSG:4326'))
@@ -255,27 +289,49 @@ class Metadata(TaskNestedView):
                     info["statistics"] = stats
                 else:
                     if hasattr(src, "metadata"):
-                        metadata = src.metadata(
-                            pmin=pmin,
-                            pmax=pmax,
-                            hist_options=histogram_options,
-                            nodata=nodata,
-                            bounds=bounds,
-                            vrt_options=vrt_options,
-                        )
+                        metadata_kwargs = {
+                            "pmin": pmin,
+                            "pmax": pmax,
+                            "hist_options": histogram_options,
+                            "nodata": nodata,
+                            "vrt_options": vrt_options,
+                        }
+                        if bounds is not None:
+                            metadata_kwargs["bounds"] = bounds
+                        try:
+                            metadata = src.metadata(**metadata_kwargs)
+                        except TypeError as e:
+                            if "unexpected keyword argument 'bounds'" not in str(e):
+                                raise
+                            metadata_kwargs.pop("bounds", None)
+                            metadata = src.metadata(**metadata_kwargs)
                         info = to_dict(metadata)
                     else:
                         info = to_dict(src.info())
-                        stats = src.statistics(
-                            percentiles=[pmin, pmax],
-                            hist_options=histogram_options,
-                            nodata=nodata,
-                            bounds=bounds,
-                            vrt_options=vrt_options,
-                        )
+                        stats_kwargs = {
+                            "percentiles": [pmin, pmax],
+                            "hist_options": histogram_options,
+                            "nodata": nodata,
+                            "vrt_options": vrt_options,
+                        }
+                        if bounds is not None:
+                            stats_kwargs["bounds"] = bounds
+                        try:
+                            stats = src.statistics(**stats_kwargs)
+                        except TypeError as e:
+                            if "unexpected keyword argument 'bounds'" not in str(e):
+                                raise
+                            stats_kwargs.pop("bounds", None)
+                            stats = src.statistics(**stats_kwargs)
                         info["statistics"] = {b: to_dict(s) for b, s in stats.items()}
-                for b in info.get("statistics", {}):
-                    ensure_percentiles(info["statistics"][b], pmin, pmax)
+                normalized_stats = {}
+                for b, band_stats in info.get("statistics", {}).items():
+                    band_key = str(b)
+                    if band_key.startswith("b") and band_key[1:].isdigit():
+                        band_key = band_key[1:]
+                    ensure_percentiles(band_stats, pmin, pmax)
+                    normalized_stats[band_key] = band_stats
+                info["statistics"] = normalized_stats
         except IndexError as e:
             # Caught when trying to get an invalid raster metadata
             # or when the crop area is defined improperly. In order
@@ -352,9 +408,9 @@ class Metadata(TaskNestedView):
             info['maxzoom'] = info['minzoom']
         info['maxzoom'] += ZOOM_EXTRA_LEVELS
         info['minzoom'] -= ZOOM_EXTRA_LEVELS
-        info['bounds'] = {'value': bounds if bounds is not None else src.bounds, 'crs': src.dataset.crs}
+        info['bounds'] = {'value': bounds if bounds is not None else source_bounds, 'crs': source_crs}
 
-        return Response(info)
+        return Response(make_json_safe(info))
 
 
 class Tiles(TaskNestedView):
@@ -429,6 +485,13 @@ class Tiles(TaskNestedView):
             if rescale is None:
                 rescale = "-1,1"
 
+        # Compatibility fallback: older UI state can persist "-1,1" on regular
+        # orthophoto RGB rendering, which washes tiles out to white.
+        if tile_type == 'orthophoto' and formula is None and rescale is not None:
+            normalized_rescale = rescale.replace("%2C", ",").replace(" ", "")
+            if normalized_rescale in ("-1,1", "-1.0,1.0"):
+                rescale = "0,255"
+
         if nodata is not None:
             nodata = np.nan if nodata == "nan" else float(nodata)
         tilesize = scale * tilesize
@@ -437,7 +500,7 @@ class Tiles(TaskNestedView):
             raise exceptions.NotFound()
 
         with COGReader(url) as src:
-            if not src.tile_exists(z, x, y):
+            if not src.tile_exists(x, y, z):
                 raise exceptions.NotFound(_("Outside of bounds"))
 
             minzoom, maxzoom = get_zoom_safe(src)
@@ -495,19 +558,40 @@ class Tiles(TaskNestedView):
             if hillshade is not None:
                 tile_buffer = 16
 
-            try:
-                if expr is not None:
-                    tile = src.tile(x, y, z, expression=expr, tilesize=tilesize, nodata=nodata,
-                                    padding=padding,
-                                    tile_buffer=tile_buffer,
-                                    resampling_method=resampling, vrt_options=vrt_options)
-                else:
-                    tile = src.tile(x, y, z, indexes=indexes, tilesize=tilesize, nodata=nodata,
-                                    padding=padding,
-                                    tile_buffer=tile_buffer,
-                                    resampling_method=resampling, vrt_options=vrt_options)
-            except TileOutsideBounds:
-                raise exceptions.NotFound(_("Outside of bounds"))
+            tile_kwargs = {
+                "tilesize": tilesize,
+                "nodata": nodata,
+                "padding": padding,
+                "tile_buffer": tile_buffer,
+                "resampling_method": resampling,
+                "vrt_options": vrt_options,
+            }
+            if expr is not None:
+                tile_kwargs["expression"] = expr
+            else:
+                tile_kwargs["indexes"] = indexes
+
+            while True:
+                try:
+                    tile = src.tile(x, y, z, **tile_kwargs)
+                    break
+                except TileOutsideBounds:
+                    raise exceptions.NotFound(_("Outside of bounds"))
+                except TypeError as e:
+                    msg = str(e)
+                    if "unexpected keyword argument 'tile_buffer'" in msg and "tile_buffer" in tile_kwargs:
+                        tile_kwargs.pop("tile_buffer", None)
+                        continue
+                    if "unexpected keyword argument 'resampling_method'" in msg and "resampling_method" in tile_kwargs:
+                        tile_kwargs["resampling"] = tile_kwargs.pop("resampling_method")
+                        continue
+                    if "unexpected keyword argument 'vrt_options'" in msg and "vrt_options" in tile_kwargs:
+                        tile_kwargs.pop("vrt_options", None)
+                        continue
+                    if "unexpected keyword argument 'padding'" in msg and "padding" in tile_kwargs:
+                        tile_kwargs.pop("padding", None)
+                        continue
+                    raise
             
             if color_map:
                 try:
