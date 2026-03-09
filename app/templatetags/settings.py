@@ -5,25 +5,55 @@ import time
 from django import template
 from webodm import settings
 from django.utils.translation import gettext as _
+from app.models import Setting, Theme
 
 register = template.Library()
 logger = logging.getLogger('app.logger')
+
+_DEFAULT_THEME = Theme(name='Default')
+
+
+def _resolve_settings(context):
+    settings_obj = None
+
+    if context is not None:
+        try:
+            settings_obj = context.get('SETTINGS')
+        except Exception:
+            try:
+                settings_obj = context['SETTINGS']
+            except Exception:
+                settings_obj = None
+
+    if settings_obj is None:
+        try:
+            settings_obj = Setting.objects.select_related('theme').first()
+        except Exception as e:
+            logger.warning("Cannot load settings from database: %s" % str(e))
+            settings_obj = None
+
+    return settings_obj
+
 
 @register.simple_tag
 def task_options_docs_link():
     return settings.TASK_OPTIONS_DOCS_LINK
 
+
 @register.simple_tag
 def gcp_docs_link():
     return '<a href="%s" target="_blank">' % settings.GCP_DOCS_LINK
+
 
 @register.simple_tag
 def reset_password_link():
     return settings.RESET_PASSWORD_LINK
 
+
 @register.simple_tag
 def has_external_auth():
     return settings.EXTERNAL_AUTH_ENDPOINT != ""
+
 
 @register.filter
 def disk_size(megabytes):
@@ -37,6 +67,7 @@ def disk_size(megabytes):
     else:
         return str(round(megabytes / k3, 2)) + ' PB'
 
+
 @register.simple_tag
 def percentage(num, den, maximum=None):
     if den == 0:
@@ -45,6 +76,7 @@ def percentage(num, den, maximum=None):
     if maximum is not None:
         perc = min(perc, maximum)
     return perc
+
 
 @register.simple_tag(takes_context=True)
 def quota_exceeded_grace_period(context):
@@ -61,26 +93,34 @@ def quota_exceeded_grace_period(context):
         return _("in %(num)s minutes") % {"num": math.floor(diff / 60)}
     else:
         return _("very soon")
-    
+
 
 @register.simple_tag
 def is_single_user_mode():
     return settings.SINGLE_USER_MODE
 
+
 @register.simple_tag
 def is_desktop_mode():
     return settings.DESKTOP_MODE
+
 
 @register.simple_tag
 def is_dev_mode():
     return settings.DEV
 
+
 @register.simple_tag(takes_context=True)
 def settings_image_url(context, image):
+    settings_obj = _resolve_settings(context)
+    if settings_obj is None:
+        logger.warning("Cannot get SETTINGS object. Cannot resolve image URL.")
+        return ''
+
     try:
-        img_cache = getattr(context['SETTINGS'], image)
-    except KeyError:
-        logger.warning("Cannot get SETTINGS key from context. Something's wrong in settings_image_url.")
+        img_cache = getattr(settings_obj, image)
+    except Exception as e:
+        logger.warning("Cannot get %s from settings: %s" % (image, str(e)))
         return ''
 
     try:
@@ -89,38 +129,48 @@ def settings_image_url(context, image):
         logger.warning("Cannot get %s, this could mean the image was deleted." % image)
         return ''
 
+
 @register.simple_tag(takes_context=True)
 def get_footer(context):
-    try:
-        settings = context['SETTINGS']
-    except KeyError:
-        logger.warning("Cannot get SETTINGS key from context. The footer will not be displayed.")
+    settings_obj = _resolve_settings(context)
+    if settings_obj is None:
+        logger.warning("Cannot get SETTINGS object. The footer will not be displayed.")
         return ""
 
-    if settings.theme.html_footer == "": return ""
+    if settings_obj.theme is None or settings_obj.theme.html_footer == "":
+        return ""
 
     organization = ""
-    if settings.organization_name != "" and settings.organization_website != "":
-        organization = "<a href='{}'>{}</a>".format(settings.organization_website, settings.organization_name)
-    elif settings.organization_name != "":
-        organization = settings.organization_name
+    if settings_obj.organization_name != "" and settings_obj.organization_website != "":
+        organization = "<a href='{}'>{}</a>".format(settings_obj.organization_website, settings_obj.organization_name)
+    elif settings_obj.organization_name != "":
+        organization = settings_obj.organization_name
 
-    footer = settings.theme.html_footer
+    footer = settings_obj.theme.html_footer
     footer = footer.replace("{ORGANIZATION}", organization)
     footer = footer.replace("{YEAR}", str(datetime.datetime.now().year))
 
-    return "<footer>" + \
-           footer + \
-            "</footer>"
+    return "<footer>" + footer + "</footer>"
+
 
 @register.simple_tag(takes_context=True)
 def theme(context, color):
     """Return a theme color from the currently selected theme"""
-    try:
-        return getattr(context['SETTINGS'].theme, color)
-    except Exception as e:
-        logger.warning("Cannot load configuration from theme(): " + str(e))
-        return "#0000FF" # dah buh dih ah buh daa..
+    settings_obj = _resolve_settings(context)
+    if settings_obj is not None and settings_obj.theme is not None:
+        try:
+            value = getattr(settings_obj.theme, color)
+            if value:
+                return value
+        except Exception as e:
+            logger.warning("Cannot load configuration from theme(): " + str(e))
+
+    value = getattr(_DEFAULT_THEME, color, None)
+    if value:
+        return value
+
+    return "#1f2937"
+
 
 @register.simple_tag
 def complementary(hexcolor):
@@ -133,8 +183,9 @@ def complementary(hexcolor):
     comp = ['%02X' % (255 - int(a, 16)) for a in rgb]
     return '#' + ''.join(comp)
 
+
 @register.simple_tag
-def scaleby(hexcolor, scalefactor, ignore_value = False):
+def scaleby(hexcolor, scalefactor, ignore_value=False):
     """
     Scales a hex string by ``scalefactor``, but is color dependent, unless ignore_value is True
     scalefactor is now always between 0 and 1. A value of 0.8
@@ -185,6 +236,7 @@ def scaleby(hexcolor, scalefactor, ignore_value = False):
     value = max(r, g, b)
 
     return calculate(hexcolor, scalefactor if ignore_value or value >= 127 else 2 - scalefactor)
+
 
 @register.simple_tag
 def scalebyiv(hexcolor, scalefactor):

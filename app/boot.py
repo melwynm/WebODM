@@ -12,6 +12,7 @@ from guardian.shortcuts import assign_perm
 from worker import tasks as worker_tasks
 from app.models import Preset
 from app.models import Theme
+from app.models.theme import ACCESSIBLE_THEME_DEFAULTS
 from app.plugins import init_plugins
 from nodeodm.models import ProcessingNode
 # noinspection PyUnresolvedReferencesapp/boot.py#L20
@@ -21,6 +22,78 @@ import logging
 from .models import Task, Setting
 from webodm import settings
 from webodm.wsgi import booted
+
+THEME_CONTRAST_MIN = 4.5
+THEME_COLOR_FIELDS = (
+    "primary",
+    "secondary",
+    "tertiary",
+    "button_primary",
+    "button_default",
+    "button_danger",
+    "header_background",
+    "header_primary",
+    "border",
+    "highlight",
+    "dialog_warning",
+    "failed",
+    "success",
+)
+
+
+def _hex_to_rgb(color):
+    if not color:
+        return None
+
+    c = color.strip()
+    if c.startswith("#"):
+        c = c[1:]
+
+    if len(c) == 3:
+        c = "".join(ch * 2 for ch in c)
+
+    if len(c) != 6:
+        return None
+
+    try:
+        return tuple(int(c[i:i + 2], 16) / 255.0 for i in (0, 2, 4))
+    except ValueError:
+        return None
+
+
+def _linearize(channel):
+    return channel / 12.92 if channel <= 0.03928 else ((channel + 0.055) / 1.055) ** 2.4
+
+
+def _contrast_ratio(color_a, color_b):
+    rgb_a = _hex_to_rgb(color_a)
+    rgb_b = _hex_to_rgb(color_b)
+    if rgb_a is None or rgb_b is None:
+        return 0.0
+
+    lum_a = 0.2126 * _linearize(rgb_a[0]) + 0.7152 * _linearize(rgb_a[1]) + 0.0722 * _linearize(rgb_a[2])
+    lum_b = 0.2126 * _linearize(rgb_b[0]) + 0.7152 * _linearize(rgb_b[1]) + 0.0722 * _linearize(rgb_b[2])
+
+    lighter = max(lum_a, lum_b)
+    darker = min(lum_a, lum_b)
+    return (lighter + 0.05) / (darker + 0.05)
+
+
+def _theme_has_good_contrast(theme):
+    pairs = (
+        (theme.primary, theme.secondary),
+        (theme.header_primary, theme.header_background),
+        (theme.secondary, theme.button_primary),
+        (theme.secondary, theme.button_default),
+        (theme.secondary, theme.button_danger),
+    )
+
+    return all(_contrast_ratio(fg, bg) >= THEME_CONTRAST_MIN for fg, bg in pairs)
+
+
+def _apply_accessible_defaults(theme):
+    for field in THEME_COLOR_FIELDS:
+        setattr(theme, field, ACCESSIBLE_THEME_DEFAULTS[field])
 
 
 def boot():
@@ -73,12 +146,23 @@ def boot():
 
         # Add settings
         default_theme, created = Theme.objects.get_or_create(name='Default')
+        default_theme_updated = False
+
         if created:
             logger.info("Created default theme")
+            _apply_accessible_defaults(default_theme)
+            default_theme_updated = True
+        elif not _theme_has_good_contrast(default_theme):
+            logger.warning("Default theme had insufficient contrast, resetting to accessible defaults")
+            _apply_accessible_defaults(default_theme)
+            default_theme_updated = True
 
-            if settings.DEFAULT_THEME_CSS:
-                default_theme.css = settings.DEFAULT_THEME_CSS
-                default_theme.save()
+        if settings.DEFAULT_THEME_CSS and default_theme.css == "":
+            default_theme.css = settings.DEFAULT_THEME_CSS
+            default_theme_updated = True
+
+        if default_theme_updated:
+            default_theme.save()
 
         if Setting.objects.all().count() == 0:
             s = Setting.objects.create(
@@ -87,7 +171,13 @@ def boot():
             s.app_logo.save(os.path.basename(settings.APP_DEFAULT_LOGO), File(open(settings.APP_DEFAULT_LOGO, 'rb')))
 
             logger.info("Created settings")
-        
+        else:
+            app_settings = Setting.objects.select_related('theme').first()
+            if app_settings is not None and (app_settings.theme is None or not _theme_has_good_contrast(app_settings.theme)):
+                app_settings.theme = default_theme
+                app_settings.save(update_fields=['theme'])
+                logger.info("Updated active theme to high-contrast default")
+
         init_plugins()
 
         if not settings.TESTING:
