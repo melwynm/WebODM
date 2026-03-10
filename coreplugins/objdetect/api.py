@@ -8,6 +8,7 @@ from app.plugins.worker import run_function_async
 from django.utils.translation import gettext_lazy as _
 
 DOG_MODEL_URL = "https://github.com/ultralytics/assets/releases/download/v8.3.0/yolo11n.onnx"
+MAX_ONNX_OPSET = 21
 
 
 def _parse_class_names(raw_names):
@@ -39,6 +40,38 @@ def _parse_class_names(raw_names):
     return {}
 
 
+def _ensure_supported_onnx_opset(model_file, progress_callback=None):
+    try:
+        import onnx
+        from onnx import version_converter
+    except ImportError:
+        return model_file
+
+    model_proto = onnx.load(model_file)
+    opset_versions = [entry.version for entry in model_proto.opset_import if entry.domain in ('', 'ai.onnx')]
+    if not opset_versions:
+        return model_file
+
+    current_opset = max(opset_versions)
+    if current_opset <= MAX_ONNX_OPSET:
+        return model_file
+
+    converted_file = f"{os.path.splitext(model_file)[0]}-opset{MAX_ONNX_OPSET}.onnx"
+    if os.path.isfile(converted_file):
+        return converted_file
+
+    if progress_callback is not None:
+        progress_callback(f"Converting ONNX model from opset {current_opset} to {MAX_ONNX_OPSET}", 0)
+
+    try:
+        converted_proto = version_converter.convert_version(model_proto, MAX_ONNX_OPSET)
+    except Exception as e:
+        raise Exception(f"Cannot convert ONNX model from opset {current_opset} to {MAX_ONNX_OPSET}: {e}")
+
+    onnx.save(converted_proto, converted_file)
+    return converted_file
+
+
 def _detect_with_custom_model(orthophoto, model, classes=None, max_threads=None, progress_callback=None):
     import logging
     import numpy as np
@@ -59,7 +92,9 @@ def _detect_with_custom_model(orthophoto, model, classes=None, max_threads=None,
             progress_callback(text, current_progress)
 
     p("Loading model")
-    session, config = create_session(get_model_file(model, progress_callback), max_threads=max_threads)
+    model_file = model if os.path.isfile(model) else get_model_file(model, progress_callback)
+    model_file = _ensure_supported_onnx_opset(model_file, progress_callback)
+    session, config = create_session(model_file, max_threads=max_threads)
     p("Model loaded", 5)
 
     meta = session.get_modelmeta().custom_metadata_map
@@ -155,9 +190,13 @@ def _detect_with_custom_model(orthophoto, model, classes=None, max_threads=None,
 
 
 def detect(orthophoto, model, classes=None, crop=None, progress_callback=None):
+    # This function is serialized and executed by app.plugins.worker.eval_async,
+    # so it must import its dependencies inside the function body.
+    import os
     import subprocess
     import shutil
     import tempfile
+    from coreplugins.objdetect.api import _detect_with_custom_model
     from webodm import settings
     from django.contrib.gis.geos import GEOSGeometry
 
