@@ -69,6 +69,9 @@ html, body, section.main, .content, #wrapper, #page-wrapper{
 }
 
 #navbar-top{
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
     height: 64px;
     min-height: 64px;
     background: linear-gradient(135deg, #1d4ed8 0%, #2563eb 45%, #3b82f6 100%);
@@ -78,9 +81,12 @@ html, body, section.main, .content, #wrapper, #page-wrapper{
     color: #fff;
 
     .navbar-header{
-        width: 100%;
+        flex: 1 1 auto;
+        width: auto;
+        min-width: 0;
         display: flex;
         align-items: center;
+        height: 64px;
     }
 
     .navbar-brand{
@@ -89,11 +95,24 @@ html, body, section.main, .content, #wrapper, #page-wrapper{
         font-weight: 600;
         font-size: 1.2rem;
         color: #fff !important;
+        position: static;
+        display: flex;
+        align-items: center;
+        order: 1;
     }
     .navbar-text{
-        margin-top: 18px;
+        margin-top: 0;
         margin-left: 12px;
         color: rgba(255, 255, 255, 0.75);
+        position: static;
+        line-height: 1.2;
+    }
+
+    .navbar-link{
+        display: flex;
+        align-items: center;
+        min-width: 0;
+        order: 1;
     }
 
     .navbar-link:hover{
@@ -102,22 +121,92 @@ html, body, section.main, .content, #wrapper, #page-wrapper{
     }
 
     .navbar-top-links{
+        flex: 0 0 auto;
         display: flex;
         align-items: center;
         justify-content: flex-end;
         clear: both;
         gap: 6px;
+        margin: 0 16px 0 auto;
+        padding-left: 0;
 
-        a.dropdown-toggle{
+        > li,
+        > li:last-child{
+            margin-right: 0;
+        }
+
+        > li > a.dropdown-toggle{
             color: #fff;
             padding: 12px 16px;
             border-radius: 999px;
             transition: background-color 0.2s ease;
         }
 
-        a:hover, a:focus, .open>a{
+        > li > a:hover,
+        > li > a:focus,
+        > li.open > a{
             background-color: rgba(15, 23, 42, 0.24);
         }
+    }
+
+    .user-menu-dropdown{
+        float: none;
+        position: relative;
+        display: flex;
+        align-items: stretch;
+        min-height: 64px;
+        border-radius: 999px;
+        overflow: visible;
+        background-color: rgba(15, 23, 42, 0.12);
+    }
+
+    .user-menu-dropdown > .dropdown-menu{
+        right: 0;
+        left: auto;
+        top: calc(100% + 8px);
+        margin-top: 0;
+        border: none;
+        border-radius: 12px;
+        overflow: hidden;
+        box-shadow: 0 22px 44px -28px rgba(15, 23, 42, 0.6);
+    }
+
+    .user-menu-settings-link,
+    .user-menu-toggle{
+        display: flex;
+        align-items: center;
+        color: #fff;
+        transition: background-color 0.2s ease, color 0.2s ease;
+    }
+
+    .user-menu-settings-link{
+        gap: 10px;
+        padding: 12px 14px 12px 16px;
+        max-width: 320px;
+    }
+
+    .user-menu-toggle{
+        justify-content: center;
+        padding: 12px 14px 12px 10px;
+    }
+
+    .user-menu-settings-link:hover,
+    .user-menu-settings-link:focus,
+    .user-menu-toggle:hover,
+    .user-menu-toggle:focus,
+    .open .user-menu-toggle{
+        background-color: rgba(15, 23, 42, 0.24);
+        color: #fff;
+        text-decoration: none;
+    }
+
+    .user-menu-name{
+        display: inline-block;
+        max-width: 180px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        font-weight: 600;
     }
 
     ul#side-menu{
@@ -151,13 +240,23 @@ html, body, section.main, .content, #wrapper, #page-wrapper{
         display: flex;
         flex-direction: column;
         justify-content: center;
-        align-items: flex-end;
-        gap: 2px;
+        align-items: flex-start;
+        gap: 4px;
 
         .email{
             font-size: 0.85rem;
             opacity: 0.85;
         }
+    }
+
+    .user-settings-link{
+        color: #2563eb !important;
+        font-weight: 600;
+    }
+
+    .user-settings-link:hover,
+    .user-settings-link:focus{
+        color: #1d4ed8 !important;
     }
 }
 
@@ -288,37 +387,64 @@ button i.glyphicon{
 
 /* This is to make the Header and navigation more mobile friendly */
 
-.navbar-toggle {
-    position: relative;
-    float: right;
-    margin-right: 15px;
-    padding: 9px 10px;
-    margin-top: 7px;
-    margin-bottom: 5px;
+#navbar-top {
+    .navbar-toggle {
+        position: relative;
+        float: none;
+        order: 3;
+        margin-left: auto;
+        margin-right: 15px;
+        padding: 9px 10px;
+        margin-top: 7px;
+        margin-bottom: 5px;
+    }
+
+    .navbar-header {
+        height: 64px;
+    }
+
+    .navbar-right {
+        clear: none !important;
+        height: auto;
+    }
+
+    > .navbar-top-links > .dropdown {
+        float: none;
+    }
+
+    .navbar-brand {
+        position: static;
+        top: auto;
+    }
+
+    .navbar-text {
+        position: static;
+        top: auto;
+        left: auto;
+    }
 }
 
-.navbar-header {
-	height: 50px;
-}
+@media (max-width: 767px) {
+    #navbar-top {
+        min-height: auto;
 
-.navbar-right {
-	clear: none !important;
-	height: 50px;
-}
+        .navbar-header {
+            width: 100%;
+        }
 
-.dropdown {
-	float: right;
-}
+        .navbar-top-links {
+            margin-right: 12px;
+        }
 
-.navbar-brand {
-	position: absolute;
-	top: 0px;
-}
+        .user-menu-settings-link {
+            max-width: 190px;
+            padding-left: 12px;
+        }
 
-.navbar-text {
-	position: absolute;
-	top: 0px;
-	left: 50px;
+        .user-menu-name {
+            max-width: 120px;
+        }
+    }
 }
 
 footer{
