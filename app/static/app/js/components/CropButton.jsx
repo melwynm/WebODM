@@ -86,7 +86,10 @@ class CropButton extends React.Component {
             if (!this.captureMarker) {
                 this.captureMarker = L.marker(this.map.getCenter(), {
                     clickable: true,
-                    zIndexOffset: 10001
+                    zIndexOffset: 10001,
+                    keyboard: false,
+                    autoPanOnFocus: false,
+                    bubblingMouseEvents: false
                 }).setIcon(L.divIcon({
                     iconSize: this.map.getSize().multiplyBy(2),
                     className: "crop-button-marker-layer"

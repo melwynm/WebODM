@@ -862,6 +862,7 @@ _('Example:'),
         this.map.fitBounds(this.mapBounds);
 
         this.map.on('click', e => {
+          if (e.originalEvent && e.originalEvent._webodmSuppressMapClick) return;
           if (PluginsAPI.Map.handleClick(e)) return;
           if (this.sideBySideCtrl) return;
           
