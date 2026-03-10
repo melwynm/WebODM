@@ -1,7 +1,7 @@
 import L from 'leaflet';
-import './app.scss';
 import 'leaflet-measure-ex/dist/leaflet-measure';
 import 'leaflet-measure-ex/dist/leaflet-measure.css';
+import './app.scss';
 import MeasurePopup from './MeasurePopup';
 import Utils from 'webodm/classes/Utils';
 import ReactDOM from 'ReactDOM';
@@ -57,8 +57,15 @@ export default class App{
           primaryAreaUnit: 'sqmeters',
           secondaryAreaUnit: 'acres'
         }).addTo(map);
+        const measureTitle = _('Measure volume, area and length');
+        const measureToggle = measure.$toggle;
 
-        // measure.options.labels.
+        if (measureToggle){
+          measureToggle.classList.add('map-control-button', 'leaflet-bar-part', 'theme-secondary');
+          measureToggle.setAttribute('title', measureTitle);
+          measureToggle.setAttribute('aria-label', measureTitle);
+          measureToggle.innerHTML = '<i class="fa fa-ruler-combined" aria-hidden="true"></i>';
+        }
 
         measure._getMeasurementDisplayStrings = measurement => {
           const us = unitSystem();

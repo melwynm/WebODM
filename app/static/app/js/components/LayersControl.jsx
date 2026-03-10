@@ -35,8 +35,11 @@ class LayersControlButton extends React.Component {
     return (<div className={showPanel ? "open" : ""}>
         <a href="javascript:void(0);" 
             title="Layers"
+            aria-label="Layers"
             onClick={this.handleOpen} 
-            className="leaflet-control-layers-control-button leaflet-bar-part theme-secondary"></a>
+            className="leaflet-control-layers-control-button leaflet-bar-part theme-secondary map-control-button">
+            <i className="fa fa-layer-group" aria-hidden="true"></i>
+        </a>
         <LayersControlPanel map={this.props.map} layers={this.props.layers} overlays={this.props.overlays} annotations={this.props.annotations} onClose={this.handleClose} />
     </div>);
   }
@@ -61,4 +64,3 @@ export default L.Control.extend({
         ReactDOM.render(<LayersControlButton ref={r => this.layersControlButton = r} map={this.map} layers={layers} overlays={overlays} annotations={annotations} />, this.container);
     }
 });
-

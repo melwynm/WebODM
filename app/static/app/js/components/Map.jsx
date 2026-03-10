@@ -614,6 +614,23 @@ class Map extends React.Component {
         mapView: this
     });
 
+    const decorateControlButton = (button, iconClass, title) => {
+      if (!button) return;
+
+      button.classList.add('map-control-button');
+      if (title) {
+        button.setAttribute('title', title);
+        button.setAttribute('aria-label', title);
+      }
+
+      if (!button.querySelector('i')) {
+        const icon = document.createElement('i');
+        icon.className = iconClass;
+        icon.setAttribute('aria-hidden', 'true');
+        button.appendChild(icon);
+      }
+    };
+
     const UnitsCtrl = Leaflet.Control.extend({
       options: {
           position: 'bottomleft'
@@ -689,6 +706,10 @@ _('Example:'),
       baseLayers: this.basemaps
     }).addTo(this.map);
 
+    const basemapButton = this.autolayers && this.autolayers._container ?
+      this.autolayers._container.querySelector('.leaflet-control-layers-toggle') : null;
+    decorateControlButton(basemapButton, 'fa fa-map', _('Basemaps'));
+
     // Drag & Drop overlays
     const addDnDZone = (container, opts) => {
         const mapTempLayerDrop = new Dropzone(container, opts);
@@ -725,9 +746,11 @@ _('Example:'),
         onAdd: function () {
             this.container = Leaflet.DomUtil.create('div', 'leaflet-control-add-overlay leaflet-bar leaflet-control');
             Leaflet.DomEvent.disableClickPropagation(this.container);
-            const btn = Leaflet.DomUtil.create('a', 'leaflet-control-add-overlay-button');
-            btn.setAttribute("title", _("Add a temporary GeoJSON (.json) or ShapeFile (.zip) overlay"));
-            
+            const btn = Leaflet.DomUtil.create('a', 'leaflet-control-add-overlay-button leaflet-bar-part theme-secondary');
+            const overlayTitle = _("Add a temporary GeoJSON (.json) or ShapeFile (.zip) overlay");
+            btn.setAttribute("href", "javascript:void(0);");
+            decorateControlButton(btn, 'fa fa-plus', overlayTitle);
+
             this.container.append(btn);
             addDnDZone(btn, {url: "/", clickable: true});
             

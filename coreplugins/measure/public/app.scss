@@ -2,7 +2,29 @@
 .leaflet-measure-resultpopup{
     h3{
         font-size: 120%;
-    } 
+    }
+}
+
+.leaflet-control-measure{
+    .leaflet-control-measure-toggle,
+    .leaflet-control-measure-toggle:hover{
+        width: 34px !important;
+        height: 34px !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        line-height: 1 !important;
+        text-indent: 0 !important;
+        white-space: normal !important;
+        overflow: visible !important;
+        background-image: none !important;
+        background-size: auto !important;
+        text-decoration: none !important;
+    }
+
+    .leaflet-control-measure-toggle i{
+        font-size: 15px;
+    }
 }
 
 .leaflet-control-measure-interaction{

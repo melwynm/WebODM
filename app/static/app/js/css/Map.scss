@@ -18,12 +18,44 @@
         }
     }
 
-    .leaflet-touch .leaflet-control-layers-toggle, .leaflet-control-layers-toggle{
-        background: no-repeat center/90% url(../icons/basemap.svg);
-        border-radius: 2px;
-        width: 30px;
-        height: 30px;
-        background-size: 22px;
+    .map-control-button,
+    .leaflet-touch .leaflet-control-layers-toggle,
+    .leaflet-control-layers-toggle{
+        width: 34px;
+        height: 34px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 8px;
+        background: #fff;
+        color: #1f2937;
+        line-height: 1;
+        text-decoration: none;
+        box-shadow: 0 14px 30px -24px rgba(15, 23, 42, 0.85);
+        transition: background-color 0.2s ease, color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+
+        i{
+            font-size: 15px;
+        }
+
+        &:hover,
+        &:focus{
+            background-color: #eff6ff;
+            color: #2563eb;
+            text-decoration: none;
+            box-shadow: 0 18px 32px -22px rgba(37, 99, 235, 0.55);
+        }
+    }
+
+    .leaflet-touch .leaflet-control-layers-toggle,
+    .leaflet-control-layers-toggle{
+        background-image: none;
+        background-size: auto;
+    }
+
+    .crop-button .leaflet-control-crop-button.selected{
+        background-color: #dbeafe;
+        color: #1d4ed8;
     }
 
     .leaflet-popup-content{
@@ -77,20 +109,8 @@
 
     .leaflet-control-add-overlay{
         z-index: 999;
-      
-        a.leaflet-control-add-overlay-button{
-          background: url(../icons/dragndrop-add.svg) 0 0 no-repeat;
-          background-size: 26px 26px;
-          border-radius: 2px;
-          &:hover{
-              cursor: pointer;
-          }
-        }
-      
     }
-    .leaflet-touch .leaflet-control-add-overlay a, .leaflet-control-add-overlay a {
-        background-position: 2px 2px;
-    }
+
     .leaflet-container{        
         a.leaflet-popup-close-button{
             top: 8px;
