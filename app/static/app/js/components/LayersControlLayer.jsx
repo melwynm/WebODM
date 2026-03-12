@@ -101,7 +101,10 @@ export default class LayersControlLayer extends React.Component {
     if (this.meta.type !== undefined){
         const visible = this.meta.type === type && (autoExpand || this.isLayerWithSameTaskIdVisible());
         const expanded = visible && autoExpand;
-        this.setState({visible, expanded});
+        if (!visible && this.state.side){
+            PluginsAPI.Map.sideBySideChanged(this.props.layer, false);
+        }
+        this.setState({visible, expanded, side: visible ? this.state.side : false});
     }
   }
 
@@ -355,6 +358,23 @@ export default class LayersControlLayer extends React.Component {
       }
   }
 
+
+  renderMonitoringDetails = () => {
+    const info = this.meta.monitoringInfo || {};
+    const shift = info.shiftMeters || {x: 0, y: 0};
+    const warnings = info.warnings || [];
+
+    return (<div className="layer-expanded">
+        <ErrorMessage bind={[this, "error"]} />
+        <div className="small monitoring-layer-details">
+            <div><strong>{_('Compared Task')}:</strong> {info.compareTaskName || '-'}</div>
+            <div><strong>{_('Correction')}:</strong> {shift.x}m / {shift.y}m</div>
+            {info.confidence !== undefined ? <div><strong>{_('Confidence')}:</strong> {info.confidence}</div> : ''}
+            {warnings.length > 0 ? <div className="text-warning">{warnings[0]}</div> : ''}
+        </div>
+        {this.props.separator ? <hr className="layer-separator" /> : ''}
+    </div>);
+  }
   render(){
     const { colorMap, bands, hillshade, formula, histogramLoading, exportLoading } = this.state;
     const { meta, tmeta } = this;
@@ -379,11 +399,11 @@ export default class LayersControlLayer extends React.Component {
     return (<div className="layers-control-layer">
         <div className="layer-control-title">
             {!this.props.overlay ? <ExpandButton bind={[this, 'expanded']} className="expand-layer" /> : <div className="paddingSpace"></div>}<Checkbox bind={[this, 'visible']}/>
-            <a title={meta.name} className="layer-label" href="javascript:void(0);" onClick={this.handleLayerClick}><i className={"layer-icon " + (meta.icon || "fa fa-vector-square fa-fw")}></i><div className="layer-title">{meta.name}</div></a> {meta.raster ? <a className="layer-action" href="javascript:void(0)" onClick={this.handleSideClick}><i title={_("Side By Side")} className={"fa fa-fw " + this.sideIcon()}></i></a> : ""}<a className="layer-action" href="javascript:void(0)" onClick={this.handleZoomToClick}><i title={_("Zoom To")} className="fa fa-expand"></i></a>
+            <a title={meta.name} className="layer-label" href="javascript:void(0);" onClick={this.handleLayerClick}><i className={"layer-icon " + (meta.icon || "fa fa-vector-square fa-fw")}></i><div className="layer-title">{meta.name}</div></a> {(meta.raster || meta.sideBySide) ? <a className="layer-action" href="javascript:void(0)" onClick={this.handleSideClick}><i title={_("Side By Side")} className={"fa fa-fw " + this.sideIcon()}></i></a> : ""}<a className="layer-action" href="javascript:void(0)" onClick={this.handleZoomToClick}><i title={_("Zoom To")} className="fa fa-expand"></i></a>
         </div>
 
         {this.state.expanded ? 
-        <div className="layer-expanded">
+        (meta.monitoring ? this.renderMonitoringDetails() : <div className="layer-expanded">
             <Histogram width={274}
                         loading={histogramLoading}
                         statistics={tmeta.statistics}
@@ -454,8 +474,11 @@ export default class LayersControlLayer extends React.Component {
                             dropUp />
             
             {this.props.separator ? <hr className="layer-separator" /> : ""}
-        </div> : ""}
+        </div>) : ""}
     </div>);
 
    }
 }
+
+
+

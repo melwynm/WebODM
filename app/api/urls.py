@@ -11,6 +11,7 @@ from rest_framework_nested import routers
 from .token import ObtainJSONWebTokenView
 from .tiler import TileJson, Bounds, Metadata, Tiles, Export
 from .potree import Scene, CameraView
+from .monitoring import MonitoringCandidates, MonitoringCompare, MonitoringTiles
 from .workers import CheckTask, GetTaskResult
 from .users import UsersList
 from .externalauth import ExternalTokenAuth
@@ -54,6 +55,10 @@ urlpatterns = [
 
     re_path(r'projects/(?P<project_pk>[^/.]+)/tasks/(?P<pk>[^/.]+)/3d/scene$', Scene.as_view()),
     re_path(r'projects/(?P<project_pk>[^/.]+)/tasks/(?P<pk>[^/.]+)/3d/cameraview$', CameraView.as_view()),
+    re_path(r'projects/(?P<project_pk>[^/.]+)/tasks/(?P<pk>[^/.]+)/monitoring/candidates$', MonitoringCandidates.as_view()),
+    re_path(r'projects/(?P<project_pk>[^/.]+)/tasks/(?P<pk>[^/.]+)/monitoring/compare$', MonitoringCompare.as_view()),
+    re_path(r'projects/(?P<project_pk>[^/.]+)/tasks/(?P<pk>[^/.]+)/monitoring/(?P<compare_task_pk>[^/.]+)/(?P<layer_type>aligned|change)/tiles/(?P<z>[\d]+)/(?P<x>[\d]+)/(?P<y>[\d]+)\.(?P<ext>png|jpg|webp)$', MonitoringTiles.as_view()),
+    re_path(r'projects/(?P<project_pk>[^/.]+)/tasks/(?P<pk>[^/.]+)/monitoring/(?P<compare_task_pk>[^/.]+)/(?P<layer_type>aligned|change)/tiles/(?P<z>[\d]+)/(?P<x>[\d]+)/(?P<y>[\d]+)@(?P<scale>[\d]+)x\.(?P<ext>png|jpg|webp)$', MonitoringTiles.as_view()),
 
     re_path(r'workers/check/(?P<celery_task_id>.+)', CheckTask.as_view()),
     re_path(r'workers/get/(?P<celery_task_id>.+)', GetTaskResult.as_view()),
@@ -69,4 +74,5 @@ if settings.ENABLE_USERS_API:
 
 if settings.EXTERNAL_AUTH_ENDPOINT != '':
     urlpatterns.append(re_path(r'^external-token-auth/', ExternalTokenAuth.as_view()))
+
 

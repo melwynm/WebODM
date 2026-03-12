@@ -31,6 +31,7 @@ import '../vendor/leaflet/leaflet-markers-canvas';
 import '../vendor/leaflet/Leaflet.SideBySide/leaflet-side-by-side';
 import { _ } from '../classes/gettext';
 import UnitSelector from './UnitSelector';
+import MonitoringCompareButton from './MonitoringCompareButton';
 import { unitSystem, toMetric } from '../classes/Units';
 
 const IOU_THRESHOLD = 0.7;
@@ -70,7 +71,8 @@ class Map extends React.Component {
       imageryLayers: [],
       overlays: [],
       annotations: [],
-      rightLayers: []
+      rightLayers: [],
+      monitoringComparison: null
     };
 
     this.basemaps = {};
@@ -86,6 +88,149 @@ class Map extends React.Component {
     this.handleMapMouseDown = this.handleMapMouseDown.bind(this);
   }
 
+
+  isMonitoringLayer = (layer) => {
+    return !!((layer && layer[Symbol.for("meta")]) || {}).monitoring;
+  }
+
+  decorateMonitoringLayer = (layer, meta) => {
+    layer[Symbol.for("meta")] = meta;
+
+    layer.getLatLng = () => {
+      return this.lastClickedLatLng ? this.lastClickedLatLng : layer.options.bounds.getCenter();
+    };
+
+    layer.show = function(){
+      if (!this._map) this.addTo(meta.mapRef);
+      else if (this.getContainer()) this.getContainer().style.display = '';
+    };
+    layer.hide = function(){
+      if (this.getContainer()) this.getContainer().style.display = 'none';
+    };
+    layer.isHidden = function(){
+      if (!this.getContainer()) return false;
+      return this.getContainer().style.display === 'none';
+    };
+    layer.setZIndex = function(z){
+      if (this._originalZ === undefined) this._originalZ = this.options.zIndex;
+      this.options.zIndex = z;
+      this._updateZIndex();
+    };
+    layer.restoreZIndex = function(){
+      if (this._originalZ !== undefined){
+        this.setZIndex(this._originalZ);
+      }
+    };
+    layer.bringToFront = function(){
+      this.setZIndex(this.options.zIndex + 10000);
+    };
+
+    return layer;
+  }
+
+  clearMonitoringComparison = () => {
+    const isMonitoring = this.isMonitoringLayer;
+    const imageryLayers = this.state.imageryLayers.filter(layer => !isMonitoring(layer));
+    const overlays = this.state.overlays.filter(layer => !isMonitoring(layer));
+    const rightLayers = this.state.rightLayers.filter(layer => !isMonitoring(layer));
+
+    this.state.imageryLayers.filter(isMonitoring).forEach(layer => layer.remove());
+    this.state.overlays.filter(isMonitoring).forEach(layer => layer.remove());
+
+    if (this.sideBySideCtrl){
+      if (rightLayers.length === 0){
+        this.removeSideBySideCtrl();
+      }else{
+        this.sideBySideCtrl.setRightLayers(rightLayers);
+      }
+    }
+
+    this.setState({
+      imageryLayers,
+      overlays,
+      rightLayers,
+      monitoringComparison: null
+    });
+  }
+
+  buildMonitoringLayer = (layerConfig, comparison, asOverlay = false) => {
+    const bounds = Leaflet.latLngBounds([
+      layerConfig.bounds.slice(0, 2).reverse(),
+      layerConfig.bounds.slice(2, 4).reverse()
+    ]);
+
+    const query = {
+      size: 512,
+      cache: Math.floor(Math.random() * 1000000)
+    };
+    if (Array.isArray(layerConfig.rescale) && layerConfig.rescale.length === 2){
+      query.rescale = `${layerConfig.rescale[0]},${layerConfig.rescale[1]}`;
+    }
+
+    const url = Utils.buildUrlWithQuery(layerConfig.url, query);
+    const baseZIndex = this.typeZIndex('orthophoto', this.zIndexGroupMap[this.state.singleTask.id] || 1);
+    const layer = Leaflet.tileLayer(url, {
+      bounds,
+      minZoom: 0,
+      maxZoom: (layerConfig.maxzoom || 24) + 99,
+      maxNativeZoom: Math.max(0, (layerConfig.maxzoom || 24) - 1),
+      tileSize: 512,
+      opacity: layerConfig.opacity !== undefined ? layerConfig.opacity : (asOverlay ? 0.8 : this.state.opacity / 100),
+      detectRetina: true,
+      zIndex: asOverlay ? baseZIndex + 2 : baseZIndex + 1,
+    });
+
+    const meta = {
+      name: layerConfig.name,
+      icon: layerConfig.icon,
+      raster: !asOverlay,
+      monitoring: true,
+      sideBySide: !!layerConfig.side_by_side,
+      type: 'orthophoto',
+      task: this.state.singleTask,
+      autoExpand: false,
+      monitoringInfo: {
+        compareTaskName: comparison.compare_task.name,
+        shiftMeters: comparison.alignment.shift_meters,
+        confidence: comparison.alignment.confidence,
+        warnings: comparison.alignment.warnings || []
+      },
+      mapRef: this.map
+    };
+
+    return this.decorateMonitoringLayer(layer, meta);
+  }
+
+  applyMonitoringComparison = (comparison) => {
+    const imageryLayers = this.state.imageryLayers.filter(layer => !this.isMonitoringLayer(layer));
+    const overlays = this.state.overlays.filter(layer => !this.isMonitoringLayer(layer));
+    const rightLayers = this.state.rightLayers.filter(layer => !this.isMonitoringLayer(layer));
+
+    this.state.imageryLayers.filter(layer => this.isMonitoringLayer(layer)).forEach(layer => layer.remove());
+    this.state.overlays.filter(layer => this.isMonitoringLayer(layer)).forEach(layer => layer.remove());
+    if (this.sideBySideCtrl){
+      if (rightLayers.length === 0){
+        this.removeSideBySideCtrl();
+      }else{
+        this.sideBySideCtrl.setRightLayers(rightLayers);
+      }
+    }
+
+    const alignedLayer = this.buildMonitoringLayer(comparison.layers.aligned_overlay, comparison, false);
+    const changeLayer = this.buildMonitoringLayer(comparison.layers.change_overlay, comparison, true);
+
+    if (this.props.mapType === 'orthophoto'){
+      alignedLayer.addTo(this.map);
+      changeLayer.addTo(this.map);
+    }
+
+    this.setState({
+      imageryLayers: imageryLayers.concat([alignedLayer]),
+      overlays: overlays.concat([changeLayer]),
+      rightLayers,
+      monitoringComparison: comparison
+    });
+  }
   countTasks = () => {
     let tasks = {};
     this.props.tiles.forEach(tile => {
@@ -101,7 +246,8 @@ class Map extends React.Component {
   }
 
   updatePopupFor(layer){
-    const popup = layer.getPopup();
+    const popup = layer.getPopup ? layer.getPopup() : null;
+    if (!popup || !popup.getContent) return;
     $('#layerOpacity', popup.getContent()).val(layer.options.opacity);
   }
 
@@ -197,10 +343,16 @@ class Map extends React.Component {
     const prevSelectedLayers = [];
 
     this.state.imageryLayers.forEach(layer => {
-      if (this.map.hasLayer(layer)) prevSelectedLayers.push(layerId(layer));
+      if (!this.isMonitoringLayer(layer) && this.map.hasLayer(layer)) prevSelectedLayers.push(layerId(layer));
       layer.remove();
     });
-    this.setState({imageryLayers: [], rightLayers: []});
+    this.state.overlays.filter(layer => this.isMonitoringLayer(layer)).forEach(layer => layer.remove());
+    this.setState({
+      imageryLayers: [],
+      rightLayers: [],
+      overlays: this.state.overlays.filter(layer => !this.isMonitoringLayer(layer)),
+      monitoringComparison: null
+    });
 
     // Request new tiles
     return new Promise((resolve, reject) => {
@@ -870,8 +1022,10 @@ _('Example:'),
           for (let layer of this.state.imageryLayers){
             if (layer._map && !layer.isHidden() && layer.options.bounds.contains(e.latlng)){
               this.lastClickedLatLng = this.map.mouseEventToLatLng(e.originalEvent);
-              this.updatePopupFor(layer);
-              layer.openPopup();
+              if (layer.getPopup && layer.getPopup()){
+                this.updatePopupFor(layer);
+                layer.openPopup();
+              }
               break;
             }
           }
@@ -1015,6 +1169,10 @@ _('Example:'),
   }
 
   componentDidUpdate(prevProps, prevState) {
+    if (prevProps.mapType === 'orthophoto' && this.props.mapType !== 'orthophoto' && this.state.monitoringComparison){
+      this.clearMonitoringComparison();
+    }
+
     this.state.imageryLayers.forEach(imageryLayer => {
       imageryLayer.setOpacity(this.state.opacity / 100);
       this.updatePopupFor(imageryLayer);
@@ -1080,6 +1238,14 @@ _('Example:'),
         <div className="actionButtons">
           
           {this.state.pluginActionButtons.map((button, i) => <div key={i}>{button}</div>)}
+          <MonitoringCompareButton
+            task={this.state.singleTask}
+            public={this.props.public}
+            mapType={this.props.mapType}
+            comparison={this.state.monitoringComparison}
+            onApply={this.applyMonitoringComparison}
+            onClear={this.clearMonitoringComparison}
+          />
           {((this.state.singleTask || this.props.project) && this.props.shareButtons && !this.props.public) ? 
             <ShareButton 
               ref={(ref) => { this.shareButton = ref; }}
@@ -1101,3 +1267,13 @@ _('Example:'),
 }
 
 export default Map;
+
+
+
+
+
+
+
+
+
+

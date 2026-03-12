@@ -210,6 +210,30 @@ def process_pending_tasks():
 
 
 @app.task(bind=True, time_limit=settings.WORKERS_MAX_TIME_LIMIT)
+def generate_monitoring_compare(self, reference_task_id, compare_task_id):
+    try:
+        from app.monitoring import ensure_monitoring_products, render_layer_payload
+
+        reference_task = Task.objects.get(pk=reference_task_id)
+        compare_task = Task.objects.get(pk=compare_task_id)
+
+        def progress_callback(status, perc):
+            self.update_state(state="PROGRESS", meta={"status": status, "progress": perc})
+
+        metadata = ensure_monitoring_products(reference_task, compare_task, progress_callback=progress_callback)
+        result = {
+            'output': render_layer_payload(reference_task, compare_task, metadata)
+        }
+
+        if settings.TESTING:
+            TestSafeAsyncResult.set(self.request.id, result)
+
+        return result
+    except Exception as e:
+        logger.error(str(e))
+        return {'error': str(e)}
+
+@app.task(bind=True, time_limit=settings.WORKERS_MAX_TIME_LIMIT)
 def export_raster(self, input, **opts):
     try:
         logger.info("Exporting raster {} with options: {}".format(input, json.dumps(opts)))
@@ -275,3 +299,6 @@ def check_quotas():
                         break
         else:
             p.clear_quota_deadline()
+
+
+
