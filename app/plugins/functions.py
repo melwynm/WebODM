@@ -174,6 +174,21 @@ def valid_plugin(plugin_path):
     manifest_path = os.path.join(plugin_path, "manifest.json")
     return os.path.isfile(initpy_path) and os.path.isfile(manifest_path) and os.path.isfile(pluginpy_path)
 
+
+def has_canonical_plugin_twin(plugin_path):
+    """
+    Return True when a hyphenated plugin directory is a legacy alias for a
+    canonical underscore-named plugin stored alongside it.
+    """
+    plugin_dir = os.path.basename(plugin_path)
+    canonical_dir = plugin_dir.replace("-", "_")
+
+    if canonical_dir == plugin_dir:
+        return False
+
+    canonical_path = os.path.join(os.path.dirname(plugin_path), canonical_dir)
+    return os.path.isdir(canonical_path) and valid_plugin(canonical_path)
+
 plugins = None
 _active_plugins_cache = None
 _plugin_lookup_cache = {
@@ -209,6 +224,11 @@ def get_plugins():
 
             # Check plugin required files
             if not valid_plugin(plugin_path):
+                continue
+
+            # Prefer the canonical underscore package when both a legacy hyphen
+            # alias and its import-friendly twin are present.
+            if has_canonical_plugin_twin(plugin_path):
                 continue
 
             # Instantiate the plugin

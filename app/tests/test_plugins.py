@@ -13,6 +13,7 @@ from app.models import Task
 from app.plugins import UserDataStore, enable_plugin
 from app.plugins import get_plugin_by_name
 from app.plugins import sync_plugin_db, get_plugins_persistent_path
+from app.plugins.functions import clear_plugins_cache, get_plugins
 from app.plugins.data_store import InvalidDataStoreValue
 from app.plugins.pyutils import parse_requirements, compute_file_md5, requirements_installed
 from .classes import BootTestCase
@@ -252,6 +253,28 @@ class TestPlugins(BootTestCase):
         # Get manifest works and parses JSON
         p = get_plugin_by_name("test", only_active=False)
         self.assertEqual(p.get_manifest()['author'], "Piero Toffanin")
+
+    def test_plugin_loading_skips_hyphen_alias_when_underscore_plugin_exists(self):
+        canonical_dir = 'coreplugins/test_alias_plugin'
+        legacy_alias_dir = 'coreplugins/test-alias-plugin'
+
+        for path in [canonical_dir, legacy_alias_dir]:
+            if os.path.exists(path):
+                shutil.rmtree(path)
+
+        shutil.copytree('coreplugins/test', canonical_dir)
+        shutil.copytree('coreplugins/test', legacy_alias_dir)
+
+        clear_plugins_cache()
+        try:
+            plugin_names = [plugin.get_name() for plugin in get_plugins()]
+            self.assertIn('test_alias_plugin', plugin_names)
+            self.assertNotIn('test-alias-plugin', plugin_names)
+        finally:
+            clear_plugins_cache()
+            for path in [canonical_dir, legacy_alias_dir]:
+                if os.path.exists(path):
+                    shutil.rmtree(path)
 
 
     def test_plugin_loading(self):
