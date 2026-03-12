@@ -38,6 +38,12 @@ This file tracks the current state of this fork so future work can start from th
 - Wired the command into startup so the stack can self-heal when default node aliases drift
 - Added a regression test covering the legacy `nodeodm` hostname repair path
 
+### Mission Planner Alias Cleanup
+
+- Stopped startup warnings caused by the legacy `mission-planner` alias folder being discovered alongside the canonical `mission_planner` package
+- Plugin discovery now prefers canonical underscore-named packages when a hyphenated legacy alias exists next to them
+- Added regression coverage so hyphenated legacy aliases are skipped when a valid underscore twin is present
+
 ## What Is Working Now
 
 - Standard WebODM task processing
@@ -58,7 +64,6 @@ This file tracks the current state of this fork so future work can start from th
 ### Operations
 
 - There is an unrelated local deletion at `nodeodm/external/NodeODM` that has intentionally been left untouched
-- The `mission-planner` plugin still logs warnings during startup in this environment
 - If a stale default processing node ever persists after a restart, you can repair it manually with `docker exec webapp python manage.py syncdefaultnodes --count 1`
 
 ## Recommended Next Steps

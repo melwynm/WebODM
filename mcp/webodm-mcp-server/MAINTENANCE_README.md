@@ -10,6 +10,8 @@ This MCP package is meant to evolve with the WebODM fork in this repository.
 
 ## Minimal Workflow for Any API Change
 
+If a WebODM change does not touch `app/api/`, authentication, or returned payload shapes, you usually do not need an MCP package update.
+
 1. Confirm the WebODM endpoint exists in app/api/urls.py and the corresponding view.
 2. Add or update a handler in lib/handlers.js.
 3. Add or update the MCP schema in lib/tool-definitions.js.

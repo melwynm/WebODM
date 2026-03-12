@@ -15,6 +15,16 @@ The package is intentionally split by responsibility:
 
 ## Change Workflow
 
+### 0. Check Whether MCP Is Affected
+
+If the WebODM change is internal only, such as plugin loading, startup warnings, worker wiring, or UI behavior, and it does not change `app/api/`, auth behavior, or response shapes, the MCP package usually does not need a code update.
+
+In that case:
+
+- leave `lib/handlers.js` and `lib/tool-definitions.js` alone
+- do not touch `API_MAPPING.md`
+- optionally refresh maintenance notes if the change clarifies future MCP triage
+
 ### 1. Confirm the API Contract
 
 Before touching the MCP package, inspect:
