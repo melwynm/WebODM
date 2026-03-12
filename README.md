@@ -6,6 +6,13 @@ A user-friendly, commercial grade software for drone image processing. Generate 
 
 ![image](https://user-images.githubusercontent.com/1951843/174504753-6869e56e-7b65-4775-bb23-6c1dc256575c.png)
 
+## Fork Notes
+
+This repository includes local product work on top of upstream WebODM.
+
+- Current fork status and recent implementation notes live in [DEVELOPMENT_STATUS.md](DEVELOPMENT_STATUS.md).
+- The local Docker setup in this workspace exposes WebODM on http://localhost:8000 by default.
+- Recent fork work includes object detection fixes, monitoring/progress comparison with auto-alignment for non-RTK imagery, and default NodeODM host repair tooling.
 
 - [Getting Started](#getting-started)
    * [Recommended Machine Specs](#recommended-machine-specs)
