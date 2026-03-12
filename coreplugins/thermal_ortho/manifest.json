@@ -1,0 +1,11 @@
+{
+  "name": "thermal_ortho",
+  "description": "Thermal orthomosaic pipeline with calibrated temperature output",
+  "version": "1.0.0",
+  "author": "melwynm",
+  "email": "",
+  "repository": "",
+  "license": "MIT",
+  "tags": ["thermal", "radiometric", "orthomosaic"],
+  "experimental": false
+}

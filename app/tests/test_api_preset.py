@@ -20,7 +20,7 @@ class TestApiPreset(BootTestCase):
         Preset.objects.create(name='Global Preset #2', system=True, options=[{'test2': True}])
         Preset.objects.create(owner=superuser, name='Local Preset #1', system=False, options=[{'test3': True}])
 
-    def check_default_presets(self):
+    def test_default_presets(self):
         self.assertTrue(Preset.objects.filter(name="Default", system=True).exists())
         self.assertTrue(Preset.objects.filter(name="DSM + DTM", system=True).exists())
         self.assertTrue(Preset.objects.filter(name="High Resolution", system=True).exists())
@@ -28,6 +28,7 @@ class TestApiPreset(BootTestCase):
         self.assertTrue(Preset.objects.filter(name="Buildings", system=True).exists())
         self.assertTrue(Preset.objects.filter(name="3D Model", system=True).exists())
         self.assertTrue(Preset.objects.filter(name="Multispectral", system=True).exists())
+        self.assertTrue(Preset.objects.filter(name="Thermal", system=True).exists())
 
     def test_preset(self):
         client = APIClient()
@@ -139,6 +140,3 @@ class TestApiPreset(BootTestCase):
         client.login(username="testsuperuser", password="test1234")
         res = client.delete("/api/presets/{}/".format(system_preset.id))
         self.assertTrue(res.status_code == status.HTTP_403_FORBIDDEN)
-
-
-

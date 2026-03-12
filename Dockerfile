@@ -55,7 +55,7 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     # Python3.9, GDAL, PDAL, nginx, letsencrypt, psql
     apt-get install -y --no-install-recommends \
         python$PYTHON_VERSION python$PYTHON_VERSION-venv python$PYTHON_VERSION-dev libpq-dev build-essential git libproj-dev gdal-bin pdal \
-        libgdal-dev nginx certbot gettext-base cron postgresql-client gettext tzdata
+        libgdal-dev nginx certbot gettext-base cron postgresql-client gettext tzdata libimage-exiftool-perl
     # Create virtualenv
     python$PYTHON_VERSION -m venv $WORKDIR/venv
 EOT
@@ -136,7 +136,7 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     # Python, GDAL, PDAL, nginx, letsencrypt, psql, git
     apt-get install -y --no-install-recommends \
         python$PYTHON_VERSION python$PYTHON_VERSION-distutils gdal-bin pdal \
-        nginx certbot gettext-base cron postgresql-client gettext tzdata git
+        nginx certbot gettext-base cron postgresql-client gettext tzdata git libimage-exiftool-perl
     npm config set fund false
     npm config set audit false
     # Install webpack, webpack CLI
@@ -152,4 +152,3 @@ EOT
 COPY --from=build $WORKDIR ./
 
 VOLUME /webodm/app/media
-

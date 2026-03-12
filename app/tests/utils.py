@@ -11,37 +11,68 @@ from contextlib import contextmanager
 
 import random
 
+from pyodm import Node
+from pyodm.exceptions import OdmError
+
 from webodm import settings
 
 logger = logging.getLogger('app.logger')
+
+
+def _wait_for_processing_node(host='127.0.0.1', port=11223, timeout=20, interval=0.25):
+    deadline = time.time() + timeout
+    client = Node(host, port)
+    last_error = None
+
+    while time.time() < deadline:
+        try:
+            client.info()
+            return
+        except OdmError as exc:
+            last_error = exc
+            time.sleep(interval)
+
+    raise RuntimeError(
+        f'Processing node at {host}:{port} did not become ready within {timeout} seconds.'
+    ) from last_error
+
 
 @contextmanager
 def start_processing_node(args = []):
     current_dir = os.path.dirname(os.path.realpath(__file__))
     node_odm = subprocess.Popen(['node', 'index.js', '--port', '11223', '--test'] + args, shell=False,
-                                cwd=os.path.join(current_dir, "..", "..", "nodeodm", "external", "NodeODM"))
-    time.sleep(3)  # Wait for the server to launch
-    yield node_odm
-    node_odm.terminate()
-    time.sleep(1)  # Wait for the server to stop
+                                cwd=os.path.join(current_dir, '..', '..', 'nodeodm', 'external', 'NodeODM'))
+    try:
+        _wait_for_processing_node()
+        yield node_odm
+    finally:
+        node_odm.terminate()
+        try:
+            node_odm.wait(timeout=5)
+        except subprocess.TimeoutExpired:
+            node_odm.kill()
+            node_odm.wait(timeout=5)
+        time.sleep(1)  # Wait for the server to stop
+
 
 @contextmanager
 def start_simple_auth_server(args = []):
     current_dir = os.path.dirname(os.path.realpath(__file__))
     s = subprocess.Popen(['python', 'simple_auth_server.py'] + args, shell=False,
-                                cwd=os.path.join(current_dir, "scripts"))
+                                cwd=os.path.join(current_dir, 'scripts'))
     time.sleep(2)  # Wait for the server to launch
     yield s
     s.terminate()
     time.sleep(1)  # Wait for the server to stop
 
+
 # We need to clear previous media_root content
 # This points to the test directory, but just in case
 # we double check that the directory is indeed a test directory
 def clear_test_media_root():
-    if "_test" in settings.MEDIA_ROOT:
+    if '_test' in settings.MEDIA_ROOT:
         if os.path.exists(settings.MEDIA_ROOT):
-            logger.info("Cleaning up {}".format(settings.MEDIA_ROOT))
+            logger.info('Cleaning up {}'.format(settings.MEDIA_ROOT))
             shutil.rmtree(settings.MEDIA_ROOT)
     else:
         logger.warning("We did not remove MEDIA_ROOT because we couldn't find a _test suffix in its path.")
@@ -54,4 +85,3 @@ def catch_signal(signal):
     signal.connect(handler, dispatch_uid=str(random.random()))
     yield handler
     signal.disconnect(handler)
-

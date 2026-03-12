@@ -46,6 +46,7 @@ const api = {
   all: function() {
     return [
       new AssetDownload(_("Orthophoto"),"orthophoto.tif","far fa-image", tiffExportFormats),
+      new AssetDownload(_("Thermal Orthophoto"),"thermal_orthophoto.tif","fa fa-fire"),
       new AssetDownload(_("Orthophoto (MBTiles)"),"orthophoto.mbtiles","far fa-image"),
       new AssetDownload(_("Orthophoto (Tiles)"),"orthophoto_tiles.zip","fa fa-table"),
       new AssetDownload(_("Orthophoto Cutline"),"cutline.gpkg","fa fa-image", vectorExportFormats),
@@ -81,4 +82,3 @@ const api = {
 }
 
 export default api;
-

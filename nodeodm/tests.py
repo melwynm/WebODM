@@ -31,7 +31,7 @@ class TestClientApi(TestCase):
 
 
     def setUp(self):
-        self.api_client = Node("localhost", 11223)
+        self.api_client = Node("127.0.0.1", 11223)
 
     def tearDown(self):
         pass
@@ -99,7 +99,7 @@ class TestClientApi(TestCase):
                     return False
 
         with start_processing_node():
-            api = Node("localhost", 11223)
+            api = Node("127.0.0.1", 11223)
             online_node = ProcessingNode.objects.get(pk=1)
 
             # Can call info(), options()
@@ -219,7 +219,7 @@ class TestClientApi(TestCase):
                     return False
 
         with start_processing_node(['--token', 'test_token']):
-            api = Node("localhost", 11223, "test_token")
+            api = Node("127.0.0.1", 11223, "test_token")
             online_node = ProcessingNode.objects.get(pk=3)
 
             self.assertTrue(online_node.update_node_info(), "Could update info")

@@ -1,0 +1,93 @@
+.thermal-ortho-panel {
+  margin-top: 12px;
+  padding: 12px;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 8px;
+  background: #f9f5ef;
+}
+
+.thermal-ortho-panel__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.thermal-ortho-panel__title {
+  font-weight: 700;
+  color: #5b3a29;
+}
+
+.thermal-ortho-panel__state {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #8a5a3d;
+}
+
+.thermal-ortho-panel__body {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  flex-wrap: wrap;
+}
+
+.thermal-ortho-panel__preview {
+  width: 104px;
+  height: 104px;
+  border-radius: 6px;
+  overflow: hidden;
+  background: #2b211d;
+  flex: 0 0 auto;
+}
+
+.thermal-ortho-panel__preview img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.thermal-ortho-panel__content {
+  flex: 1 1 220px;
+  min-width: 220px;
+}
+
+.thermal-ortho-panel__message {
+  margin-bottom: 8px;
+  color: #5b3a29;
+}
+
+.thermal-ortho-panel__stats {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+  font-size: 12px;
+  color: #6a4d3f;
+  margin-bottom: 10px;
+}
+
+.thermal-ortho-panel__actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.thermal-ortho-panel__progress {
+  height: 6px;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.08);
+  overflow: hidden;
+  margin: 10px 0;
+}
+
+.thermal-ortho-panel__progress-bar {
+  height: 100%;
+  background: linear-gradient(90deg, #f68d2e, #b53d00);
+}
+
+.thermal-ortho-panel__error {
+  color: #a52400;
+  margin-bottom: 8px;
+}

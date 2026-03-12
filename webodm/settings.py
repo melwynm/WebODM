@@ -286,6 +286,9 @@ if TESTING:
 MEDIA_TMP = os.path.join(MEDIA_ROOT, 'tmp')
 MEDIA_CACHE = os.path.join(MEDIA_ROOT, 'CACHE')
 
+os.makedirs(MEDIA_TMP, exist_ok=True)
+os.makedirs(MEDIA_CACHE, exist_ok=True)
+
 FILE_UPLOAD_TEMP_DIR = MEDIA_TMP
 
 TEMPLATES = [

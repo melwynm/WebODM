@@ -64,6 +64,11 @@ class MapView extends React.Component {
   }
 
   isThermalMap = () => {
+    if (this.props.mapItems.length > 0){
+      const allHaveThermal = this.props.mapItems.every(item => item.meta && item.meta.task && item.meta.task.has_thermal);
+      if (allHaveThermal) return true;
+    }
+
     let thermalCount = 0;
     for (let item of this.props.mapItems){
       if (item.meta && item.meta.task && item.meta.task.orthophoto_bands){

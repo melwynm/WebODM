@@ -145,6 +145,7 @@ def get_tile_url(task, tile_type, query_params):
 def get_extent(task, tile_type):
     extent_map = {
         'orthophoto': task.orthophoto_extent,
+        'thermal': task.orthophoto_extent,
         'dsm': task.dsm_extent,
         'dtm': task.dtm_extent,
     }
@@ -160,6 +161,8 @@ def get_extent(task, tile_type):
 
 
 def get_raster_path(task, tile_type):
+    if tile_type == 'thermal':
+        return task.get_asset_download_path('thermal_orthophoto.tif')
     return task.get_asset_download_path(tile_type + ".tif")
 
 def get_pointcloud_path(task):
@@ -811,4 +814,3 @@ class Export(TaskNestedView):
                                                             crop=task.crop.wkt if task.crop is not None else None,
                                                             crop_reference=task.get_reference_raster() if task.crop is not None else None).task_id
                 return Response({'celery_task_id': celery_task_id, 'filename': filename})
-

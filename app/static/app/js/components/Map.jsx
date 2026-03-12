@@ -402,7 +402,13 @@ class Map extends React.Component {
         let queryParams = {};
 
         if (type == "plant"){
-          if (meta.task && meta.task.orthophoto_bands && meta.task.orthophoto_bands.length === 2){
+          if (meta.task && meta.task.has_thermal){
+            queryParams = {
+              formula: 'Celsius',
+              bands: 'L',
+              color_map: 'magma'
+            };
+          }else if (meta.task && meta.task.orthophoto_bands && meta.task.orthophoto_bands.length === 2){
             // Single band, probably thermal dataset, in any case we can't render NDVI
             // because it requires 3 bands
             queryParams = {
@@ -1267,13 +1273,3 @@ _('Example:'),
 }
 
 export default Map;
-
-
-
-
-
-
-
-
-
-

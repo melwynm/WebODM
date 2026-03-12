@@ -184,6 +184,7 @@ class Task(models.Model):
                 'deferred_compress_dir': '.'
             },
             'orthophoto.tif': os.path.join('odm_orthophoto', 'odm_orthophoto.tif'),
+            'thermal_orthophoto.tif': os.path.join('thermal_orthophoto', 'thermal_orthophoto.tif'),
             'orthophoto.png': os.path.join('odm_orthophoto', 'odm_orthophoto.png'),
             'orthophoto.mbtiles': os.path.join('odm_orthophoto', 'odm_orthophoto.mbtiles'),
             'orthophoto.kmz': os.path.join('odm_orthophoto', 'odm_orthophoto.kmz'),
@@ -1170,7 +1171,7 @@ class Task(models.Model):
                     if cursor.rowcount == 0:
                         raise NodeServerError(gettext("Unsupported SRS %(code)s. Please make sure you picked a supported SRS.") % {'code': str(raster.srid)})
 
-                # It will be implicitly transformed into the SRID of the model’s field
+                # It will be implicitly transformed into the SRID of the model's field
                 # self.field = GEOSGeometry(...)
                 setattr(self, field, GEOSGeometry(extent.wkt, srid=raster.srid))
 
@@ -1230,16 +1231,18 @@ class Task(models.Model):
         return self.assets_path("{}_tiles".format(tile_type), z, x, "{}.png".format(y))
 
     def get_tile_base_url(self, tile_type):
-        # plant is just a special case of orthophoto
         if tile_type == 'plant':
-            tile_type = 'orthophoto'
+            tile_type = 'thermal' if 'thermal_orthophoto.tif' in self.available_assets else 'orthophoto'
 
         return "/api/projects/{}/tasks/{}/{}/".format(self.project.id, self.id, tile_type)
 
     def get_map_items(self):
         types = []
-        if 'orthophoto.tif' in self.available_assets: 
+        has_thermal = 'thermal_orthophoto.tif' in self.available_assets
+
+        if 'orthophoto.tif' in self.available_assets:
             types.append('orthophoto')
+        if has_thermal or 'orthophoto.tif' in self.available_assets:
             types.append('plant')
         if 'dsm.tif' in self.available_assets: types.append('dsm')
         if 'dtm.tif' in self.available_assets: types.append('dtm')
@@ -1263,6 +1266,7 @@ class Task(models.Model):
                     'ground_control_points': ground_control_points,
                     'epsg': self.epsg,
                     'orthophoto_bands': self.orthophoto_bands,
+                    'has_thermal': has_thermal,
                     'crop': self.crop is not None,
                     'extent': self.get_extent(),
                 }

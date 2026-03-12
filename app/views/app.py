@@ -85,6 +85,7 @@ def map(request, project_pk=None, task_pk=None):
                 'title': title,
                 'public': 'false',
                 'share-buttons': 'false' if settings.DESKTOP_MODE else 'true',
+                'selected-map-type': request.GET.get('t', 'auto'),
                 'permissions': json.dumps(get_permissions(request.user, project)),
                 'project': json.dumps(projectInfo),
             }.items()

@@ -391,7 +391,8 @@ class TestApiTask(BootTransactionTestCase):
             # Can download assets
             for asset in list(task.ASSETS_MAP.keys()):
                 res = client.get("/api/projects/{}/tasks/{}/download/{}".format(project.id, task.id, asset))
-                self.assertEqual(res.status_code, status.HTTP_200_OK)
+                expected = status.HTTP_200_OK if task.is_asset_available_slow(asset) else status.HTTP_404_NOT_FOUND
+                self.assertEqual(res.status_code, expected)
 
             # We can stream downloads
             res = client.get("/api/projects/{}/tasks/{}/download/{}?_force_stream=1".format(project.id, task.id, list(task.ASSETS_MAP.keys())[0]))
@@ -1524,4 +1525,3 @@ class TestApiTask(BootTransactionTestCase):
         # Cannot filter with invalid bounding box format
         res = client.get("/api/projects/{}/tasks/?bbox=bad".format(project.id))
         self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
-

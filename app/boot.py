@@ -196,6 +196,15 @@ def add_default_presets():
         Preset.objects.update_or_create(name='Multispectral', system=True,
                                         defaults={'options': [{'name': 'auto-boundary', 'value': True},
                                                               {'name': 'radiometric-calibration', 'value': 'camera'}]})
+        Preset.objects.update_or_create(name='Thermal', system=True,
+                                        defaults={'options': [{'name': 'auto-boundary', 'value': True},
+                                                              {'name': 'radiometric-calibration', 'value': 'camera'},
+                                                              {'name': 'texturing-skip-global-seam-leveling', 'value': True},
+                                                              {'name': 'pc-quality', 'value': 'high'},
+                                                              {'name': 'dsm', 'value': True},
+                                                              {'name': 'orthophoto-compression', 'value': 'DEFLATE'},
+                                                              {'name': 'build-overviews', 'value': True},
+                                                              {'name': 'cog', 'value': True}]})
         Preset.objects.update_or_create(name='Volume Analysis', system=True,
                                         defaults={'options': [{'name': 'auto-boundary', 'value': True},
                                                               {'name': 'dsm', 'value': True},

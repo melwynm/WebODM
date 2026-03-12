@@ -95,7 +95,8 @@ class ProcessingNode(models.Model):
             return False
 
     def api_client(self, timeout=30):
-        return Node(self.hostname, self.port, self.token, timeout)
+        hostname = '127.0.0.1' if self.hostname == 'localhost' else self.hostname
+        return Node(hostname, self.port, self.token, timeout)
 
     def get_available_options_json(self, pretty=False):
         """
