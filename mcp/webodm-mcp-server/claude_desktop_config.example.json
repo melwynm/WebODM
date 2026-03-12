@@ -1,0 +1,13 @@
+{
+  "mcpServers": {
+    "webodm": {
+      "command": "node",
+      "args": [
+        "/absolute/path/to/WebODM/mcp/webodm-mcp-server/index.js"
+      ],
+      "env": {
+        "WEBODM_BASE_URL": "http://localhost:8000"
+      }
+    }
+  }
+}

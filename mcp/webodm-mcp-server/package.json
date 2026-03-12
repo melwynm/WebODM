@@ -1,0 +1,33 @@
+{
+  "name": "webodm-mcp-server",
+  "version": "1.0.0",
+  "description": "MCP server for this WebODM fork with a maintenance workflow for custom API work.",
+  "type": "module",
+  "main": "index.js",
+  "bin": {
+    "webodm-mcp-server": "./index.js"
+  },
+  "scripts": {
+    "start": "node index.js",
+    "dev": "node --watch index.js",
+    "test": "node test-connection.js",
+    "generate": "node generate-tool.js",
+    "smoke": "node --check index.js && node --check generate-tool.js && node --check test-connection.js"
+  },
+  "keywords": [
+    "mcp",
+    "webodm",
+    "photogrammetry",
+    "opendronemap",
+    "maintenance"
+  ],
+  "license": "MIT",
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.0.0",
+    "form-data": "^4.0.1",
+    "node-fetch": "^3.3.2"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
