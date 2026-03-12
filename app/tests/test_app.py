@@ -3,6 +3,8 @@ from django.test import Client
 from rest_framework import status
 from guardian.shortcuts import assign_perm
 from nodeodm.models import ProcessingNode
+from unittest.mock import patch
+from django.core.management import call_command
 
 from app.models import Project, Task
 from app.models import Setting
@@ -269,6 +271,22 @@ class TestApp(BootTestCase):
         u = User.objects.create_user(username="default_user")
         u.refresh_from_db()
         self.assertTrue(u.groups.filter(name='Default').count() == 1)
+
+    @patch('app.management.commands.syncdefaultnodes.socket.gethostbyname', side_effect=OSError())
+    def test_syncdefaultnodes_repairs_legacy_default_node(self, _mock_gethostbyname):
+        legacy_node = ProcessingNode.objects.create(hostname='nodeodm', port=3000)
+        task = Task.objects.create(
+            project=Project.objects.get(owner=User.objects.get(username="testuser")),
+            processing_node=legacy_node,
+            auto_processing_node=False
+        )
+
+        call_command('syncdefaultnodes', count=1)
+
+        task.refresh_from_db()
+        self.assertEqual(task.processing_node.hostname, 'webodm-node-odm-1')
+        self.assertEqual(task.processing_node.label, 'node-odm-1')
+        self.assertFalse(ProcessingNode.objects.filter(hostname='nodeodm', port=3000).exists())
 
     def test_projects(self):
         # Get a normal user
