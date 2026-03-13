@@ -1,14 +1,23 @@
 # Examples
 
-## 1. Authenticate and inspect projects
+## 1. Bootstrap a durable MCP session
 
-1. Call webodm_authenticate with your username and password.
-2. Call webodm_list_projects.
-3. Call webodm_get_project for the project you care about.
+1. Call `webodm_authenticate` with your username and password.
+2. Call `webodm_get_api_token` with:
+
+```json
+{
+  "store_for_session": true
+}
+```
+
+3. The running MCP session now uses `Authorization: Token <api_key>` for later calls.
+4. Call `webodm_list_projects`.
+5. Call `webodm_get_project` for the project you care about.
 
 ## 2. Find completed tasks in a project
 
-1. Call webodm_list_tasks with:
+1. Call `webodm_list_tasks` with:
 
 ```json
 {
@@ -20,7 +29,7 @@
 }
 ```
 
-2. Inspect each task with webodm_get_task.
+2. Inspect each task with `webodm_get_task`.
 
 ## 3. Create a new task from local images
 
@@ -52,8 +61,8 @@
 }
 ```
 
-2. Upload files with webodm_upload_task_files.
-3. Finalize with webodm_commit_task_upload.
+2. Upload files with `webodm_upload_task_files`.
+3. Finalize with `webodm_commit_task_upload`.
 
 ## 5. Get incremental task output
 
@@ -85,9 +94,11 @@
 }
 ```
 
-If WebODM returns a celery_task_id, poll it with webodm_check_worker_task.
+If WebODM returns a `celery_task_id`, poll it with `webodm_check_worker_task`.
 
 ## 7. Build a direct authenticated asset URL
+
+Use this only when the current MCP session is still using JWT/Bearer auth:
 
 ```json
 {
@@ -98,8 +109,21 @@ If WebODM returns a celery_task_id, poll it with webodm_check_worker_task.
 }
 ```
 
-## 8. Start a monitoring comparison
+If the session is using a permanent API key, use the returned URL and send `Authorization: Token <api_key>` yourself.
 
-1. Call webodm_get_monitoring_candidates.
+## 8. Rotate the permanent API token safely
+
+```json
+{
+  "confirm_invalidate": true,
+  "store_for_session": true
+}
+```
+
+Call that with `webodm_regenerate_api_token`. The old permanent token stops working immediately.
+
+## 9. Start a monitoring comparison
+
+1. Call `webodm_get_monitoring_candidates`.
 2. Choose a candidate task ID.
-3. Call webodm_create_monitoring_compare with compare_task set to that task ID.
+3. Call `webodm_create_monitoring_compare` with `compare_task` set to that task ID.

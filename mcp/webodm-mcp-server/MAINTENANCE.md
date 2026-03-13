@@ -8,10 +8,10 @@ Keep the MCP layer synchronized with the WebODM API in this repository without t
 
 The package is intentionally split by responsibility:
 
-- index.js: MCP bootstrap only.
-- lib/common.js: shared auth, HTTP, schema, and multipart helpers.
-- lib/tool-definitions.js: user-facing MCP tool metadata.
-- lib/handlers.js: endpoint-specific logic.
+- `index.js`: MCP bootstrap only.
+- `lib/common.js`: shared auth, HTTP, schema, and multipart helpers.
+- `lib/tool-definitions.js`: user-facing MCP tool metadata.
+- `lib/handlers.js`: endpoint-specific logic.
 
 ## Change Workflow
 
@@ -29,10 +29,16 @@ In that case:
 
 Before touching the MCP package, inspect:
 
-- app/api/urls.py
-- the target view or viewset in app/api/
-- any relevant tests in app/tests/
-- the public docs in slate/source/includes/reference/
+- `app/api/urls.py`
+- the target view or viewset in `app/api/`
+- any relevant tests in `app/tests/`
+- the public docs in `slate/source/includes/reference/`
+
+If the change touches authentication, also inspect:
+
+- `app/auth/`
+- `webodm/settings.py`
+- `app/models/profile.py` if the token lifecycle changed
 
 ### 2. Decide Whether the Existing Tool Should Change
 
@@ -42,14 +48,15 @@ Ask these questions:
 - Did the request body change?
 - Did the response shape change?
 - Is this a new endpoint that deserves a new MCP tool?
+- Did the auth scheme or bootstrap flow change?
 
 If only the request or response changed, update the existing handler and tool schema. Avoid creating duplicates.
 
 ### 3. Update the Handler
 
-Make the behavior change in lib/handlers.js first. Keep handler logic small and move any reusable logic into lib/common.js.
+Make the behavior change in `lib/handlers.js` first. Keep handler logic small and move any reusable logic into `lib/common.js`.
 
-Examples of changes that belong in common.js:
+Examples of changes that belong in `common.js`:
 
 - shared request helpers
 - auth behavior
@@ -59,7 +66,7 @@ Examples of changes that belong in common.js:
 
 ### 4. Update the Tool Schema
 
-Reflect the MCP-visible argument contract in lib/tool-definitions.js.
+Reflect the MCP-visible argument contract in `lib/tool-definitions.js`.
 
 A good schema change should:
 
@@ -69,7 +76,7 @@ A good schema change should:
 
 ### 5. Refresh the Mapping
 
-Update API_MAPPING.md so future changes have one source of truth.
+Update `API_MAPPING.md` so future changes have one source of truth.
 
 ### 6. Verify
 
@@ -86,16 +93,16 @@ npm test
 npm run generate
 ```
 
-This creates a markdown snippet in generated/ with a candidate schema block and a handler stub.
+This creates a markdown snippet in `generated/` with a candidate schema block and a handler stub.
 
 ### Manual checklist
 
-1. Add a handler in lib/handlers.js.
-2. Add the tool metadata in lib/tool-definitions.js.
-3. Add a short note to API_MAPPING.md.
-4. Add or update an example in EXAMPLES.md if the tool is user-facing.
-5. Run npm run smoke.
-6. Run npm test.
+1. Add a handler in `lib/handlers.js`.
+2. Add the tool metadata in `lib/tool-definitions.js`.
+3. Add a short note to `API_MAPPING.md`.
+4. Add or update an example in `EXAMPLES.md` if the tool is user-facing.
+5. Run `npm run smoke`.
+6. Run `npm test`.
 
 ## Editing Existing Tools Safely
 
@@ -105,30 +112,39 @@ If you can extend a payload object or query object without renaming a tool, do t
 
 ### Preserve auth behavior
 
-This fork uses Bearer tokens. Do not switch the Authorization header back to JWT.
+This fork accepts both JWT/Bearer tokens and permanent `Token` API keys. Keep the active auth scheme explicit, do not send API keys as `Bearer`, and do not assume `include_jwt_query` works for token-auth sessions.
 
 ### Preserve project-list behavior
 
-This fork returns an array from /api/projects/ when page is omitted. Do not assume pagination unless page is provided.
+This fork returns an array from `/api/projects/` when `page` is omitted. Do not assume pagination unless `page` is provided.
 
 ## Common Scenarios
 
 ### New task action endpoint
 
-Example: POST /api/projects/{project_id}/tasks/{task_id}/requeue/
+Example: `POST /api/projects/{project_id}/tasks/{task_id}/requeue/`
 
-1. Add a handler calling requestJson(..., { method: "POST" }).
-2. Add the MCP schema with project_id and task_id.
-3. Map it in API_MAPPING.md.
+1. Add a handler calling `requestJson(..., { method: "POST" })`.
+2. Add the MCP schema with `project_id` and `task_id`.
+3. Map it in `API_MAPPING.md`.
 4. Verify against a real instance.
 
 ### New project metadata field
 
 If the field belongs to the serializer, update the project create and update payload descriptions. If it only works through the special edit endpoint, document that in the edit-project tool.
 
+### New auth bootstrap or token endpoint
+
+If WebODM adds or changes `/api/token-auth/`, `/api/token/`, or permanent token handling:
+
+1. Update `lib/common.js` first.
+2. Add or update the MCP auth tool in `lib/handlers.js`.
+3. Refresh auth notes in `README.md`, `TROUBLESHOOTING.md`, and `API_MAPPING.md`.
+4. Re-test both JWT bootstrap and permanent-token requests.
+
 ### New export option
 
-If export_task_asset already accepts a flexible payload, you might only need a docs update. Add the new payload field to API_MAPPING.md and EXAMPLES.md.
+If `webodm_export_task_asset` already accepts a flexible payload, you might only need a docs update. Add the new payload field to `API_MAPPING.md` and `EXAMPLES.md`.
 
 ## Breaking Change Checklist
 
@@ -136,8 +152,8 @@ When WebODM changes an endpoint path or removes a field:
 
 1. Update the handler.
 2. Update the schema.
-3. Add a note in API_MAPPING.md under Notes.
-4. Update README.md or TROUBLESHOOTING.md if users will notice the change.
+3. Add a note in `API_MAPPING.md` under Notes.
+4. Update `README.md` or `TROUBLESHOOTING.md` if users will notice the change.
 
 ## Release Notes Suggestion
 

@@ -8,7 +8,7 @@ from django.shortcuts import render, redirect, get_object_or_404
 from guardian.shortcuts import get_objects_for_user
 
 from nodeodm.models import ProcessingNode
-from app.models import Project, Task
+from app.models import Profile, Project, Task
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.utils.translation import gettext as _
@@ -119,6 +119,15 @@ def model_display(request, project_pk=None, task_pk=None):
 def about(request):
     return render(request, 'app/about.html', {'title': _('About'), 'version': settings.VERSION})
 
+
+@login_required
+def account_token(request):
+    profile, _created = Profile.objects.get_or_create(user=request.user)
+    return render(request, 'app/account_token.html', {
+        'title': _('API Token'),
+        'masked_api_key': profile.masked_api_key(),
+    })
+
 @login_required
 def processing_node(request, processing_node_id):
     pn = get_object_or_404(ProcessingNode, pk=processing_node_id)
@@ -171,3 +180,5 @@ def handler404(request, exception):
 
 def handler500(request):
     return render(request, '500.html', status=500)
+
+

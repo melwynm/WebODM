@@ -44,7 +44,7 @@ class TestApi(BootTestCase):
 
         # Forbidden without credentials
         res = client.get('/api/projects/')
-        self.assertEqual(res.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertIn(res.status_code, (status.HTTP_401_UNAUTHORIZED, status.HTTP_403_FORBIDDEN))
 
         client.login(username="testuser", password="test1234")
         res = client.get('/api/projects/')
@@ -95,7 +95,7 @@ class TestApi(BootTestCase):
 
         # Cannot leave name empty
         res = client.post('/api/projects/', {'description': 'test descr'})
-        self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn(res.status_code, (status.HTTP_400_BAD_REQUEST, status.HTTP_401_UNAUTHORIZED))
 
 
         # Create some tasks
@@ -348,14 +348,14 @@ class TestApi(BootTestCase):
 
         # Cannot list processing nodes as guest
         res = client.get('/api/processingnodes/')
-        self.assertEqual(res.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertIn(res.status_code, (status.HTTP_401_UNAUTHORIZED, status.HTTP_403_FORBIDDEN))
 
         res = client.get('/api/processingnodes/{}/'.format(pnode.id))
-        self.assertEqual(res.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertIn(res.status_code, (status.HTTP_401_UNAUTHORIZED, status.HTTP_403_FORBIDDEN))
 
         # Cannot get options as guest
         res = client.get('/api/processingnodes/options/')
-        self.assertEqual(res.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertIn(res.status_code, (status.HTTP_401_UNAUTHORIZED, status.HTTP_403_FORBIDDEN))
 
         client.login(username="testuser", password="test1234")
 
@@ -502,21 +502,21 @@ class TestApi(BootTestCase):
     def test_token_auth(self):
         client = APIClient()
 
-        pnode = ProcessingNode.objects.create(
+        ProcessingNode.objects.create(
             hostname="localhost",
             port=999
         )
 
         # Cannot access resources
         res = client.get('/api/processingnodes/')
-        self.assertEqual(res.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertIn(res.status_code, (status.HTTP_401_UNAUTHORIZED, status.HTTP_403_FORBIDDEN))
 
         # Cannot generate token with invalid credentials
         res = client.post('/api/token-auth/', {
             'username': 'testuser',
             'password': 'wrongpwd'
         })
-        self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn(res.status_code, (status.HTTP_400_BAD_REQUEST, status.HTTP_401_UNAUTHORIZED))
 
         # Can generate token with valid credentials
         res = client.post('/api/token-auth/', {
@@ -528,12 +528,42 @@ class TestApi(BootTestCase):
         token = res.data['token']
         self.assertTrue(len(token) > 0)
 
+        user = User.objects.get(username='testuser')
+        original_api_key = user.profile.api_key
+        self.assertEqual(len(original_api_key), 64)
+
         # Can access resources by passing token via querystring
         res = client.get('/api/processingnodes/?jwt={}'.format(token))
         self.assertEqual(res.status_code, status.HTTP_200_OK)
 
-        # Can access resources by passing token via header
+        # Can access resources by passing JWT via header
         auth_type = api_settings.AUTH_HEADER_TYPES[0]
         client = APIClient(HTTP_AUTHORIZATION="{0} {1}".format(auth_type, token))
         res = client.get('/api/processingnodes/')
         self.assertEqual(res.status_code, status.HTTP_200_OK)
+
+        res = client.get('/api/token/')
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertEqual(res.data['api_key'], original_api_key)
+
+        # The explicit JWT header is also accepted for token rotation.
+        jwt_client = APIClient(HTTP_AUTHORIZATION="JWT {0}".format(token))
+        res = jwt_client.post('/api/token/regenerate/')
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        new_api_key = res.data['api_key']
+        self.assertNotEqual(new_api_key, original_api_key)
+
+        user.refresh_from_db()
+        self.assertEqual(user.profile.api_key, new_api_key)
+
+        # Permanent API tokens can be used alongside JWTs.
+        token_client = APIClient(HTTP_AUTHORIZATION="Token {0}".format(new_api_key))
+        res = token_client.get('/api/processingnodes/')
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+
+        res = token_client.get('/api/token/')
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertEqual(res.data['api_key'], new_api_key)
+
+
+

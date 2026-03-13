@@ -11,7 +11,7 @@ import {
 export const TOOL_DEFINITIONS = [
   {
     name: "webodm_authenticate",
-    description: "Authenticate against WebODM and store the returned access token in memory for later tools.",
+    description: "Authenticate against WebODM with username/password and store the returned JWT in memory for later tools.",
     inputSchema: schema(
       {
         username: {
@@ -24,6 +24,24 @@ export const TOOL_DEFINITIONS = [
         },
       },
       ["username", "password"]
+    ),
+  },
+  {
+    name: "webodm_get_api_token",
+    description: "Fetch the current user's permanent WebODM API token. Optionally store it in memory so later tools use Token auth instead of the current JWT.",
+    inputSchema: schema({
+      store_for_session: booleanField("Whether to replace the current in-memory auth session with the returned permanent API token."),
+    }),
+  },
+  {
+    name: "webodm_regenerate_api_token",
+    description: "Regenerate the current user's permanent API token. This immediately invalidates the old token, and by default the new token becomes the MCP session credential.",
+    inputSchema: schema(
+      {
+        confirm_invalidate: booleanField("Must be true to confirm that the old permanent token will be invalidated."),
+        store_for_session: booleanField("Set false to avoid replacing the current in-memory auth session with the new API token."),
+      },
+      ["confirm_invalidate"]
     ),
   },
   {
@@ -295,7 +313,7 @@ export const TOOL_DEFINITIONS = [
         task_id: numberField("Task ID."),
         asset: stringField("Asset filename, for example all.zip or textured_model.zip."),
         filename: stringField("Optional download filename override."),
-        include_jwt_query: booleanField("Whether to include the current token as a jwt query parameter in the returned authenticated_url."),
+        include_jwt_query: booleanField("Whether to include the current JWT as a jwt query parameter in the returned authenticated_url. This only works when the current session is using JWT/Bearer auth."),
       },
       ["project_id", "task_id", "asset"]
     ),
@@ -308,7 +326,7 @@ export const TOOL_DEFINITIONS = [
         project_id: numberField("Project ID."),
         task_id: numberField("Task ID."),
         asset_path: stringField("Unsafe asset path segment accepted by WebODM, for example potree/metadata.json."),
-        include_jwt_query: booleanField("Whether to include the current token as a jwt query parameter in the returned authenticated_url."),
+        include_jwt_query: booleanField("Whether to include the current JWT as a jwt query parameter in the returned authenticated_url. This only works when the current session is using JWT/Bearer auth."),
       },
       ["project_id", "task_id", "asset_path"]
     ),
@@ -501,7 +519,7 @@ export const TOOL_DEFINITIONS = [
       {
         celery_task_id: stringField("Celery task ID."),
         filename: stringField("Optional filename query parameter."),
-        include_jwt_query: booleanField("Whether to include the current token as a jwt query parameter in the returned authenticated_url."),
+        include_jwt_query: booleanField("Whether to include the current JWT as a jwt query parameter in the returned authenticated_url. This only works when the current session is using JWT/Bearer auth."),
       },
       ["celery_task_id"]
     ),
@@ -535,3 +553,4 @@ export const TOOL_DEFINITIONS = [
     ),
   },
 ];
+

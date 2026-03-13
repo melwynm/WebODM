@@ -5,12 +5,16 @@ import shutil
 
 from django.contrib import admin
 from django.contrib import messages
-from django.http import HttpResponseRedirect
+from django.http import HttpResponseRedirect, HttpResponseNotAllowed, JsonResponse
 from django.urls import re_path, reverse
 from django.utils.html import format_html
 from guardian.admin import GuardedModelAdmin
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 from django.contrib.auth.models import User
+from django.core.exceptions import PermissionDenied
+from django.shortcuts import get_object_or_404
+from django.template.loader import render_to_string
+from django.utils.safestring import mark_safe
 
 from app.models import PluginDatum
 from app.models import Preset
@@ -266,20 +270,75 @@ admin.site.register(Plugin, PluginAdmin)
 class ProfileInline(admin.StackedInline):
     model = Profile
     can_delete = False
+    extra = 0
+    fields = ('quota', 'api_token_management')
+    readonly_fields = ('api_token_management',)
 
-    # Hide "quota" profile field when adding (show during editing)
+    class Media:
+        css = {'all': ('app/css/api-token-management.css',)}
+        js = ('app/js/api-token-management.js',)
+
     def get_fields(self, request, obj=None):
         if obj is None:
-            fields = list(super().get_fields(request, obj))
-            fields.remove('quota')
-            return fields
-        else:
-            return super().get_fields(request, obj)
+            return ['api_token_management']
+        return list(self.fields)
+
+    def api_token_management(self, obj):
+        if obj is None or not getattr(obj, 'user_id', None):
+            return _("Save the user account first to generate an API token.")
+
+        return mark_safe(render_to_string('app/includes/api_token_manager.html', {
+            'masked_api_key': obj.masked_api_key(),
+            'fetch_url': reverse('admin:auth_user_api_token', args=[obj.user_id]),
+            'regenerate_url': reverse('admin:auth_user_api_token_regenerate', args=[obj.user_id]),
+        }))
+
+    api_token_management.short_description = _("API Token")
+
 
 class UserAdmin(BaseUserAdmin):
     inlines = [ProfileInline]
+
+    def get_urls(self):
+        urls = super().get_urls()
+        custom_urls = [
+            re_path(
+                r'^(?P<user_id>[^/.]+)/api-token/$',
+                self.admin_site.admin_view(self.api_token_view),
+                name='auth_user_api_token',
+            ),
+            re_path(
+                r'^(?P<user_id>[^/.]+)/api-token/regenerate/$',
+                self.admin_site.admin_view(self.regenerate_api_token_view),
+                name='auth_user_api_token_regenerate',
+            ),
+        ]
+        return custom_urls + urls
+
+    def get_token_user(self, request, user_id):
+        user = get_object_or_404(User, pk=user_id)
+        if not self.has_change_permission(request, user):
+            raise PermissionDenied
+        return user
+
+    def api_token_view(self, request, user_id, *args, **kwargs):
+        user = self.get_token_user(request, user_id)
+        profile, _created = Profile.objects.get_or_create(user=user)
+        return JsonResponse({'api_key': profile.api_key})
+
+    def regenerate_api_token_view(self, request, user_id, *args, **kwargs):
+        if request.method != 'POST':
+            return HttpResponseNotAllowed(['POST'])
+
+        user = self.get_token_user(request, user_id)
+        profile, _created = Profile.objects.get_or_create(user=user)
+        profile.regenerate_api_key()
+        return JsonResponse({'api_key': profile.api_key})
 
 
 # Re-register UserAdmin
 admin.site.unregister(User)
 admin.site.register(User, UserAdmin)
+
+
+

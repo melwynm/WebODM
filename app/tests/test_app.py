@@ -79,6 +79,12 @@ class TestApp(BootTestCase):
         # We should have a project created from the dashboard
         self.assertTrue(Project.objects.count() >= 1)
 
+        res = c.get('/account/token/')
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertTemplateUsed(res, 'app/account_token.html')
+        self.assertIn(User.objects.get(username=self.credentials['username']).profile.masked_api_key(), res.content.decode("utf-8"))
+        self.assertIn('/api/token/regenerate/', res.content.decode("utf-8"))
+
         # Can access API page
         res = c.get('/api/')
         self.assertTrue(res.status_code == status.HTTP_200_OK)
@@ -242,6 +248,12 @@ class TestApp(BootTestCase):
             res = c.get(url)
             self.assertEqual(res.status_code, status.HTTP_200_OK)
 
+        managed_user = User.objects.get(username='testuser')
+        res = c.get('/admin/auth/user/{}/change/'.format(managed_user.id))
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertIn('API Token', res.content.decode("utf-8"))
+        self.assertIn(managed_user.profile.masked_api_key(), res.content.decode("utf-8"))
+
         # Cannot access dev tools (not in dev mode)
         settings.DEV = False
         self.assertEqual(c.get('/dev-tools/').status_code, status.HTTP_404_NOT_FOUND)
@@ -330,3 +342,4 @@ class TestApp(BootTestCase):
 
         task.options = [{'name': 'test', 'value': 1}, {"invalid": 1}]
         self.assertRaises(ValidationError, task.save)
+

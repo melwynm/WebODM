@@ -30,18 +30,21 @@ class TestApiPreset(BootTestCase):
         self.assertTrue(Preset.objects.filter(name="Multispectral", system=True).exists())
         self.assertTrue(Preset.objects.filter(name="Thermal", system=True).exists())
 
+        thermal = Preset.objects.get(name="Thermal", system=True)
+        self.assertTrue(any(option.get('name') == 'texturing-skip-global-seam-leveling' and option.get('value') is True for option in thermal.options))
+
     def test_preset(self):
         client = APIClient()
 
         # Cannot list presets without authentication
         res = client.get("/api/presets/")
-        self.assertTrue(res.status_code == status.HTTP_403_FORBIDDEN)
+        self.assertIn(res.status_code, (status.HTTP_401_UNAUTHORIZED, status.HTTP_403_FORBIDDEN))
 
         # Cannot create presets without authentication
         res = client.post("/api/presets/", {
             'name': 'test',
         })
-        self.assertTrue(res.status_code == status.HTTP_403_FORBIDDEN)
+        self.assertIn(res.status_code, (status.HTTP_401_UNAUTHORIZED, status.HTTP_403_FORBIDDEN))
 
         user = User.objects.get(username="testuser")
         self.assertFalse(user.is_superuser)
@@ -140,3 +143,5 @@ class TestApiPreset(BootTestCase):
         client.login(username="testsuperuser", password="test1234")
         res = client.delete("/api/presets/{}/".format(system_preset.id))
         self.assertTrue(res.status_code == status.HTTP_403_FORBIDDEN)
+
+

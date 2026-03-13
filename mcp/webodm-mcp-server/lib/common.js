@@ -4,7 +4,12 @@ import FormData from "form-data";
 import fetch from "node-fetch";
 
 export const WEBODM_BASE_URL = normalizeBaseUrl(process.env.WEBODM_BASE_URL || "http://localhost:8000");
-let authToken = process.env.WEBODM_TOKEN || null;
+export const AUTH_SCHEMES = {
+  BEARER: "Bearer",
+  TOKEN: "Token",
+};
+
+let authState = getInitialAuthState();
 
 export const TASK_STATUS = {
   10: {
@@ -154,16 +159,23 @@ export function compactObject(value) {
 }
 
 export function getAuthToken() {
-  return authToken;
+  return authState?.token || null;
 }
 
-export function setAuthToken(token) {
-  authToken = token;
+export function getAuthScheme() {
+  return authState?.scheme || null;
+}
+
+export function setAuthToken(token, scheme = AUTH_SCHEMES.BEARER) {
+  authState = {
+    token,
+    scheme: normalizeAuthScheme(scheme),
+  };
 }
 
 export function ensureTokenAvailable() {
-  if (!authToken) {
-    throw new Error("No WebODM token is loaded. Call webodm_authenticate first or set WEBODM_TOKEN.");
+  if (!authState?.token) {
+    throw new Error("No WebODM credentials are loaded. Call webodm_authenticate first or set WEBODM_API_KEY / WEBODM_TOKEN.");
   }
 }
 
@@ -226,9 +238,12 @@ export function buildUrlResult(endpoint, query, includeJwtQuery, requiresAuth = 
 
   if (includeJwtQuery) {
     ensureTokenAvailable();
+    if (getAuthScheme() !== AUTH_SCHEMES.BEARER) {
+      throw new Error("include_jwt_query only works when the current MCP session is using a JWT/Bearer token.");
+    }
     const authenticatedUrl = buildUrl(endpoint, {
       ...(query || {}),
-      jwt: authToken,
+      jwt: getAuthToken(),
     });
     result.authenticated_url = authenticatedUrl.toString();
   }
@@ -238,12 +253,15 @@ export function buildUrlResult(endpoint, query, includeJwtQuery, requiresAuth = 
 
 export async function uploadMultipart(endpoint, form) {
   const url = buildUrl(endpoint);
+  const headers = {
+    ...form.getHeaders(),
+  };
+
+  applyAuthHeader(headers);
+
   const response = await fetch(url, {
     method: "POST",
-    headers: {
-      Authorization: `Bearer ${authToken}`,
-      ...form.getHeaders(),
-    },
+    headers,
     body: form,
   });
 
@@ -267,8 +285,8 @@ export async function requestJson(endpoint, options = {}) {
   const url = buildUrl(endpoint, query);
   let body;
 
-  if (!skipAuth && authToken) {
-    requestHeaders.Authorization = `Bearer ${authToken}`;
+  if (!skipAuth) {
+    applyAuthHeader(requestHeaders);
   }
 
   if (json !== undefined) {
@@ -300,13 +318,16 @@ export async function requestJson(endpoint, options = {}) {
 }
 
 export async function parseResponse(response, url, responseType) {
-  if (response.status === 403) {
+  if (response.status === 401 || response.status === 403) {
     const maybeJson = await safeJson(response);
     if (maybeJson && maybeJson.detail === "Signature has expired.") {
       throw new Error("WebODM access token has expired. Authenticate again.");
     }
+    if (maybeJson && maybeJson.detail === "Invalid API token") {
+      throw new Error("WebODM API token was rejected. If you regenerated it, load the new token before retrying.");
+    }
     if (maybeJson) {
-      throw new Error(`WebODM request failed (403) for ${url}: ${JSON.stringify(maybeJson)}`);
+      throw new Error(`WebODM request failed (${response.status}) for ${url}: ${JSON.stringify(maybeJson)}`);
     }
   }
 
@@ -377,4 +398,45 @@ export function toolError(message) {
 
 export function createMultipartForm() {
   return new FormData();
+}
+
+function normalizeAuthScheme(value) {
+  const normalized = String(value || AUTH_SCHEMES.BEARER).trim().toLowerCase();
+
+  if (normalized === "bearer" || normalized === "jwt") {
+    return AUTH_SCHEMES.BEARER;
+  }
+
+  if (normalized === "token") {
+    return AUTH_SCHEMES.TOKEN;
+  }
+
+  throw new Error(`Unsupported WebODM auth scheme: ${value}`);
+}
+
+function getInitialAuthState() {
+  if (process.env.WEBODM_API_KEY) {
+    return {
+      token: process.env.WEBODM_API_KEY,
+      scheme: AUTH_SCHEMES.TOKEN,
+    };
+  }
+
+  if (process.env.WEBODM_TOKEN) {
+    return {
+      token: process.env.WEBODM_TOKEN,
+      scheme: normalizeAuthScheme(process.env.WEBODM_TOKEN_TYPE || AUTH_SCHEMES.BEARER),
+    };
+  }
+
+  return null;
+}
+
+function applyAuthHeader(headers) {
+  if (!authState?.token || headers.Authorization) {
+    return headers;
+  }
+
+  headers.Authorization = `${authState.scheme} ${authState.token}`;
+  return headers;
 }

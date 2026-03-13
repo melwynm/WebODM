@@ -1,0 +1,64 @@
+.api-token-manager {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    max-width: 100%;
+}
+
+.api-token-manager__input {
+    width: min(32rem, 100%);
+    max-width: 100%;
+    min-height: 34px;
+    padding: 6px 10px;
+    border: 1px solid #c7c7c7;
+    border-radius: 4px;
+    background: #fff;
+    color: #333;
+    font-family: Consolas, Monaco, monospace;
+}
+
+.api-token-manager__buttons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.api-token-manager__button {
+    min-height: 34px;
+    padding: 6px 12px;
+    border: 1px solid #c7c7c7;
+    border-radius: 4px;
+    background: #f7f7f7;
+    color: #333;
+    cursor: pointer;
+}
+
+.api-token-manager__button:hover:not(:disabled) {
+    background: #ececec;
+}
+
+.api-token-manager__button:disabled {
+    cursor: wait;
+    opacity: 0.7;
+}
+
+.api-token-manager__button--danger {
+    border-color: #b94a48;
+    color: #b94a48;
+}
+
+.api-token-manager__status {
+    color: #666;
+    font-size: 12px;
+}
+
+.api-token-manager__status.is-error {
+    color: #b94a48;
+}
+
+@media (max-width: 767px) {
+    .api-token-manager__input {
+        width: 100%;
+    }
+}

@@ -7,9 +7,9 @@ cd mcp/webodm-mcp-server
 npm install
 ```
 
-## 2. Set Your WebODM URL
+## 2. Set Your WebODM URL and Optional Auth
 
-Copy .env.example to .env if you want a local file, or set WEBODM_BASE_URL in your MCP client config.
+Copy `.env.example` to `.env` if you want a local file, or set these values in your MCP client config.
 
 Default value:
 
@@ -17,17 +17,33 @@ Default value:
 WEBODM_BASE_URL=http://localhost:8000
 ```
 
+Recommended for long-lived automation:
+
+```bash
+WEBODM_API_KEY=your_permanent_api_key_here
+```
+
+If you do not have a permanent API key yet, you can start with `webodm_authenticate` and then switch the running session by calling:
+
+```json
+{
+  "store_for_session": true
+}
+```
+
+with `webodm_get_api_token`.
+
 ## 3. Verify the Connection
 
 ```bash
 npm test
 ```
 
-This prompts for your username and password, requests a token from /api/token-auth/, and checks a few core endpoints.
+This prompts for your username and password, requests a JWT from `/api/token-auth/`, verifies `/api/token/`, then checks a few core endpoints using permanent `Token` auth.
 
 ## 4. Register the MCP Server
 
-Use the example in claude_desktop_config.example.json and point it at:
+Use the example in `claude_desktop_config.example.json` and point it at:
 
 ```text
 <absolute-path-to-WebODM>/mcp/webodm-mcp-server/index.js
@@ -37,10 +53,13 @@ Use the example in claude_desktop_config.example.json and point it at:
 
 A typical first flow is:
 
-1. webodm_authenticate
-2. webodm_list_projects
-3. webodm_list_tasks
-4. webodm_get_task
+1. `webodm_authenticate`
+2. `webodm_get_api_token`
+3. `webodm_list_projects`
+4. `webodm_list_tasks`
+5. `webodm_get_task`
+
+If your MCP client already injects `WEBODM_API_KEY`, you can skip `webodm_authenticate` and `webodm_get_api_token`.
 
 ## Useful Commands
 

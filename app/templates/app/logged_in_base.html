@@ -54,6 +54,7 @@
                     {% endwith %}
                 {% endif %}
                 <li class="divider"></li>
+                <li><a href="{% url 'account_token' %}"><i class="fa fa-key fa-fw"></i> {% trans 'API Token' %}</a></li>
                 <li><a href="/logout/"><i class="fa fa-sign-out-alt fa-fw"></i> {% trans 'Logout' %}</a>
                 </li>
             </ul>
@@ -180,3 +181,4 @@
     </section>
 </div>
 {% endblock %}
+

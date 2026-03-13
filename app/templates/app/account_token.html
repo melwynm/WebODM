@@ -1,0 +1,27 @@
+{% extends "app/logged_in_base.html" %}
+{% load i18n static %}
+
+{% block extra-headers %}
+    {{ block.super }}
+    <link rel="stylesheet" href="{% static 'app/css/api-token-management.css' %}">
+    <script src="{% static 'app/js/api-token-management.js' %}" defer></script>
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8 col-lg-7">
+        <div class="panel panel-default">
+            <div class="panel-heading">
+                <h3 class="panel-title">{% trans 'API Token' %}</h3>
+            </div>
+            <div class="panel-body">
+                <p>{% trans 'Use this permanent token for integrations that should not depend on expiring JWT logins.' %}</p>
+                <p><code>Authorization: Token &lt;your_api_key&gt;</code></p>
+                {% url 'api_token' as fetch_url %}
+                {% url 'api_token_regenerate' as regenerate_url %}
+                {% include 'app/includes/api_token_manager.html' with masked_api_key=masked_api_key fetch_url=fetch_url regenerate_url=regenerate_url %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

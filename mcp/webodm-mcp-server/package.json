@@ -1,7 +1,7 @@
 {
   "name": "webodm-mcp-server",
   "version": "1.0.0",
-  "description": "MCP server for this WebODM fork with a maintenance workflow for custom API work.",
+  "description": "MCP server for this WebODM fork with JWT and permanent API token support.",
   "type": "module",
   "main": "index.js",
   "bin": {
@@ -12,7 +12,7 @@
     "dev": "node --watch index.js",
     "test": "node test-connection.js",
     "generate": "node generate-tool.js",
-    "smoke": "node --check index.js && node --check generate-tool.js && node --check test-connection.js"
+    "smoke": "node --check index.js && node --check generate-tool.js && node --check test-connection.js && node --check lib/common.js && node --check lib/handlers.js && node --check lib/tool-definitions.js"
   },
   "keywords": [
     "mcp",
@@ -31,3 +31,4 @@
     "node": ">=18.0.0"
   }
 }
+

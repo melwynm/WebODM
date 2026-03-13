@@ -2,11 +2,18 @@
 
 This file maps the current WebODM API in this repository to the MCP tools in this package.
 
-## Projects
+## Authentication
 
 | WebODM Endpoint | MCP Tool |
 | --- | --- |
 | POST /api/token-auth/ | webodm_authenticate |
+| GET /api/token/ | webodm_get_api_token |
+| POST /api/token/regenerate/ | webodm_regenerate_api_token |
+
+## Projects
+
+| WebODM Endpoint | MCP Tool |
+| --- | --- |
 | GET /api/projects/ | webodm_list_projects |
 | GET /api/projects/{id}/ | webodm_get_project |
 | POST /api/projects/ | webodm_create_project |
@@ -84,11 +91,14 @@ This file maps the current WebODM API in this repository to the MCP tools in thi
 
 These tools do not hit WebODM directly:
 
-- webodm_get_task_status_info
-- webodm_get_pending_action_info
+- `webodm_get_task_status_info`
+- `webodm_get_pending_action_info`
 
 ## Notes
 
-- This fork uses Bearer authentication after /api/token-auth/ returns a token.
-- /api/projects/ may return a plain array when page is not provided.
+- This fork accepts both `Authorization: Bearer <jwt>` and `Authorization: Token <api_key>`.
+- The MCP package can bootstrap with `webodm_authenticate` and then switch the live session to permanent auth with `webodm_get_api_token`.
+- `webodm_regenerate_api_token` uses `POST /api/token/regenerate/` on purpose, even though `POST /api/token/` also rotates the token in WebODM.
+- `?jwt=` URL helpers only work when the current MCP session is using a JWT/Bearer token.
+- `/api/projects/` may return a plain array when `page` is not provided.
 - The worker result endpoint is mapped as a URL helper because the response may be a binary file.

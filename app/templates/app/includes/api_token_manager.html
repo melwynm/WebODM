@@ -1,0 +1,29 @@
+{% load i18n %}
+<span class="api-token-manager"
+      data-api-token-manager
+      data-fetch-url="{{ fetch_url }}"
+      data-regenerate-url="{{ regenerate_url }}"
+      data-masked-token="{{ masked_api_key }}"
+      data-visible="false"
+      data-show-label="{% trans 'Show' %}"
+      data-hide-label="{% trans 'Hide' %}"
+      data-copy-success="{% trans 'Copied to clipboard.' %}"
+      data-copy-error="{% trans 'Copy failed. Please copy the token manually.' %}"
+      data-load-error="{% trans 'We could not load the API token.' %}"
+      data-regenerate-success="{% trans 'API token regenerated.' %}"
+      data-regenerate-error="{% trans 'We could not regenerate the API token.' %}"
+      data-confirm-message="{% trans 'This will invalidate your current token. Any integrations using it will break. Are you sure?' %}">
+    <input type="text"
+           class="api-token-manager__input"
+           readonly
+           value="{{ masked_api_key }}"
+           data-api-token-input
+           autocomplete="off"
+           spellcheck="false">
+    <span class="api-token-manager__buttons">
+        <button type="button" class="api-token-manager__button" data-api-token-toggle>{% trans 'Show' %}</button>
+        <button type="button" class="api-token-manager__button" data-api-token-copy>{% trans 'Copy' %}</button>
+        <button type="button" class="api-token-manager__button api-token-manager__button--danger" data-api-token-regenerate>{% trans 'Regenerate' %}</button>
+    </span>
+    <span class="api-token-manager__status" data-api-token-status aria-live="polite">{% trans 'Masked for safety. Reveal or copy when needed.' %}</span>
+</span>

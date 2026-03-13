@@ -6,7 +6,8 @@
         "/absolute/path/to/WebODM/mcp/webodm-mcp-server/index.js"
       ],
       "env": {
-        "WEBODM_BASE_URL": "http://localhost:8000"
+        "WEBODM_BASE_URL": "http://localhost:8000",
+        "WEBODM_API_KEY": "paste_permanent_api_key_here"
       }
     }
   }

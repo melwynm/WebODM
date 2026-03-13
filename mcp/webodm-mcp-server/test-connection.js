@@ -47,7 +47,7 @@ async function main() {
     process.exit(1);
   }
 
-  let token;
+  let jwtToken;
   try {
     const authResponse = await fetch(`${baseUrl}/api/token-auth/`, {
       method: "POST",
@@ -62,33 +62,54 @@ async function main() {
     }
 
     const payload = await authResponse.json();
-    token = payload.token;
-    console.log("2. Authentication succeeded.");
+    jwtToken = payload.token;
+    console.log("2. JWT authentication succeeded.");
   } catch (error) {
     console.error(`2. Authentication failed: ${error.message}`);
+    process.exit(1);
+  }
+
+  let apiKey;
+  try {
+    const tokenResponse = await fetch(`${baseUrl}/api/token/`, {
+      headers: {
+        Authorization: `Bearer ${jwtToken}`,
+      },
+    });
+    if (!tokenResponse.ok) {
+      throw new Error(await tokenResponse.text());
+    }
+    const payload = await tokenResponse.json();
+    apiKey = payload.api_key;
+    if (!apiKey) {
+      throw new Error("Response did not include api_key.");
+    }
+    console.log("3. Permanent API token endpoint works.");
+  } catch (error) {
+    console.error(`3. API token retrieval failed: ${error.message}`);
     process.exit(1);
   }
 
   try {
     const projectsResponse = await fetch(`${baseUrl}/api/projects/`, {
       headers: {
-        Authorization: `Bearer ${token}`,
+        Authorization: `Token ${apiKey}`,
       },
     });
     if (!projectsResponse.ok) {
       throw new Error(await projectsResponse.text());
     }
     const payload = await projectsResponse.json();
-    console.log(`3. Project API access works (${countProjects(payload)} visible project(s)).`);
+    console.log(`4. Project API access works with permanent token auth (${countProjects(payload)} visible project(s)).`);
   } catch (error) {
-    console.error(`3. Project listing failed: ${error.message}`);
+    console.error(`4. Project listing failed: ${error.message}`);
     process.exit(1);
   }
 
   try {
     const nodesResponse = await fetch(`${baseUrl}/api/processingnodes/`, {
       headers: {
-        Authorization: `Bearer ${token}`,
+        Authorization: `Token ${apiKey}`,
       },
     });
     if (!nodesResponse.ok) {
@@ -96,32 +117,32 @@ async function main() {
     }
     const payload = await nodesResponse.json();
     const onlineNodes = Array.isArray(payload) ? payload.filter((node) => node.online) : [];
-    console.log(`4. Processing node API works (${onlineNodes.length} online node(s)).`);
+    console.log(`5. Processing node API works (${onlineNodes.length} online node(s)).`);
   } catch (error) {
-    console.error(`4. Processing node check failed: ${error.message}`);
+    console.error(`5. Processing node check failed: ${error.message}`);
     process.exit(1);
   }
 
   try {
     const optionsResponse = await fetch(`${baseUrl}/api/processingnodes/options/`, {
       headers: {
-        Authorization: `Bearer ${token}`,
+        Authorization: `Token ${apiKey}`,
       },
     });
     if (!optionsResponse.ok) {
       throw new Error(await optionsResponse.text());
     }
     const payload = await optionsResponse.json();
-    console.log(`5. Shared processing options API works (${Array.isArray(payload) ? payload.length : 0} option(s)).`);
+    console.log(`6. Shared processing options API works (${Array.isArray(payload) ? payload.length : 0} option(s)).`);
   } catch (error) {
-    console.error(`5. Processing option check failed: ${error.message}`);
+    console.error(`6. Processing option check failed: ${error.message}`);
     process.exit(1);
   }
 
   console.log();
   console.log("All checks passed.");
   console.log();
-  console.log("Use this Claude Desktop block after adjusting the path:");
+  console.log("Use this Claude Desktop block after adjusting the path and inserting your permanent API key:");
   console.log(
     JSON.stringify(
       {
@@ -131,6 +152,7 @@ async function main() {
             args: ["<absolute-path-to-WebODM>/mcp/webodm-mcp-server/index.js"],
             env: {
               WEBODM_BASE_URL: baseUrl,
+              WEBODM_API_KEY: "paste_permanent_api_key_here",
             },
           },
         },

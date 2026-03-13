@@ -331,6 +331,7 @@ REST_FRAMEWORK = {
     'rest_framework.filters.OrderingFilter',
   ],
   'DEFAULT_AUTHENTICATION_CLASSES': (
+    'app.auth.APIKeyAuthentication',
     'rest_framework.authentication.SessionAuthentication',
     'rest_framework.authentication.BasicAuthentication',
     'rest_framework_simplejwt.authentication.JWTAuthentication',
@@ -342,6 +343,7 @@ REST_FRAMEWORK = {
 
 SIMPLE_JWT = {
     'ACCESS_TOKEN_LIFETIME': datetime.timedelta(hours=6),
+    'AUTH_HEADER_TYPES': ('Bearer', 'JWT'),
 }
 
 # Celery
@@ -441,3 +443,5 @@ try:
     from .settings_override import *
 except ImportError:
     pass
+
+

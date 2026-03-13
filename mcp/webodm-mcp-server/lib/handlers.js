@@ -1,6 +1,7 @@
 import fs from "fs";
 import path from "path";
 import {
+  AUTH_SCHEMES,
   PENDING_ACTIONS,
   TASK_STATUS,
   appendMultipartField,
@@ -11,6 +12,7 @@ import {
   createMultipartForm,
   encodePathPreservingSlashes,
   ensureTokenAvailable,
+  getAuthScheme,
   getAuthToken,
   requestJson,
   setAuthToken,
@@ -29,11 +31,56 @@ export const TOOL_HANDLERS = {
       skipAuth: true,
     });
 
-    setAuthToken(payload.token);
+    setAuthToken(payload.token, AUTH_SCHEMES.BEARER);
     return {
       success: true,
-      message: "Authentication succeeded.",
+      message: "JWT authentication succeeded.",
       token_received: Boolean(getAuthToken()),
+      auth_scheme_in_session: getAuthScheme(),
+      base_url: WEBODM_BASE_URL,
+    };
+  },
+
+  async webodm_get_api_token(args) {
+    ensureTokenAvailable();
+    const payload = await requestJson("/api/token/");
+    const storeForSession = Boolean(args.store_for_session);
+
+    if (storeForSession) {
+      setAuthToken(payload.api_key, AUTH_SCHEMES.TOKEN);
+    }
+
+    return {
+      success: true,
+      api_key: payload.api_key,
+      stored_for_session: storeForSession,
+      auth_scheme_in_session: storeForSession ? AUTH_SCHEMES.TOKEN : getAuthScheme(),
+      base_url: WEBODM_BASE_URL,
+    };
+  },
+
+  async webodm_regenerate_api_token(args) {
+    ensureTokenAvailable();
+
+    if (!args.confirm_invalidate) {
+      throw new Error("Set confirm_invalidate=true to regenerate the permanent API token.");
+    }
+
+    const payload = await requestJson("/api/token/regenerate/", {
+      method: "POST",
+    });
+    const storeForSession = args.store_for_session !== false;
+
+    if (storeForSession) {
+      setAuthToken(payload.api_key, AUTH_SCHEMES.TOKEN);
+    }
+
+    return {
+      success: true,
+      api_key: payload.api_key,
+      stored_for_session: storeForSession,
+      auth_scheme_in_session: storeForSession ? AUTH_SCHEMES.TOKEN : getAuthScheme(),
+      message: "API token regenerated. Any integrations using the old token will stop working.",
       base_url: WEBODM_BASE_URL,
     };
   },
@@ -424,5 +471,3 @@ export const TOOL_HANDLERS = {
     };
   },
 };
-
-
