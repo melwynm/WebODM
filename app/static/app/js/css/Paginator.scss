@@ -1,70 +1,309 @@
 .paginator{
     display: flex;
-    justify-content: flex-end;
-    margin-bottom: 8px;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 14px;
+    margin-bottom: 22px;
 
-    .toolbar{
-        i{
-            opacity: 0.8;
-        }
-        margin-right: 8px;
-        &.no-margin{
-            margin-right: 0;
-        }
+    &.paginator-bottom{
+        margin-top: 18px;
     }
-    .btn-group.open > .dropdown-menu{
-        top: 24px;
-        padding-right: 4px;
-        a{
-            border: none;
-        }
+
+    .paginator-toolbar{
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: space-between;
+        gap: 18px;
+        padding: 18px 20px;
+        border-radius: 22px;
+        border: 1px solid rgba(148, 163, 184, 0.18);
+        background: linear-gradient(135deg, rgba(248, 250, 252, 0.95) 0%, rgba(255, 255, 255, 1) 100%);
+        box-shadow: 0 26px 55px -42px rgba(15, 23, 42, 0.48);
+    }
+
+    .paginator-summary{
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        gap: 6px;
+        min-width: 160px;
+    }
+
+    .paginator-summary__eyebrow{
+        font-size: 0.78rem;
+        font-weight: 700;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        color: #64748b;
+    }
+
+    .paginator-summary__value{
+        font-size: 1.15rem;
+        font-weight: 600;
+        color: #0f172a;
+    }
+
+    .paginator-controls{
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: flex-end;
+        align-items: center;
+        gap: 12px;
+        flex: 1;
+    }
+
+    .paginator-search-shell{
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 8px 8px 8px 14px;
+        border-radius: 999px;
+        border: 1px solid rgba(148, 163, 184, 0.28);
+        background: #ffffff;
+        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.6);
+        min-width: min(520px, 100%);
+        flex: 1;
+    }
+
+    .paginator-search-icon{
+        color: #64748b;
+        font-size: 0.95rem;
     }
 
     .search{
-        height: 25px;
-        margin-left: 7px;
-        margin-right: 4px;
-        padding-left: 4px;
-        padding-right: 4px;
-        border-width: 1px;
-        border-radius: 3px;
-        display: inline-block;
-        max-width: 210px;
-    }
+        border: none;
+        box-shadow: none;
+        background: transparent;
+        margin: 0;
+        padding: 0;
+        min-width: 180px;
+        flex: 1;
+        height: auto;
+        color: #0f172a;
+        font-size: 0.95rem;
 
-    .pagination>li{
-        display: inline-block;
-    }
-
-    .search-popup{
-        min-width: 256px;
-
-        li{
-            display: flex;
-            button{
-                width: 27px;
-                height: 25px;
-                i{
-                    position: relative;
-                    top: -4px;
-                    left: -3px;
-                }
-            }
+        &:focus{
+            box-shadow: none;
         }
     }
 
-    @media (max-width: 576px) { 
-        .search-popup{
-            min-width: 180px;
+    .paginator-search-clear{
+        width: 32px;
+        height: 32px;
+        border: none;
+        border-radius: 50%;
+        background: rgba(148, 163, 184, 0.16);
+        color: #475569;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        transition: background-color 0.2s ease, color 0.2s ease;
+
+        &:hover,
+        &:focus{
+            background: rgba(37, 99, 235, 0.12);
+            color: #2563eb;
+            outline: none;
+        }
+    }
+
+    .paginator-search-submit.btn-modern{
+        padding: 8px 16px;
+        box-shadow: none;
+        flex: none;
+    }
+
+    .paginator-sort .dropdown-toggle.btn-modern{
+        min-height: 50px;
+        background: rgba(148, 163, 184, 0.12);
+        color: #0f172a;
+        box-shadow: none;
+    }
+
+    .paginator-sort-order{
+        display: block;
+        margin-top: 2px;
+        font-size: 0.74rem;
+        font-weight: 500;
+        color: #64748b;
+    }
+
+    .btn-group.open > .dropdown-menu{
+        top: calc(100% + 10px);
+    }
+
+    .sort-items{
+        min-width: 220px;
+        padding: 10px 0;
+        border-radius: 16px;
+        border: 1px solid rgba(148, 163, 184, 0.18);
+        box-shadow: 0 26px 50px -35px rgba(15, 23, 42, 0.36);
+
+        .sort-order-label{
+            opacity: 0.7;
+            padding: 10px 16px 6px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: #64748b;
+        }
+
+        a{
+            margin-right: 0 !important;
+            padding: 10px 16px !important;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            color: #0f172a;
+        }
+
+        a:hover{
+            cursor: pointer;
+            background: rgba(37, 99, 235, 0.08);
+        }
+
+        .fa-check{
+            font-size: 80%;
+            margin-left: 8px;
+            color: #2563eb;
         }
     }
 
     .clear-search{
-        margin-top: 1px;
-        font-weight: bold;
-        margin-right: 8px;
-        .query{
-            font-weight: normal;
+        display: inline-flex;
+        align-items: center;
+        align-self: flex-end;
+        gap: 10px;
+        padding: 8px 14px;
+        border-radius: 999px;
+        background: rgba(37, 99, 235, 0.09);
+        color: #1d4ed8;
+        font-weight: 600;
+    }
+
+    .clear-search__label{
+        color: #475569;
+        font-weight: 500;
+    }
+
+    .query{
+        color: #0f172a;
+        font-weight: 600;
+    }
+
+    .clear-search__button{
+        width: 28px;
+        height: 28px;
+        border: none;
+        border-radius: 50%;
+        background: rgba(37, 99, 235, 0.14);
+        color: #1d4ed8;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+
+        &:hover,
+        &:focus{
+            background: rgba(37, 99, 235, 0.24);
+            outline: none;
+        }
+    }
+
+    .pagination{
+        margin: 0;
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: flex-end;
+        gap: 8px;
+    }
+
+    .pagination > li{
+        display: inline-flex;
+    }
+
+    .pagination > li > a,
+    .pagination > li > span{
+        border: none;
+        border-radius: 12px;
+        min-width: 40px;
+        min-height: 40px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0 14px;
+        color: #0f172a;
+        background: rgba(255, 255, 255, 0.92);
+        box-shadow: 0 16px 30px -26px rgba(15, 23, 42, 0.45);
+        transition: transform 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
+    }
+
+    .pagination > li > a:hover,
+    .pagination > li > span:hover{
+        background: rgba(37, 99, 235, 0.1);
+        color: #1d4ed8;
+        transform: translateY(-1px);
+        text-decoration: none;
+    }
+
+    .pagination > li.active > a,
+    .pagination > li.active > span{
+        background: linear-gradient(135deg, #2563eb 0%, #3b82f6 100%);
+        color: #ffffff;
+        box-shadow: 0 18px 32px -24px rgba(37, 99, 235, 0.65);
+    }
+
+    .pagination > li.disabled > a,
+    .pagination > li.disabled > span{
+        opacity: 0.4;
+        pointer-events: none;
+    }
+
+    @media (max-width: 768px) {
+        .paginator-toolbar{
+            padding: 16px;
+        }
+
+        .paginator-controls{
+            justify-content: stretch;
+        }
+
+        .paginator-search-shell{
+            min-width: 100%;
+        }
+
+        .paginator-sort{
+            width: 100%;
+        }
+
+        .paginator-sort .dropdown-toggle.btn-modern{
+            width: 100%;
+            justify-content: flex-start;
+        }
+
+        .clear-search{
+            align-self: flex-start;
+        }
+    }
+
+    @media (max-width: 576px) {
+        .paginator-search-shell{
+            flex-wrap: wrap;
+            border-radius: 20px;
+        }
+
+        .search{
+            min-width: 0;
+            width: calc(100% - 42px);
+        }
+
+        .paginator-search-submit.btn-modern{
+            width: 100%;
+            justify-content: center;
+        }
+
+        .pagination{
+            justify-content: flex-start;
         }
     }
 }

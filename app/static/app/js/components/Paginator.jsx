@@ -1,9 +1,9 @@
 import React from 'react';
 import '../css/Paginator.scss';
-import { Link, withRouter  } from 'react-router-dom';
+import { Link, withRouter } from 'react-router-dom';
 import SortPanel from './SortPanel';
 import Utils from '../classes/Utils';
-import { _ } from '../classes/gettext';
+import { _, interpolate } from '../classes/gettext';
 
 let decodeSearch = (search) => {
     return window.decodeURI(search.replace(/:/g, "#"));
@@ -18,7 +18,7 @@ class Paginator extends React.Component {
         this.state = {
             searchText: decodeSearch(q.search || ""),
             sortKey: q.ordering || "-created_at"
-        }
+        };
 
         this.sortItems = [{
             key: "created_at",
@@ -43,17 +43,6 @@ class Paginator extends React.Component {
         document.removeEventListener("onProjectListTagClicked", this.addTagAndSearch);
     }
 
-    closeSearch = () => {
-        this.searchContainer.classList.remove("open");
-    }
-
-    toggleSearch = e => {
-        e.stopPropagation();
-        setTimeout(() => {
-            this.searchInput.focus();
-        }, 50);
-    }
-
     handleSearchChange = e => {
         this.setState({searchText: e.target.value});
     }
@@ -66,7 +55,6 @@ class Paginator extends React.Component {
     
     search = () => {
         this.props.history.push({search: this.getQueryForPage(1)});
-        this.closeSearch();
     }
 
     clearSearch = () => {
@@ -105,44 +93,92 @@ class Paginator extends React.Component {
         }, 0);
     }
 
+    getSelectedSortLabel = () => {
+        const normalizedSortKey = this.state.sortKey.replace("-", "");
+        const selectedSort = this.sortItems.find(item => item.key === normalizedSortKey);
+        return selectedSort ? selectedSort.label : _("Created on");
+    }
+
+    getSelectedSortDirection = () => {
+        return this.state.sortKey[0] === "-" ? _("Descending") : _("Ascending");
+    }
+
     render() {
         const { itemsPerPage, totalItems, currentPage } = this.props;
         const { searchText } = this.state;
 
         let paginator = null;
         let clearSearch = null;
-        let toolbar = (<ul className={"pagination pagination-sm toolbar " + (totalItems == 0 && !searchText ? "hidden " : " ") + (totalItems / itemsPerPage <= 1 ? "no-margin" : "")}>
-            <li className="btn-group" ref={domNode => { this.searchContainer = domNode; }}>
-                <a href="javascript:void(0);" className="dropdown-toggle"
-                        data-toggle-outside 
-                        data-toggle="dropdown"
-                        aria-haspopup="true" aria-expanded="false"
-                        onClick={this.toggleSearch}
-                        title={_("Search")}><i className="fa fa-search"></i></a>
-                <ul className="dropdown-menu dropdown-menu-right search-popup">
-                    <li>
-                        <input type="text" 
-                            ref={(domNode) => { this.searchInput = domNode}}
-                            className="form-control search theme-border-secondary-07" 
+
+        const toolbar = (
+            <div className="paginator-toolbar">
+                <div className="paginator-summary">
+                    <span className="paginator-summary__eyebrow">{_("Workspace")}</span>
+                    <strong className="paginator-summary__value">
+                        {interpolate(_("%(count)s projects"), {count: totalItems || 0})}
+                    </strong>
+                </div>
+
+                <div className="paginator-controls">
+                    <div className="paginator-search-shell theme-border-secondary-07">
+                        <span className="paginator-search-icon" aria-hidden="true">
+                            <i className="fa fa-search"></i>
+                        </span>
+                        <input
+                            type="text"
+                            ref={(domNode) => { this.searchInput = domNode; }}
+                            className="form-control search theme-border-secondary-07"
                             placeholder={_("Search names, #tags or @user")}
                             spellCheck="false"
                             autoComplete="false"
                             value={searchText}
                             onKeyDown={this.handleSearchKeyDown}
                             onChange={this.handleSearchChange} />
-                        <button onClick={this.search} className="btn btn-sm btn-default"><i className="fa fa-search"></i></button>
-                    </li>
-                </ul>
-            </li>
-            <li className="btn-group">
-                <a href="javascript:void(0);" className="dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false"><i className="fa fa-sort-alpha-down" title={_("Sort")}></i></a>
-                <SortPanel selected={this.state.sortKey} items={this.sortItems} onChange={this.sortChanged} />
-            </li>
-        </ul>);
+                        {searchText ?
+                            <button type="button" className="paginator-search-clear" title={_("Clear search")} onClick={this.clearSearch}>
+                                <i className="fa fa-times"></i>
+                            </button>
+                        : ""}
+                        <button type="button" onClick={this.search} className="btn btn-primary btn-modern paginator-search-submit">
+                            <span className="btn-modern__icon" aria-hidden="true">
+                                <i className="fa fa-search"></i>
+                            </span>
+                            <span className="btn-modern__label">{_("Search")}</span>
+                        </button>
+                    </div>
+
+                    <div className="btn-group paginator-sort">
+                        <button
+                            type="button"
+                            className="btn btn-default btn-modern dropdown-toggle"
+                            data-toggle="dropdown"
+                            aria-haspopup="true"
+                            aria-expanded="false">
+                            <span className="btn-modern__icon" aria-hidden="true">
+                                <i className="fa fa-sort-alpha-down"></i>
+                            </span>
+                            <span className="btn-modern__label">
+                                {this.getSelectedSortLabel()}
+                                <span className="paginator-sort-order">{this.getSelectedSortDirection()}</span>
+                            </span>
+                        </button>
+                        <SortPanel selected={this.state.sortKey} items={this.sortItems} onChange={this.sortChanged} />
+                    </div>
+                </div>
+            </div>
+        );
 
         if (this.props.currentSearch){
             let currentSearch = decodeSearch(this.props.currentSearch);
-            clearSearch = (<span className="clear-search">{_("Search results for:")} <span className="query">{currentSearch}</span> <a href="javascript:void(0);" onClick={this.clearSearch}>×</a></span>);
+            clearSearch = (
+                <span className="clear-search">
+                    <span className="clear-search__label">{_("Search results for:")}</span>
+                    <span className="query">{currentSearch}</span>
+                    <button type="button" className="clear-search__button" onClick={this.clearSearch} title={_("Clear search")}>
+                        <i className="fa fa-times"></i>
+                    </button>
+                </span>
+            );
         }
 
         if (itemsPerPage && itemsPerPage && totalItems > itemsPerPage){
@@ -153,7 +189,7 @@ class Paginator extends React.Component {
             let rangeEnd = rangeStart + Math.min(numPages, MAX_PAGE_BUTTONS);
             if (rangeEnd > numPages){
                 rangeStart -= rangeEnd - numPages - 1;
-                rangeEnd -= rangeEnd - numPages - 1
+                rangeEnd -= rangeEnd - numPages - 1;
             }
             let pages = [...Array(rangeEnd - rangeStart).keys()].map(i => i + rangeStart - 1);
             
@@ -180,9 +216,9 @@ class Paginator extends React.Component {
         }
 
         return [
-            <div key="0" className="text-right paginator">{clearSearch}{toolbar}{paginator}</div>,
+            <div key="0" className="paginator">{toolbar}{clearSearch}{paginator}</div>,
             this.props.children,
-            <div key="2" className="text-right paginator">{paginator}</div>,
+            <div key="2" className="paginator paginator-bottom">{paginator}</div>,
         ];
     }
 }

@@ -1,4 +1,9 @@
 .task-list{
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    margin-top: 6px;
+
     .task-bar{
         text-align: right;
     }

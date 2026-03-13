@@ -7,7 +7,6 @@
     border: 1px solid rgba(148, 163, 184, 0.18);
     box-shadow: 0 26px 52px -34px rgba(15, 23, 42, 0.45);
     transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
-    // Allow dropdown menus to extend beyond the project card without being clipped.
     overflow: visible;
 
     &:hover {
@@ -114,28 +113,49 @@
     .project-links {
         display: flex;
         flex-wrap: wrap;
-        gap: 14px;
+        gap: 12px;
         align-items: center;
         margin-top: 4px;
         color: #1f2937;
-        font-size: 0.95rem;
+        font-size: 0.94rem;
 
         span,
         a,
         div {
             display: inline-flex;
             align-items: center;
-            gap: 6px;
+            gap: 8px;
+        }
+
+        > span,
+        > a,
+        > div:not(.task-filters) {
+            min-height: 42px;
+            padding: 0 15px;
+            border-radius: 999px;
+            border: 1px solid rgba(148, 163, 184, 0.2);
+            background: rgba(248, 250, 252, 0.96);
+            box-shadow: 0 14px 28px -26px rgba(15, 23, 42, 0.38);
+        }
+
+        > span {
+            font-weight: 600;
+            color: #0f172a;
         }
 
         a {
-            color: #2563eb;
+            color: #0f172a;
             font-weight: 600;
 
             &:hover,
             &:focus {
-                text-decoration: underline;
+                text-decoration: none;
+                color: #1d4ed8;
             }
+        }
+
+        i {
+            color: #2563eb;
         }
     }
 
@@ -143,23 +163,46 @@
         display: flex;
         flex-wrap: wrap;
         align-items: center;
-        gap: 12px;
+        gap: 10px;
         margin-left: auto;
     }
 
+    .task-filters .btn-group {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        min-height: 42px;
+        padding: 0 15px;
+        border-radius: 999px;
+        border: 1px solid rgba(148, 163, 184, 0.2);
+        background: rgba(248, 250, 252, 0.96);
+        box-shadow: 0 14px 28px -26px rgba(15, 23, 42, 0.38);
+    }
+
+    .task-filters .dropdown-toggle {
+        color: #0f172a;
+        font-weight: 600;
+        text-decoration: none;
+    }
+
+    .task-filters .btn-group > i {
+        color: #2563eb;
+    }
+
     .filter-dropdown {
+        min-width: 320px;
         max-width: 340px;
-        padding: 10px 10px 12px 10px;
-        border-radius: 12px;
-        border: 1px solid rgba(148, 163, 184, 0.35);
+        padding: 12px 10px 14px 10px;
+        border-radius: 16px;
+        border: 1px solid rgba(148, 163, 184, 0.28);
         box-shadow: 0 22px 45px -28px rgba(15, 23, 42, 0.4);
     }
 
     .filter-text {
-        height: 34px;
-        border-radius: 10px;
+        height: 38px;
+        border-radius: 12px;
         border: 1px solid rgba(148, 163, 184, 0.4);
-        padding: 4px 10px;
+        padding: 6px 12px;
         margin: 0 6px 10px 6px;
         font-size: 0.9rem;
     }
@@ -168,8 +211,8 @@
     .tag-selection {
         display: flex;
         align-items: center;
-        gap: 6px;
-        padding: 2px 4px;
+        gap: 8px;
+        padding: 4px 6px;
     }
 
     .filter-checkbox-label {
@@ -189,11 +232,11 @@
     .tag-badge.small-badge {
         display: inline-flex;
         align-items: center;
-        padding: 2px 8px;
+        padding: 4px 10px;
         border-radius: 999px;
         background: rgba(37, 99, 235, 0.12);
         color: #1d4ed8;
-        font-size: 0.85rem;
+        font-size: 0.82rem;
         font-weight: 600;
         cursor: pointer;
 
@@ -229,14 +272,29 @@
     }
 
     .quick-clear-filter {
-        color: #ef4444;
-        font-weight: 700;
+        width: 28px;
+        height: 28px;
+        border-radius: 999px;
+        background: rgba(239, 68, 68, 0.12);
+        color: transparent;
+        font-size: 0;
         text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+
+        &::before {
+            content: "\f00d";
+            font-family: "Font Awesome 5 Free";
+            font-weight: 900;
+            font-size: 12px;
+            color: #dc2626;
+        }
 
         &:hover,
         &:focus {
             text-decoration: none;
-            color: #b91c1c;
+            background: rgba(239, 68, 68, 0.18);
         }
     }
 
@@ -262,6 +320,17 @@
         }
     }
 
+    @media (max-width: 767px) {
+        .project-links {
+            align-items: stretch;
+        }
+
+        .task-filters {
+            margin-left: 0;
+            width: 100%;
+        }
+    }
+
     @media (max-width: 576px) {
         padding: 22px;
 
@@ -271,6 +340,18 @@
 
         .project-card-footer {
             padding-top: 18px;
+        }
+
+        .project-links > span,
+        .project-links > a,
+        .project-links > div:not(.task-filters),
+        .task-filters .btn-group {
+            width: 100%;
+            justify-content: center;
+        }
+
+        .filter-dropdown {
+            min-width: 280px;
         }
     }
 }

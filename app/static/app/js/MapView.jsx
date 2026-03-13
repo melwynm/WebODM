@@ -84,7 +84,7 @@ class MapView extends React.Component {
   }
 
   tilesFromMapType(type){
-    // Go through the list of map items and return 
+    // Go through the list of map items and return
     // only those that match a particular type (in tile format)
     const tiles = [];
 
@@ -151,35 +151,51 @@ class MapView extends React.Component {
     // If we have only one button, hide it...
     if (mapTypeButtons.length === 1) mapTypeButtons = [];
 
-    return (<div className="map-view">
-        <div className="map-view-header">
-          {this.props.title ?
-            <h3 className="map-title" title={this.props.title}><i className="fa fa-globe"></i> {this.props.title}</h3>
-          : ""}
+    const workspaceTitle = this.props.title || _("Map Workspace");
+    const workspaceContext = this.props.project && this.props.project.name ?
+      this.props.project.name :
+      _("Project Map");
 
-          <div className="map-type-selector btn-group" role="group">
-            {mapTypeButtons.map(mapType =>
-              <button
-                key={mapType.type}
-                onClick={this.handleMapTypeButton(mapType.type)}
-                title={mapType.label}
-                className={"btn btn-sm " + (mapType.type === this.state.selectedMapType ? "btn-primary" : "btn-default")}><i className={mapType.icon + " fa-fw"}></i><span className="hidden-sm hidden-xs"> {mapType.label}</span></button>
-            )}
+    return (<div className="map-view">
+        <div className="map-view-shell">
+          <div className="map-view-header">
+            <div className="map-view-heading">
+              <div className="map-view-heading__eyebrow">
+                <span className="map-view-heading__badge">
+                  <i className="fa fa-location-arrow"></i>
+                  <span>{workspaceContext}</span>
+                </span>
+                <span className="map-view-heading__meta">
+                  {interpolate(_("%(count)s map layers"), {count: mapTypeButtons.length || 1})}
+                </span>
+              </div>
+              <h3 className="map-title" title={workspaceTitle}><i className="fa fa-globe"></i> {workspaceTitle}</h3>
+            </div>
+
+            <div className="map-type-selector btn-group" role="group">
+              {mapTypeButtons.map(mapType =>
+                <button
+                  key={mapType.type}
+                  onClick={this.handleMapTypeButton(mapType.type)}
+                  title={mapType.label}
+                  className={"btn btn-sm " + (mapType.type === this.state.selectedMapType ? "btn-primary" : "btn-default")}><i className={mapType.icon + " fa-fw"}></i><span className="hidden-sm hidden-xs"> {mapType.label}</span></button>
+              )}
+            </div>
           </div>
-        </div>
-      
-        <div className="map-container">
-            <Map 
-                tiles={this.state.tiles} 
-                showBackground={true} 
-                mapType={this.state.selectedMapType} 
-                public={this.props.public}
-                publicEdit={this.props.publicEdit}
-                shareButtons={this.props.shareButtons}
-                permissions={this.props.permissions}
-                thermal={isThermal}
-                project={this.props.project}
-            />
+
+          <div className="map-container">
+              <Map
+                  tiles={this.state.tiles}
+                  showBackground={true}
+                  mapType={this.state.selectedMapType}
+                  public={this.props.public}
+                  publicEdit={this.props.publicEdit}
+                  shareButtons={this.props.shareButtons}
+                  permissions={this.props.permissions}
+                  thermal={isThermal}
+                  project={this.props.project}
+              />
+          </div>
         </div>
       </div>);
   }

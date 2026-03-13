@@ -1,38 +1,47 @@
 .map{
-    position: relative; 
+    position: relative;
 
     .opacity-slider{
-        border-radius: 4px;
-        text-align: center;
         width: 220px;
         position: absolute;
+        left: 20px;
         bottom: 20px;
-        left: 50%;
-        margin-left: -100px;
         z-index: 999;
-        padding-bottom: 6px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 12px 14px;
+        border-radius: 18px;
+        background: rgba(15, 23, 42, 0.76);
+        color: #f8fafc;
+        box-shadow: 0 24px 48px -36px rgba(15, 23, 42, 0.8);
+        backdrop-filter: blur(12px);
+
         .opacity-slider-label{
             display: inline-block;
-            position: relative;
-            top: 2px;
+            white-space: nowrap;
+            font-weight: 600;
+            font-size: 0.85rem;
         }
     }
 
     .map-control-button,
     .leaflet-touch .leaflet-control-layers-toggle,
-    .leaflet-control-layers-toggle{
-        width: 34px;
-        height: 34px;
+    .leaflet-control-layers-toggle,
+    .leaflet-bar a{
+        width: 40px;
+        height: 40px;
         display: flex;
         align-items: center;
         justify-content: center;
-        border-radius: 8px;
-        background: #fff;
+        border-radius: 12px;
+        background: rgba(255, 255, 255, 0.96);
         color: #1f2937;
         line-height: 1;
         text-decoration: none;
-        box-shadow: 0 14px 30px -24px rgba(15, 23, 42, 0.85);
+        box-shadow: 0 18px 34px -28px rgba(15, 23, 42, 0.85);
         transition: background-color 0.2s ease, color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+        border: none;
 
         i{
             font-size: 15px;
@@ -44,6 +53,17 @@
             color: #2563eb;
             text-decoration: none;
             box-shadow: 0 18px 32px -22px rgba(37, 99, 235, 0.55);
+            transform: translateY(-1px);
+        }
+    }
+
+    .leaflet-bar{
+        border: none;
+        box-shadow: none;
+        background: transparent;
+
+        a + a{
+            margin-top: 8px;
         }
     }
 
@@ -58,7 +78,18 @@
         color: #1d4ed8;
     }
 
+    .leaflet-popup-content-wrapper{
+        border-radius: 18px;
+        box-shadow: 0 24px 50px -30px rgba(15, 23, 42, 0.45);
+    }
+
+    .leaflet-popup-tip{
+        box-shadow: none;
+    }
+
     .leaflet-popup-content{
+        margin: 16px 18px;
+
         .title{
             font-weight: bold;
             margin-bottom: 8px;
@@ -85,7 +116,13 @@
 
     .leaflet-right .leaflet-control,
     .leaflet-control-measure.leaflet-control{
-        margin-right: 12px;
+        margin-right: 14px;
+    }
+
+    .leaflet-top .leaflet-control,
+    .leaflet-bottom .leaflet-control{
+        margin-top: 14px;
+        margin-bottom: 14px;
     }
 
     .popup-opacity-slider{
@@ -95,11 +132,16 @@
     .actionButtons{
         position: absolute;
         z-index: 2000;
-        right: 12px;
-        bottom: 20px;
+        right: 16px;
+        top: 16px;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        align-items: flex-end;
+
         & > *{
-            display: inline-block;
-            margin-left: 12px;
+            display: inline-flex;
+            margin-left: 0;
         }
     }
 
@@ -111,7 +153,9 @@
         z-index: 999;
     }
 
-    .leaflet-container{        
+    .leaflet-container{
+        background: linear-gradient(180deg, #dbeafe 0%, #f8fafc 100%);
+
         a.leaflet-popup-close-button{
             top: 8px;
             right: 8px;
@@ -125,8 +169,28 @@
     & > .alert-warning{
         position: absolute;
         z-index: 10000;
-        top: 8px;
-        left: 8px;
-        right: 8px;
+        top: 12px;
+        left: 12px;
+        right: 12px;
+        border-radius: 16px;
+        border: 1px solid rgba(251, 146, 60, 0.24);
+        box-shadow: 0 22px 40px -28px rgba(15, 23, 42, 0.5);
+    }
+
+    @media (max-width: 768px){
+        .actionButtons{
+            top: auto;
+            right: 12px;
+            bottom: 16px;
+            flex-direction: row;
+            flex-wrap: wrap;
+            justify-content: flex-end;
+        }
+
+        .opacity-slider{
+            left: 12px;
+            right: 12px;
+            width: auto;
+        }
     }
 }

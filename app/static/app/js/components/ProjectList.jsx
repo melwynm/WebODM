@@ -23,7 +23,7 @@ class ProjectList extends Paginated {
             refreshing: false,
             error: "",
             projects: []
-        }
+        };
 
         this.PROJECTS_PER_PAGE = 10;
 
@@ -40,7 +40,7 @@ class ProjectList extends Paginated {
 
         let search = source.substr(source.indexOf("?"));
         let q = Utils.queryParams({search});
-        
+
         // All parameters that can change via history.push without
         // triggering a reload of the project list should go here
         delete q.project_task_open;
@@ -59,7 +59,7 @@ class ProjectList extends Paginated {
         this.setState({refreshing: true});
 
         // Load projects from API
-        this.serverRequest = 
+        this.serverRequest =
             $.getJSON(this.props.source, json => {
                 if (json.results){
                     this.setState({
@@ -68,14 +68,14 @@ class ProjectList extends Paginated {
                     });
                     this.updatePagination(this.PROJECTS_PER_PAGE, json.count);
                 }else{
-                    this.setState({ 
+                    this.setState({
                         error: interpolate(_("Invalid JSON response: %(error)s"), {error: JSON.stringify(json)}),
                         loading: false
                     });
                 }
             })
             .fail((jqXHR, textStatus, errorThrown) => {
-                this.setState({ 
+                this.setState({
                     error: interpolate(_("Could not load projects list: %(error)s"), {error: textStatus}),
                     loading: false
                 });
@@ -115,23 +115,37 @@ class ProjectList extends Paginated {
         if (this.state.loading){
             return (<div className="project-list text-center"><i className="fa fa-circle-notch fa-spin fa-2x fa-fw"></i></div>);
         }else{
+            const hasProjects = this.state.projects.length > 0;
+            const emptyMessage = this.props.currentSearch ?
+                _("No projects match this search yet.") :
+                _("Create a new project to start organizing flights, maps and reports.");
+
             return (<div className="project-list">
                 <ErrorMessage bind={[this, 'error']} />
                 <Paginator {...this.state.pagination} {...this.props}>
-                    <ul
-                        key="1"
-                        className={`project-grid list-group ${this.state.refreshing ? "refreshing" : ""}`}>
-                        {this.state.projects.map(p => (
-                            <ProjectListItem 
-                                ref={(domNode) => { this["projectListItem_" + p.id] = domNode }}
-                                key={p.id} 
-                                data={p} 
-                                onDelete={this.handleDelete}
-                                onTaskMoved={this.handleTaskMoved}
-                                onProjectDuplicated={this.handleProjectDuplicated}
-                                history={this.props.history} /> 
-                        ))}
-                    </ul>
+                    {hasProjects ?
+                        <ul
+                            key="1"
+                            className={`project-grid list-group ${this.state.refreshing ? "refreshing" : ""}`}>
+                            {this.state.projects.map(p => (
+                                <ProjectListItem
+                                    ref={(domNode) => { this["projectListItem_" + p.id] = domNode; }}
+                                    key={p.id}
+                                    data={p}
+                                    onDelete={this.handleDelete}
+                                    onTaskMoved={this.handleTaskMoved}
+                                    onProjectDuplicated={this.handleProjectDuplicated}
+                                    history={this.props.history} />
+                            ))}
+                        </ul>
+                    :
+                        <div className="project-list-empty">
+                            <div className="project-list-empty__icon" aria-hidden="true">
+                                <i className="fa fa-map-o"></i>
+                            </div>
+                            <h3>{_("Your workspace is ready")}</h3>
+                            <p>{emptyMessage}</p>
+                        </div>}
                 </Paginator>
             </div>);
         }
