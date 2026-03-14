@@ -1,5 +1,8 @@
 import { _ } from './gettext';
 
+// Canonical project pipeline reference lives in /PIPELINE.md.
+// This file intentionally exposes only the runtime processing subset for the UI.
+
 export default {
     get: function(){
         return [{

@@ -10,6 +10,7 @@ A user-friendly, commercial grade software for drone image processing. Generate 
 
 This repository includes local product work on top of upstream WebODM.
 
+- The canonical combined pipeline for this fork lives in [PIPELINE.md](PIPELINE.md).
 - Current fork status and recent implementation notes live in [DEVELOPMENT_STATUS.md](DEVELOPMENT_STATUS.md).
 - The local Docker setup in this workspace exposes WebODM on http://localhost:8000 by default.
 - Recent fork work includes object detection fixes, monitoring/progress comparison with auto-alignment for non-RTK imagery, and default NodeODM host repair tooling.

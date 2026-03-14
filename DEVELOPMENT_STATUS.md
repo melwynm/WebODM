@@ -1,10 +1,15 @@
 # Development Status
 
-Last updated: 2026-03-12
+Last updated: 2026-03-14
 
 ## Purpose
 
 This file tracks the current state of this fork so future work can start from the right baseline without having to reconstruct recent changes from commit history alone.
+
+## Canonical Pipeline
+
+- The single source of truth for the combined processing and roadmap pipeline now lives in `PIPELINE.md`.
+- When checking what comes next, use the first stage marked `Next` in `PIPELINE.md`.
 
 ## Current Focus
 
@@ -66,13 +71,6 @@ This file tracks the current state of this fork so future work can start from th
 - There is an unrelated local deletion at `nodeodm/external/NodeODM` that has intentionally been left untouched
 - If a stale default processing node ever persists after a restart, you can repair it manually with `docker exec webapp python manage.py syncdefaultnodes --count 1`
 
-## Recommended Next Steps
-
-1. Extend monitoring from orthophoto compare into a proper project timeline view
-2. Add DSM/DTM delta and cut/fill change products
-3. Promote detected changes into issues/annotations with status tracking
-4. Improve alignment from translation-only to affine or feature-based local warping
-5. Add exportable monitoring/progress reports for stakeholders
 
 ## Useful Commands
 
