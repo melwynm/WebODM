@@ -35,6 +35,7 @@ FROM common AS build
 
 # Install Python deps -- install & remove cleanup build-only deps in the process
 COPY requirements.txt ./
+COPY coreplugins/geometry_correction/requirements.txt ./coreplugins/geometry_correction/requirements.txt
 
 RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     --mount=type=cache,target=/var/lib/apt,sharing=locked \
@@ -55,7 +56,8 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     # Python3.9, GDAL, PDAL, nginx, letsencrypt, psql
     apt-get install -y --no-install-recommends \
         python$PYTHON_VERSION python$PYTHON_VERSION-venv python$PYTHON_VERSION-dev libpq-dev build-essential git libproj-dev gdal-bin pdal \
-        libgdal-dev nginx certbot gettext-base cron postgresql-client gettext tzdata libimage-exiftool-perl
+        libgdal-dev nginx certbot gettext-base cron postgresql-client gettext tzdata libimage-exiftool-perl \
+        libgl1 libglib2.0-0
     # Create virtualenv
     python$PYTHON_VERSION -m venv $WORKDIR/venv
 EOT
@@ -68,8 +70,10 @@ RUN --mount=type=cache,target=/root/.cache/pip \
     # Install Python dependencies
     # Install pip
     pip install pip==24.0
-    # Install Python requirements, including correct Python GDAL bindings.
-    pip install -r requirements.txt "boto3==1.14.14" gdal[numpy]=="$(gdal-config --version).*"
+    # Install Python requirements, including geometry_correction runtime extras
+    # and the correct Python GDAL bindings.
+    pip install -r requirements.txt -r coreplugins/geometry_correction/requirements.txt \
+        "boto3==1.14.14" gdal[numpy]=="$(gdal-config --version).*"
 EOT
 
 # Install project Node dependencies
@@ -136,7 +140,8 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     # Python, GDAL, PDAL, nginx, letsencrypt, psql, git
     apt-get install -y --no-install-recommends \
         python$PYTHON_VERSION python$PYTHON_VERSION-distutils gdal-bin pdal \
-        nginx certbot gettext-base cron postgresql-client gettext tzdata git libimage-exiftool-perl
+        nginx certbot gettext-base cron postgresql-client gettext tzdata git libimage-exiftool-perl \
+        libgl1 libglib2.0-0
     npm config set fund false
     npm config set audit false
     # Install webpack, webpack CLI

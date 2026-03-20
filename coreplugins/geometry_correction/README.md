@@ -64,7 +64,7 @@ Typical outputs are written under `assets/geometry_correction/`:
 
 ## Dependencies
 
-Install plugin dependencies from the plugin root:
+Install plugin dependencies from the plugin root for manual, non-Docker setups:
 
 ```bash
 pip install -r coreplugins/geometry_correction/requirements.txt
@@ -74,10 +74,14 @@ Core optional runtime dependencies:
 
 - `open3d`
 - `laspy[lazrs]`
-- `opencv-python`
+- `opencv-python-headless`
 - `rasterio`
 - `scipy`
 - `requests`
+
+The WebODM Docker image now installs `coreplugins/geometry_correction/requirements.txt`
+during build and includes the required OpenGL runtime libraries for Open3D
+(`libgl1` and `libglib2.0-0`).
 
 ## Tests
 
@@ -97,7 +101,7 @@ Example container run:
 docker exec webapp /bin/bash -lc "cd /webodm && export PYTHONPATH=/webodm:/webodm/coreplugins/geometry_correction:$PYTHONPATH && python -m unittest discover -s /webodm/coreplugins/geometry_correction/geometry_correction/tests -t /webodm/coreplugins/geometry_correction -v"
 ```
 
-Some integration tests remain environment-dependent:
+Outside the Docker image, some integration tests remain environment-dependent:
 
-- OpenCV-backed Hough detection tests are skipped when `opencv-python` is not installed.
+- OpenCV-backed Hough detection tests are skipped when OpenCV is not installed.
 - Open3D-backed point-cloud integration tests are skipped when `open3d` is not installed.

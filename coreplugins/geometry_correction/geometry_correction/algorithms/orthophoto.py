@@ -55,7 +55,7 @@ class OrthoCorrectionStats:
 
 def _require_cv2() -> None:
     if cv2 is None:
-        raise ImportError("opencv-python is required: pip install opencv-python")
+        raise ImportError("OpenCV is required: pip install opencv-python-headless")
 
 
 def _require_rasterio() -> None:

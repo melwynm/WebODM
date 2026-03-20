@@ -51,6 +51,9 @@ if [ "$1" = "--setup-devenv" ] || [ "$2" = "--setup-devenv" ]; then
 
     echo Setup pip requirements...
     pip install -r requirements.txt
+    if [ -f coreplugins/geometry_correction/requirements.txt ]; then
+        pip install -r coreplugins/geometry_correction/requirements.txt
+    fi
 
     echo Build translations...
     python manage.py translate build --safe
