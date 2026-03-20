@@ -154,6 +154,8 @@ class Map extends React.Component {
   }
 
   buildMonitoringLayer = (layerConfig, comparison, asOverlay = false) => {
+    const referenceTask = comparison.reference_task || this.state.singleTask;
+    const compareTask = comparison.compare_task || {};
     const bounds = Leaflet.latLngBounds([
       layerConfig.bounds.slice(0, 2).reverse(),
       layerConfig.bounds.slice(2, 4).reverse()
@@ -168,7 +170,7 @@ class Map extends React.Component {
     }
 
     const url = Utils.buildUrlWithQuery(layerConfig.url, query);
-    const baseZIndex = this.typeZIndex('orthophoto', this.zIndexGroupMap[this.state.singleTask.id] || 1);
+    const baseZIndex = this.typeZIndex('orthophoto', this.zIndexGroupMap[(referenceTask || {}).id] || 1);
     const layer = Leaflet.tileLayer(url, {
       bounds,
       minZoom: 0,
@@ -187,16 +189,23 @@ class Map extends React.Component {
       monitoring: true,
       sideBySide: !!layerConfig.side_by_side,
       type: 'orthophoto',
-      task: this.state.singleTask,
+      task: referenceTask,
       autoExpand: false,
       monitoringInfo: {
-        compareTaskName: comparison.compare_task.name,
+        referenceTaskName: referenceTask ? referenceTask.name : '',
+        compareTaskName: compareTask.name || '',
+        referenceCreatedAt: referenceTask ? referenceTask.created_at : null,
+        compareCreatedAt: compareTask.created_at || null,
         shiftMeters: comparison.alignment.shift_meters,
         confidence: comparison.alignment.confidence,
         warnings: comparison.alignment.warnings || []
       },
       mapRef: this.map
     };
+
+    if (this.taskCount > 1 && referenceTask){
+      meta.group = {id: referenceTask.id, name: referenceTask.name};
+    }
 
     return this.decorateMonitoringLayer(layer, meta);
   }
@@ -229,6 +238,10 @@ class Map extends React.Component {
       overlays: overlays.concat([changeLayer]),
       rightLayers,
       monitoringComparison: comparison
+    }, () => {
+      if (alignedLayer && alignedLayer.options && alignedLayer.options.bounds){
+        this.map.fitBounds(alignedLayer.options.bounds);
+      }
     });
   }
   countTasks = () => {
@@ -348,6 +361,7 @@ class Map extends React.Component {
     });
     this.state.overlays.filter(layer => this.isMonitoringLayer(layer)).forEach(layer => layer.remove());
     this.setState({
+      singleTask: null,
       imageryLayers: [],
       rightLayers: [],
       overlays: this.state.overlays.filter(layer => !this.isMonitoringLayer(layer)),
@@ -1246,6 +1260,7 @@ _('Example:'),
           {this.state.pluginActionButtons.map((button, i) => <div key={i}>{button}</div>)}
           <MonitoringCompareButton
             task={this.state.singleTask}
+            project={this.props.project}
             public={this.props.public}
             mapType={this.props.mapType}
             comparison={this.state.monitoringComparison}

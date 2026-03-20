@@ -11,6 +11,7 @@ import { _ } from '../classes/gettext';
 class MonitoringCompareButton extends React.Component {
   static defaultProps = {
     task: null,
+    project: null,
     public: false,
     mapType: 'orthophoto',
     comparison: null,
@@ -20,6 +21,7 @@ class MonitoringCompareButton extends React.Component {
 
   static propTypes = {
     task: PropTypes.object,
+    project: PropTypes.object,
     public: PropTypes.bool,
     mapType: PropTypes.string,
     comparison: PropTypes.object,
@@ -30,12 +32,17 @@ class MonitoringCompareButton extends React.Component {
   constructor(props){
     super(props);
 
-    this.state = {
+    this.state = this.getInitialState();
+  }
+
+  getInitialState(){
+    return {
       open: false,
-      loadingCandidates: false,
+      loadingTimeline: false,
       running: false,
-      candidates: [],
-      selectedTaskId: '',
+      timelineTasks: [],
+      referenceTaskId: '',
+      compareTaskId: '',
       progress: 0,
       progressStatus: '',
       error: ''
@@ -43,38 +50,75 @@ class MonitoringCompareButton extends React.Component {
   }
 
   componentDidUpdate(prevProps, prevState){
-    if (this.state.open && !prevState.open && this.props.task){
-      this.loadCandidates();
+    if (this.state.open && !prevState.open && this.getProjectId()){
+      this.loadTimeline();
     }
 
-    if (prevProps.task && this.props.task && prevProps.task.id !== this.props.task.id){
-      this.setState({
-        open: false,
-        candidates: [],
-        selectedTaskId: '',
-        progress: 0,
-        progressStatus: '',
-        running: false,
-        error: ''
-      });
+    if (this.getProjectIdFromProps(prevProps) !== this.getProjectId() || this.getContextTaskIdFromProps(prevProps) !== this.getContextTaskId()){
+      this.setState(this.getInitialState());
     }
   }
 
-  loadCandidates = () => {
-    if (!this.props.task) return;
+  getProjectIdFromProps = props => {
+    if (props.task && props.task.project) return props.task.project;
+    if (props.project && props.project.id) return props.project.id;
+    return null;
+  }
 
-    this.setState({loadingCandidates: true, error: ''});
-    $.getJSON(`/api/projects/${this.props.task.project}/tasks/${this.props.task.id}/monitoring/candidates`)
-      .done(({results}) => {
-        const candidates = Array.isArray(results) ? results : [];
-        const selectedTaskId = candidates.length > 0 ? candidates[0].id : '';
-        this.setState({candidates, selectedTaskId});
+  getProjectId = () => this.getProjectIdFromProps(this.props)
+
+  getContextTaskIdFromProps = props => {
+    if (props.task && props.task.id) return props.task.id;
+    return null;
+  }
+
+  getContextTaskId = () => this.getContextTaskIdFromProps(this.props)
+
+  getTaskById = taskId => {
+    if (!taskId) return null;
+    return this.state.timelineTasks.find(task => task.id === taskId) || null;
+  }
+
+  isKnownTaskId = (tasks, taskId) => {
+    if (!taskId) return false;
+    return tasks.some(task => task.id === taskId);
+  }
+
+  pickAdjacentTaskId = (referenceTaskId, tasks, preferredTaskId = '') => {
+    if (!referenceTaskId || tasks.length < 2) return '';
+    if (preferredTaskId && preferredTaskId !== referenceTaskId && this.isKnownTaskId(tasks, preferredTaskId)) return preferredTaskId;
+
+    const referenceIndex = tasks.findIndex(task => task.id === referenceTaskId);
+    if (referenceIndex === -1) return '';
+    if (referenceIndex > 0) return tasks[referenceIndex - 1].id;
+    if (referenceIndex + 1 < tasks.length) return tasks[referenceIndex + 1].id;
+    return '';
+  }
+
+  loadTimeline = () => {
+    const projectId = this.getProjectId();
+    if (!projectId) return;
+
+    const contextTaskId = this.getContextTaskId();
+    const query = contextTaskId ? `?task=${contextTaskId}` : '';
+
+    this.setState({loadingTimeline: true, error: ''});
+    $.getJSON(`/api/projects/${projectId}/monitoring/timeline${query}`)
+      .done(payload => {
+        const timelineTasks = Array.isArray(payload.results) ? payload.results : [];
+        const referenceTaskId = this.isKnownTaskId(timelineTasks, payload.default_reference_task_id) ?
+          payload.default_reference_task_id :
+          (timelineTasks.length > 0 ? timelineTasks[timelineTasks.length - 1].id : '');
+        const compareTaskId = this.pickAdjacentTaskId(referenceTaskId, timelineTasks, payload.default_compare_task_id || '');
+
+        this.setState({timelineTasks, referenceTaskId, compareTaskId});
       })
-      .fail(() => {
-        this.setState({error: _('Cannot load monitoring candidates.')});
+      .fail(jqXHR => {
+        const responseError = jqXHR && jqXHR.responseJSON ? (jqXHR.responseJSON.detail || jqXHR.responseJSON.error) : '';
+        this.setState({error: responseError || _('Cannot load the monitoring timeline.')});
       })
       .always(() => {
-        this.setState({loadingCandidates: false});
+        this.setState({loadingTimeline: false});
       });
   }
 
@@ -82,23 +126,36 @@ class MonitoringCompareButton extends React.Component {
     this.setState({open: !this.state.open, error: ''});
   }
 
-  handleSelectTask = e => {
-    this.setState({selectedTaskId: e.target.value});
+  handleReferenceTask = taskId => {
+    this.setState(prevState => ({
+      referenceTaskId: taskId,
+      compareTaskId: this.pickAdjacentTaskId(taskId, prevState.timelineTasks, prevState.compareTaskId)
+    }));
+  }
+
+  handleCompareTask = taskId => {
+    this.setState(prevState => ({
+      compareTaskId: this.pickAdjacentTaskId(prevState.referenceTaskId, prevState.timelineTasks, taskId)
+    }));
   }
 
   handleRun = () => {
-    const { task } = this.props;
-    const { selectedTaskId } = this.state;
-    if (!task || !selectedTaskId){
-      this.setState({error: _('Select a task to compare.')});
+    const projectId = this.getProjectId();
+    const { referenceTaskId, compareTaskId } = this.state;
+    if (!projectId || !referenceTaskId || !compareTaskId){
+      this.setState({error: _('Choose two timeline tasks to compare.')});
+      return;
+    }
+    if (referenceTaskId === compareTaskId){
+      this.setState({error: _('Choose two different timeline tasks to compare.')});
       return;
     }
 
     this.setState({running: true, progress: 0, progressStatus: _('Preparing comparison...'), error: ''});
     $.ajax({
       type: 'POST',
-      url: `/api/projects/${task.project}/tasks/${task.id}/monitoring/compare`,
-      data: { compare_task: selectedTaskId }
+      url: `/api/projects/${projectId}/tasks/${referenceTaskId}/monitoring/compare`,
+      data: { compare_task: compareTaskId }
     }).done(result => {
       if (!result || !result.celery_task_id){
         this.setState({running: false, error: _('Invalid monitoring response.')});
@@ -123,8 +180,9 @@ class MonitoringCompareButton extends React.Component {
       }, (status, progress) => {
         this.setState({progressStatus: status, progress: Math.round((progress || 0) * 100)});
       });
-    }).fail(() => {
-      this.setState({running: false, error: _('Cannot start the monitoring comparison.')});
+    }).fail(jqXHR => {
+      const responseError = jqXHR && jqXHR.responseJSON ? (jqXHR.responseJSON.detail || jqXHR.responseJSON.error) : '';
+      this.setState({running: false, error: responseError || _('Cannot start the monitoring comparison.')});
     });
   }
 
@@ -133,17 +191,95 @@ class MonitoringCompareButton extends React.Component {
     this.setState({progress: 0, progressStatus: '', error: ''});
   }
 
+  formatTaskName = task => {
+    if (!task) return '-';
+    return task.name || task.id;
+  }
+
+  formatTaskDate = task => {
+    if (!task || !task.created_at) return _('Unknown date');
+    return new Date(task.created_at).toLocaleString();
+  }
+
+  renderSelectionSummary(){
+    const referenceTask = this.getTaskById(this.state.referenceTaskId);
+    const compareTask = this.getTaskById(this.state.compareTaskId);
+
+    return (
+      <div className="selection-grid">
+        <div className="panel-section compact">
+          <label>{_('Reference')}</label>
+          <div className="panel-value strong">{this.formatTaskName(referenceTask)}</div>
+          <div className="panel-muted">{this.formatTaskDate(referenceTask)}</div>
+        </div>
+        <div className="panel-section compact">
+          <label>{_('Compare')}</label>
+          <div className="panel-value strong">{this.formatTaskName(compareTask)}</div>
+          <div className="panel-muted">{this.formatTaskDate(compareTask)}</div>
+        </div>
+      </div>
+    );
+  }
+
+  renderTimeline(){
+    const { loadingTimeline, timelineTasks, referenceTaskId, compareTaskId } = this.state;
+
+    if (loadingTimeline){
+      return <div className="panel-value">{_('Loading timeline...')}</div>;
+    }
+
+    if (timelineTasks.length === 0){
+      return <div className="panel-value">{_('No completed orthophotos are available in this project yet.')}</div>;
+    }
+
+    return (
+      <div className="timeline-list">
+        {timelineTasks.map(task => {
+          const isReference = task.id === referenceTaskId;
+          const isCompare = task.id === compareTaskId;
+          const classes = [
+            'timeline-task',
+            isReference ? 'is-reference' : '',
+            isCompare ? 'is-compare' : '',
+            task.is_context ? 'is-context' : ''
+          ].filter(Boolean).join(' ');
+
+          return (
+            <div key={task.id} className={classes}>
+              <div className="timeline-marker">{task.position}</div>
+              <div className="timeline-card" onClick={() => this.handleReferenceTask(task.id)}>
+                <div className="timeline-card__meta">{this.formatTaskDate(task)}</div>
+                <div className="timeline-card__title">{this.formatTaskName(task)}</div>
+                <div className="timeline-badges">
+                  {task.is_context ? <span className="timeline-badge muted">{_('Current')}</span> : ''}
+                  {isReference ? <span className="timeline-badge primary">{_('Reference')}</span> : ''}
+                  {isCompare ? <span className="timeline-badge accent">{_('Compare')}</span> : ''}
+                </div>
+                <div className="timeline-actions">
+                  <button type="button" className="btn btn-default btn-sm" onClick={e => { e.stopPropagation(); this.handleReferenceTask(task.id); }}>{_('Set Reference')}</button>
+                  <button type="button" className="btn btn-default btn-sm" onClick={e => { e.stopPropagation(); this.handleCompareTask(task.id); }} disabled={timelineTasks.length < 2}>{_('Set Compare')}</button>
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    );
+  }
+
   renderSummary(){
     const { comparison } = this.props;
     if (!comparison) return '';
 
+    const referenceTask = comparison.reference_task || {};
+    const compareTask = comparison.compare_task || {};
     const shift = comparison.alignment && comparison.alignment.shift_meters ? comparison.alignment.shift_meters : {x: 0, y: 0};
     const confidence = comparison.alignment && comparison.alignment.confidence !== undefined ? comparison.alignment.confidence : null;
     const warnings = comparison.alignment && comparison.alignment.warnings ? comparison.alignment.warnings : [];
 
     return (
       <div className="monitoring-summary">
-        <div className="summary-title">{comparison.compare_task.name}</div>
+        <div className="summary-title">{referenceTask.name || referenceTask.id || '-'} {_('vs')} {compareTask.name || compareTask.id || '-'}</div>
         <div>{_('Correction')}: {shift.x}m / {shift.y}m</div>
         {confidence !== null ? <div>{_('Confidence')}: {confidence}</div> : ''}
         {warnings.length > 0 ? <div className="summary-warning">{warnings[0]}</div> : ''}
@@ -152,13 +288,14 @@ class MonitoringCompareButton extends React.Component {
   }
 
   render(){
-    const { task, public: isPublic, mapType, comparison } = this.props;
-    const { open, loadingCandidates, running, candidates, selectedTaskId, progress, progressStatus } = this.state;
+    const { task, project, public: isPublic, mapType, comparison } = this.props;
+    const { open, running, referenceTaskId, compareTaskId, progress, progressStatus } = this.state;
+    const projectId = this.getProjectId();
 
-    if (!task || isPublic || mapType !== 'orthophoto') return '';
+    if (!projectId || isPublic || mapType !== 'orthophoto') return '';
 
     return (
-      <div className={"monitoring-compare " + (open ? 'open' : '')}>
+      <div className={'monitoring-compare ' + (open ? 'open' : '')}>
         <button
           type="button"
           className="btn btn-sm btn-secondary monitoring-toggle"
@@ -168,33 +305,28 @@ class MonitoringCompareButton extends React.Component {
 
         {open ? <div className="monitoring-panel theme-secondary">
           <div className="panel-header">
-            <div className="panel-title">{_('Monitoring & Progress')}</div>
+            <div className="panel-title">{_('Monitoring & Progress Timeline')}</div>
             <button type="button" className="close" onClick={this.toggleOpen}>&times;</button>
           </div>
 
-          <div className="panel-section">
-            <label>{_('Current task')}</label>
-            <div className="panel-value">{task.name || task.id}</div>
+          <div className="panel-section compact panel-context">
+            <label>{task ? _('Current task') : _('Project')}</label>
+            <div className="panel-value strong">{task ? this.formatTaskName(task) : ((project && project.name) || projectId)}</div>
           </div>
 
-          <div className="panel-section">
-            <label htmlFor="monitoring-task-select">{_('Compare against')}</label>
-            {loadingCandidates ? <div className="panel-value">{_('Loading tasks...')}</div> :
-              <select id="monitoring-task-select" className="form-control" value={selectedTaskId} onChange={this.handleSelectTask}>
-                {candidates.length === 0 ? <option value="">{_('No completed orthophotos found')}</option> : ''}
-                {candidates.map(candidate => (
-                  <option key={candidate.id} value={candidate.id}>{candidate.name || candidate.id}</option>
-                ))}
-              </select>}
+          {this.renderSelectionSummary()}
+
+          <div className="panel-section timeline-section">
+            <label>{_('Timeline')}</label>
+            <div className="panel-help">{_('Pick a reference task and a comparison task from the completed orthophoto timeline. The comparison task defaults to the nearest earlier capture when available.')}</div>
+            {this.renderTimeline()}
           </div>
 
-          <div className="panel-help">{_('The system automatically aligns the orthophotos before generating the overlay and change heatmap.')}</div>
           <ErrorMessage bind={[this, 'error']} />
-
           {running ? <ProgressBar current={progress} total={100} template={progressStatus || ''} /> : ''}
 
           <div className="panel-actions">
-            <button type="button" className="btn btn-primary" disabled={running || !selectedTaskId} onClick={this.handleRun}>{_('Load Comparison')}</button>
+            <button type="button" className="btn btn-primary" disabled={running || !referenceTaskId || !compareTaskId} onClick={this.handleRun}>{_('Load Comparison')}</button>
             {comparison ? <button type="button" className="btn btn-default" onClick={this.handleClear}>{_('Clear')}</button> : ''}
           </div>
         </div> : ''}

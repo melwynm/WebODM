@@ -1,6 +1,6 @@
 # Consolidated Pipeline
 
-Last updated: 2026-03-14
+Last updated: 2026-03-19
 
 This file is the single source of truth for the project pipeline in this fork.
 It combines:
@@ -13,7 +13,7 @@ The next item is the first stage marked `Next`.
 
 ## Current Next Item
 
-`13. Project Timeline Monitoring`
+`14. DSM/DTM Delta and Cut/Fill`
 
 Extend monitoring from single-task orthophoto comparison into a proper project timeline view.
 
@@ -33,11 +33,12 @@ Extend monitoring from single-task orthophoto comparison into a proper project t
 | 10 | Report | Runtime | Working | Generate the standard processing report. |
 | 11 | Postprocess | Runtime | Working | Finalize assets and derived outputs. |
 | 12 | Monitoring Compare MVP | Workflow | Working | Compare orthophotos in single-task view with translational auto-alignment, overlay output, and change heatmap output. |
-| 13 | Project Timeline Monitoring | Workflow | Next | Expand monitoring into a project-level timeline experience instead of a single-task comparison view. |
-| 14 | DSM/DTM Delta and Cut/Fill | Workflow | Planned | Add terrain change products beyond orthophoto-only comparison. |
+| 13 | Project Timeline Monitoring | Workflow | Working | Monitoring now supports project-level timeline selection, timeline-driven compare launch, and cache invalidation for regenerated timeline comparisons. |
+| 14 | DSM/DTM Delta and Cut/Fill | Workflow | Next | Add terrain change products beyond orthophoto-only comparison. |
 | 15 | Change Issues and Annotations | Workflow | Planned | Promote detected changes into trackable issues and annotations with status. |
 | 16 | Advanced Alignment | Workflow | Planned | Improve alignment from translation-only correction to affine or local feature-based warping. |
 | 17 | Stakeholder Reports | Workflow | Planned | Export monitoring and progress reports for external review and communication. |
+| 18 | OneDrive Folder Task Intake | Workflow | Planned | Allow creating or processing tasks directly from a configured OneDrive folder intake path. |
 
 ## Interpretation Rules
 

@@ -1190,6 +1190,7 @@ class Task(models.Model):
         self.update_orthophoto_bands_field()
         self.update_size()
         self.clear_task_assets_cache()
+        self.clear_monitoring_cache()
         self.potree_scene = {}
         self.running_progress = 1.0
         self.crop = None
@@ -1378,6 +1379,7 @@ class Task(models.Model):
         directory_to_delete = os.path.join(settings.MEDIA_ROOT,
                                            task_directory_path(self.id, self.project.id))
         self.clear_task_assets_cache()
+        self.clear_monitoring_cache()
 
         super(Task, self).delete(using, keep_parents)
 
@@ -1624,6 +1626,16 @@ class Task(models.Model):
                 shutil.rmtree(d)
             except Exception as e:
                 logger.warning("Cannot clear task assets cache {}: {}".format(d, str(e)))
+
+    def clear_monitoring_cache(self):
+        if self.id is None:
+            return
+
+        try:
+            from app.monitoring import clear_monitoring_cache_for_task
+            clear_monitoring_cache_for_task(self.id)
+        except Exception as e:
+            logger.warning("Cannot clear monitoring cache for task {}: {}".format(self, str(e)))
 
     def get_safe_textured_model(self, max_size_mb=150):
         input_glb = self.get_check_file_asset_path('textured_model.glb')

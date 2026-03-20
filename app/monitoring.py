@@ -18,7 +18,7 @@ from webodm import settings
 
 logger = logging.getLogger("app.logger")
 
-MONITORING_CACHE_VERSION = 1
+MONITORING_CACHE_VERSION = 2
 PREVIEW_LONG_SIDE = 2048
 MIN_VALID_PIXELS = 4096
 CHANGE_ALPHA_THRESHOLD = 18.0
@@ -38,11 +38,59 @@ def monitoring_cache_dir(reference_task_id, compare_task_id):
     )
 
 
+def clear_monitoring_cache_for_task(task_id):
+    monitoring_root = os.path.join(settings.MEDIA_CACHE, "monitoring")
+    task_id = str(task_id)
+
+    if not os.path.isdir(monitoring_root):
+        return
+
+    direct_reference_path = os.path.join(monitoring_root, task_id)
+    if os.path.isdir(direct_reference_path):
+        shutil.rmtree(direct_reference_path, ignore_errors=True)
+
+    for reference_id in os.listdir(monitoring_root):
+        reference_path = os.path.join(monitoring_root, reference_id)
+        if not os.path.isdir(reference_path):
+            continue
+
+        compare_path = os.path.join(reference_path, task_id)
+        if os.path.isdir(compare_path):
+            shutil.rmtree(compare_path, ignore_errors=True)
+
+        try:
+            if reference_id != task_id and not os.listdir(reference_path):
+                os.rmdir(reference_path)
+        except OSError:
+            continue
+
+
+def monitoring_task_input(task):
+    orthophoto_path = task.get_asset_download_path("orthophoto.tif")
+    asset_mtime = None
+    if os.path.isfile(orthophoto_path):
+        asset_mtime = round(float(os.path.getmtime(orthophoto_path)), 6)
+
+    return {
+        "task_id": str(task.id),
+        "task_name": task.name,
+        "task_created_at": task.created_at.isoformat() if task.created_at else None,
+        "asset_mtime": asset_mtime,
+    }
+
+
+def monitoring_inputs(reference_task, compare_task):
+    return {
+        "reference": monitoring_task_input(reference_task),
+        "compare": monitoring_task_input(compare_task),
+    }
+
 def ensure_monitoring_products(reference_task, compare_task, progress_callback=None):
     cache_dir = monitoring_cache_dir(reference_task.id, compare_task.id)
     metadata_path = os.path.join(cache_dir, "metadata.json")
+    current_inputs = monitoring_inputs(reference_task, compare_task)
 
-    metadata = _load_cached_metadata(cache_dir, metadata_path)
+    metadata = _load_cached_metadata(cache_dir, metadata_path, reference_task, compare_task)
     if metadata is not None:
         return _with_paths(cache_dir, metadata)
 
@@ -73,6 +121,7 @@ def ensure_monitoring_products(reference_task, compare_task, progress_callback=N
     metadata = {
         "version": MONITORING_CACHE_VERSION,
         "generated_at": datetime.utcnow().isoformat() + "Z",
+        "inputs": current_inputs,
         "alignment": alignment,
         "aligned_overlay": {
             "path": os.path.basename(aligned_path),
@@ -357,12 +406,20 @@ def render_layer_payload(reference_task, compare_task, metadata):
     return {
         "reference_task": {
             "id": str(reference_task.id),
+            "project": reference_task.project.id,
             "name": reference_task.name,
+            "created_at": reference_task.created_at.isoformat(),
         },
         "compare_task": {
             "id": str(compare_task.id),
+            "project": compare_task.project.id,
             "name": compare_task.name,
             "created_at": compare_task.created_at.isoformat(),
+        },
+        "timeline": {
+            "generated_at": metadata.get("generated_at"),
+            "reference_task_id": str(reference_task.id),
+            "compare_task_id": str(compare_task.id),
         },
         "alignment": alignment,
         "layers": {
@@ -663,7 +720,7 @@ def _progress(progress_callback, status, progress):
         progress_callback(status, progress)
 
 
-def _load_cached_metadata(cache_dir, metadata_path):
+def _load_cached_metadata(cache_dir, metadata_path, reference_task=None, compare_task=None):
     if not os.path.isfile(metadata_path):
         return None
 
@@ -677,6 +734,11 @@ def _load_cached_metadata(cache_dir, metadata_path):
         change_path = os.path.join(cache_dir, metadata["change_overlay"]["path"])
         if not os.path.isfile(aligned_path) or not os.path.isfile(change_path):
             return None
+
+        if reference_task is not None and compare_task is not None:
+            if metadata.get("inputs") != monitoring_inputs(reference_task, compare_task):
+                return None
+
         return metadata
     except Exception as e:
         logger.warning("Cannot load monitoring cache %s: %s", metadata_path, e)

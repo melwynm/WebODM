@@ -9,12 +9,14 @@
     position: absolute;
     right: 0;
     bottom: 44px;
-    width: 320px;
+    width: min(380px, calc(100vw - 24px));
+    max-height: min(72vh, 640px);
     padding: 14px;
     border-radius: 12px;
     background: linear-gradient(180deg, rgba(255,255,255,0.98), rgba(244,247,251,0.98));
     box-shadow: 0 24px 60px -34px rgba(15, 23, 42, 0.7);
     color: #1f2937;
+    overflow: hidden;
   }
 
   .panel-header{
@@ -46,10 +48,28 @@
     }
   }
 
+  .panel-section.compact{
+    margin-bottom: 8px;
+    padding: 10px;
+    border: 1px solid rgba(148, 163, 184, 0.24);
+    border-radius: 10px;
+    background: rgba(255,255,255,0.72);
+  }
+
   .panel-value,
-  .panel-help{
+  .panel-help,
+  .panel-muted{
     font-size: 13px;
     line-height: 1.5;
+  }
+
+  .panel-value.strong{
+    font-weight: 600;
+    color: #0f172a;
+  }
+
+  .panel-muted{
+    color: #64748b;
   }
 
   .panel-help{
@@ -57,17 +77,156 @@
     color: #475569;
   }
 
-  .panel-actions{
+  .selection-grid{
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+  }
+
+  .timeline-section{
+    margin-bottom: 0;
+  }
+
+  .timeline-list{
+    max-height: min(34vh, 300px);
+    overflow-y: auto;
+    padding-right: 4px;
+  }
+
+  .timeline-task{
+    position: relative;
+    padding-left: 34px;
+    margin-bottom: 10px;
+
+    &:last-child{
+      margin-bottom: 0;
+    }
+
+    &:before{
+      content: '';
+      position: absolute;
+      left: 10px;
+      top: 0;
+      bottom: -10px;
+      width: 2px;
+      background: linear-gradient(180deg, rgba(148, 163, 184, 0.35), rgba(148, 163, 184, 0.08));
+    }
+
+    &:last-child:before{
+      bottom: 18px;
+    }
+  }
+
+  .timeline-marker{
+    position: absolute;
+    left: 0;
+    top: 8px;
+    width: 22px;
+    height: 22px;
+    border-radius: 999px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #e2e8f0;
+    color: #334155;
+    font-size: 11px;
+    font-weight: 700;
+    z-index: 1;
+  }
+
+  .timeline-card{
+    padding: 10px 12px;
+    border-radius: 12px;
+    border: 1px solid rgba(148, 163, 184, 0.24);
+    background: rgba(255,255,255,0.8);
+    cursor: pointer;
+    transition: border-color 120ms ease, box-shadow 120ms ease, transform 120ms ease;
+
+    &:hover{
+      border-color: rgba(59, 130, 246, 0.35);
+      box-shadow: 0 18px 30px -28px rgba(37, 99, 235, 0.75);
+      transform: translateY(-1px);
+    }
+  }
+
+  .timeline-task.is-reference .timeline-card{
+    border-color: rgba(37, 99, 235, 0.5);
+    box-shadow: inset 0 0 0 1px rgba(37, 99, 235, 0.2);
+  }
+
+  .timeline-task.is-compare .timeline-card{
+    border-color: rgba(217, 119, 6, 0.45);
+  }
+
+  .timeline-task.is-context .timeline-marker{
+    background: #0f172a;
+    color: #fff;
+  }
+
+  .timeline-card__meta{
+    font-size: 11px;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: #64748b;
+  }
+
+  .timeline-card__title{
+    margin-top: 3px;
+    font-size: 13px;
+    font-weight: 700;
+    color: #0f172a;
+  }
+
+  .timeline-badges{
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 8px;
+  }
+
+  .timeline-badge{
+    display: inline-flex;
+    align-items: center;
+    border-radius: 999px;
+    padding: 2px 8px;
+    font-size: 11px;
+    font-weight: 600;
+    background: #e2e8f0;
+    color: #334155;
+  }
+
+  .timeline-badge.primary{
+    background: rgba(37, 99, 235, 0.12);
+    color: #1d4ed8;
+  }
+
+  .timeline-badge.accent{
+    background: rgba(217, 119, 6, 0.14);
+    color: #b45309;
+  }
+
+  .timeline-badge.muted{
+    background: rgba(15, 23, 42, 0.08);
+    color: #475569;
+  }
+
+  .timeline-actions{
     display: flex;
     gap: 8px;
     margin-top: 10px;
   }
 
+  .panel-actions{
+    display: flex;
+    gap: 8px;
+    margin-top: 12px;
+  }
+
   .monitoring-summary{
     position: absolute;
     right: 0;
-    bottom: -74px;
-    width: 240px;
+    bottom: -86px;
+    width: 280px;
     padding: 10px 12px;
     border-radius: 10px;
     background: rgba(255,255,255,0.96);

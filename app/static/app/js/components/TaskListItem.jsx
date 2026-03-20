@@ -1068,6 +1068,9 @@ class TaskListItem extends React.Component {
     let taskActionsIcon = "fa-ellipsis-h";
     if (actionLoading) taskActionsIcon = "fa-circle-notch fa-spin fa-fw";
     const userTags = Tags.userTags(task.tags);
+    const statusContent = showEditLink ?
+      <a href="javascript:void(0);" className="status-link" onClick={this.startEditing}>{statusLabel}</a> :
+      statusLabel;
 
     return (
       <div className="task-list-item">
@@ -1096,9 +1099,9 @@ class TaskListItem extends React.Component {
             : ""}
           </div>
           <div className="col-xs-5 col-sm-6 col-md-4 col-lg-3 actions">
-            {showEditLink ?
-              <a href="javascript:void(0);" onClick={this.startEditing}>{statusLabel}</a>
-              : statusLabel}
+            <div className="status-slot">
+              {statusContent}
+            </div>
             {taskActions.length > 0 ? 
                 <div className="btn-group">
                 <button disabled={disabled || actionLoading} className="btn task-actions btn-secondary btn-xs dropdown-toggle" type="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">

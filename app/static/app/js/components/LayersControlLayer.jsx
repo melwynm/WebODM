@@ -367,6 +367,7 @@ export default class LayersControlLayer extends React.Component {
     return (<div className="layer-expanded">
         <ErrorMessage bind={[this, "error"]} />
         <div className="small monitoring-layer-details">
+            <div><strong>{_('Reference Task')}:</strong> {info.referenceTaskName || '-'}</div>
             <div><strong>{_('Compared Task')}:</strong> {info.compareTaskName || '-'}</div>
             <div><strong>{_('Correction')}:</strong> {shift.x}m / {shift.y}m</div>
             {info.confidence !== undefined ? <div><strong>{_('Confidence')}:</strong> {info.confidence}</div> : ''}
@@ -479,6 +480,5 @@ export default class LayersControlLayer extends React.Component {
 
    }
 }
-
 
 
