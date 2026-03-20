@@ -36,9 +36,31 @@ class CorrectionJob(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
+        app_label = "geometry_correction"
         ordering = ["-created_at"]
         verbose_name = "Correction Job"
         verbose_name_plural = "Correction Jobs"
 
     def __str__(self):
         return f"CorrectionJob(task={self.task_id}, status={self.status})"
+
+    def mark_running(self, celery_task_id=""):
+        self.status = self.Status.RUNNING
+        self.celery_task_id = celery_task_id or self.celery_task_id
+        self.error_message = ""
+        self.save(update_fields=["status", "celery_task_id", "error_message", "updated_at"])
+
+    def mark_completed(self, result):
+        self.status = self.Status.COMPLETED
+        self.result = result or {}
+        self.error_message = ""
+        self.save(update_fields=["status", "result", "error_message", "updated_at"])
+
+    def mark_failed(self, error_message, result=None):
+        self.status = self.Status.FAILED
+        self.error_message = str(error_message)
+        if result is not None:
+            self.result = result
+            self.save(update_fields=["status", "result", "error_message", "updated_at"])
+        else:
+            self.save(update_fields=["status", "error_message", "updated_at"])

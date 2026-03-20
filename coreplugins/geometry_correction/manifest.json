@@ -1,0 +1,13 @@
+{
+  "name": "Geometry Correction",
+  "webodmMinVersion": "2.5.0",
+  "description": "Post-process point clouds, meshes and orthophotos with semantic-aware geometric correction.",
+  "version": "0.2.0",
+  "author": "OpenAI Codex",
+  "email": "support@openai.com",
+  "repository": "https://github.com/OpenDroneMap/WebODM",
+  "tags": ["geometry", "correction", "orthophoto", "pointcloud", "mesh"],
+  "homepage": "https://github.com/OpenDroneMap/WebODM",
+  "experimental": true,
+  "deprecated": false
+}
