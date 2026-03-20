@@ -1272,6 +1272,7 @@ _('Example:'),
               ref={(ref) => { this.shareButton = ref; }}
               task={this.state.singleTask}
               project={this.props.project}
+              popupPlacement="bottom"
               linksTarget="map"
               queryParams={{t: this.props.mapType}}
             />

@@ -1,6 +1,12 @@
 .plugin-measure.popup{
+    display: grid;
+    gap: 10px;
+    color: inherit;
+    justify-items: start;
+
     p{
         margin: 0;
+        line-height: 1.5;
     }
 
     .error.long{
@@ -10,20 +16,46 @@
     }
 
     a.export-measurements{
-    	display: block;
-    	margin-top: 12px;
+        display: inline-flex !important;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        width: auto;
+        min-height: 38px;
+        padding: 8px 14px;
+        margin-top: 4px;
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.96);
+        color: #0f172a;
+        font-weight: 600;
+        text-decoration: none;
+
+        &:hover,
+        &:focus{
+            background: #eff6ff;
+            color: #1d4ed8;
+            text-decoration: none;
+        }
     }
 
     .base-control{
-        display: inline-block;
-        margin-top: 16px;
+        display: flex;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-top: 8px;
+
         select{
             font-size: 12px;
-            height: auto;
-            margin-left: 4px;
-            padding: 4px;
+            min-height: 34px;
+            margin-left: 0;
+            padding: 6px 10px;
             display: inline-block;
             width: auto;
+            border-radius: 10px;
+            border: 1px solid rgba(148, 163, 184, 0.28);
+            background: rgba(255, 255, 255, 0.96);
+            color: #0f172a;
         }
     }
 }

@@ -119,9 +119,9 @@
         color: #1f2937;
         font-size: 0.94rem;
 
-        span,
-        a,
-        div {
+        > span,
+        > a,
+        > div {
             display: inline-flex;
             align-items: center;
             gap: 8px;

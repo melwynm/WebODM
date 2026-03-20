@@ -8,15 +8,16 @@
   .monitoring-panel{
     position: absolute;
     right: 0;
-    bottom: 44px;
-    width: min(380px, calc(100vw - 24px));
-    max-height: min(72vh, 640px);
+    top: calc(100% + 10px);
+    width: 380px;
+    max-width: calc(100vw - 24px);
+    max-height: calc(100vh - 120px);
     padding: 14px;
     border-radius: 12px;
     background: linear-gradient(180deg, rgba(255,255,255,0.98), rgba(244,247,251,0.98));
     box-shadow: 0 24px 60px -34px rgba(15, 23, 42, 0.7);
     color: #1f2937;
-    overflow: hidden;
+    overflow: hidden auto;
   }
 
   .panel-header{
@@ -88,7 +89,7 @@
   }
 
   .timeline-list{
-    max-height: min(34vh, 300px);
+    max-height: 300px;
     overflow-y: auto;
     padding-right: 4px;
   }
@@ -212,21 +213,23 @@
 
   .timeline-actions{
     display: flex;
+    flex-wrap: wrap;
     gap: 8px;
     margin-top: 10px;
   }
 
   .panel-actions{
     display: flex;
+    flex-wrap: wrap;
     gap: 8px;
     margin-top: 12px;
   }
 
   .monitoring-summary{
-    position: absolute;
-    right: 0;
-    bottom: -86px;
-    width: 280px;
+    position: static;
+    width: 100%;
+    max-width: 280px;
+    margin-top: 8px;
     padding: 10px 12px;
     border-radius: 10px;
     background: rgba(255,255,255,0.96);
@@ -244,5 +247,12 @@
   .summary-warning{
     margin-top: 6px;
     color: #b45309;
+  }
+
+  @media (max-width: 768px){
+    .monitoring-panel{
+      width: calc(100vw - 24px);
+      max-width: 100%;
+    }
   }
 }

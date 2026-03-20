@@ -1,20 +1,25 @@
 .sharePopup{
 	position: absolute;
 	&.top{
-		bottom: 0;
+		bottom: calc(100% + 10px);
 	}
 	&.bottom{
-		top: 0;
+		top: calc(100% + 10px);
 	}
 	right: 0;
 	pointer-events: none;
+	z-index: 2200;
 
 	.sharePopupContainer{
 		pointer-events: auto;
 		position: relative;
 		display: block;
-	    left: -26px;
-    	min-width: 280px;
+		width: 320px;
+    	min-width: 300px;
+    	max-width: calc(100vw - 32px);
+		left: auto;
+		border-radius: 18px;
+		box-shadow: 0 26px 54px -34px rgba(15, 23, 42, 0.58);
 
 		.fa-exclamation-triangle{
 			margin-right: 4px;
@@ -33,26 +38,27 @@
 		}
 
 		&.top{
-			top: -43px;
+			top: 0;
 		}
 		&.bottom{
-		    top: 153px;
-    		left: -46px;
+		    top: 0;
+    		left: auto;
 		}
 
 		&.popover.top > .arrow{
 			left: auto;
-			right: 60px;
+			right: 28px;
 		}
 		&.popover.bottom > .arrow{
-			left: 25px;
+			left: auto;
+			right: 28px;
 		}
 
 		&.shareProject.top{
-			left: 0px;
+			left: auto;
 
 			& > .arrow{
-				right: 20px;
+				right: 28px;
 			}
 		}
 
@@ -67,6 +73,8 @@
 		.checkboxes{
 			display: flex;
 			justify-content: space-between;
+			gap: 12px;
+			flex-wrap: wrap;
 		}
 
 		.btn-qr{
@@ -97,10 +105,19 @@
 			transition: max-height 1s ease-in-out;
 			
 			&.show{
-				max-height: 800px;
+				max-height: min(60vh, 800px);
 				height: auto;
+				overflow-y: auto;
 			}
 		}
 	}
 }
 
+@media (max-width: 576px){
+	.sharePopup{
+		.sharePopupContainer{
+			width: calc(100vw - 32px);
+			min-width: 0;
+		}
+	}
+}

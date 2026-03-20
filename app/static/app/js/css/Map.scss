@@ -132,16 +132,39 @@
     .actionButtons{
         position: absolute;
         z-index: 2000;
-        right: 16px;
+        right: 64px;
         top: 16px;
+        width: 184px;
+        max-width: calc(100% - 128px);
         display: flex;
         flex-direction: column;
-        gap: 12px;
-        align-items: flex-end;
+        gap: 10px;
+        align-items: stretch;
 
         & > *{
-            display: inline-flex;
+            display: flex;
+            width: 100%;
             margin-left: 0;
+            max-width: 100%;
+        }
+
+        .shareButton,
+        .monitoring-compare,
+        .switchModeButton{
+            width: 100%;
+            max-width: 100%;
+        }
+
+        .shareButton > button,
+        .monitoring-toggle,
+        .switchModeButton{
+            width: 100% !important;
+            min-height: 42px;
+            justify-content: center;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            box-shadow: 0 18px 34px -28px rgba(15, 23, 42, 0.85);
         }
     }
 
@@ -160,6 +183,66 @@
             top: 8px;
             right: 8px;
         }
+    }
+
+    .leaflet-control-measure,
+    .leaflet-control-measure-interaction,
+    .leaflet-measure-resultpopup,
+    .leaflet-measure-path-measurement{
+        max-width: calc(100% - 28px);
+        box-sizing: border-box;
+    }
+
+    .leaflet-control-measure-interaction,
+    .leaflet-measure-resultpopup,
+    .leaflet-measure-path-measurement{
+        width: 340px;
+        border-radius: 18px;
+        border: 1px solid rgba(148, 163, 184, 0.24);
+        background: #0f172a !important;
+        color: #f8fafc !important;
+        backdrop-filter: blur(14px);
+        box-shadow: 0 24px 48px -30px rgba(15, 23, 42, 0.78);
+        overflow: hidden auto;
+    }
+
+    .leaflet-measure-path-measurement .results,
+    .leaflet-measure-path-measurement .tasks{
+        width: auto;
+        max-width: 100%;
+        box-sizing: border-box;
+    }
+
+    .leaflet-control-measure-interaction,
+    .leaflet-measure-resultpopup,
+    .leaflet-measure-path-measurement{
+        max-height: calc(100% - 28px);
+    }
+
+    .leaflet-control-measure-interaction *,
+    .leaflet-measure-resultpopup *,
+    .leaflet-measure-path-measurement *{
+        color: inherit !important;
+        text-shadow: none !important;
+        overflow-wrap: anywhere;
+    }
+
+    .leaflet-measure-resultpopup a,
+    .leaflet-measure-path-measurement a,
+    .leaflet-control-measure-interaction a{
+        color: #bfdbfe !important;
+    }
+
+    .leaflet-measure-resultpopup button,
+    .leaflet-measure-path-measurement button,
+    .leaflet-control-measure-interaction button,
+    .leaflet-measure-resultpopup input[type="button"],
+    .leaflet-measure-path-measurement input[type="button"],
+    .leaflet-control-measure-interaction input[type="button"]{
+        border: 1px solid rgba(148, 163, 184, 0.28);
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.96);
+        color: #0f172a !important;
     }
 
     & > .leaflet-container{
@@ -182,6 +265,8 @@
             top: auto;
             right: 12px;
             bottom: 16px;
+            width: auto;
+            max-width: calc(100% - 24px);
             flex-direction: row;
             flex-wrap: wrap;
             justify-content: flex-end;
@@ -191,6 +276,14 @@
             left: 12px;
             right: 12px;
             width: auto;
+        }
+
+        .leaflet-control-measure-interaction,
+        .leaflet-measure-resultpopup,
+        .leaflet-measure-path-measurement{
+            left: 12px !important;
+            right: 12px !important;
+            width: auto !important;
         }
     }
 }

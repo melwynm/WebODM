@@ -1,6 +1,13 @@
 .shareButton{
+	display: flex;
+	position: relative;
+	justify-content: flex-end;
+
 	button{
     	border-width: 1px;
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		gap: 8px;
 	}
 }
-

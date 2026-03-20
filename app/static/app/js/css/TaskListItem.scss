@@ -10,7 +10,10 @@
         margin: 0;
         padding: 18px 20px;
         display: grid;
-        grid-template-columns: minmax(0, 1.5fr) minmax(90px, auto) minmax(140px, auto) minmax(220px, auto);
+        width: 100%;
+        box-sizing: border-box;
+        grid-template-columns: minmax(0, 1fr) 90px 120px 248px;
+        grid-template-areas: "name images time actions";
         gap: 14px;
         align-items: center;
         background: linear-gradient(135deg, rgba(248, 250, 252, 0.95) 0%, rgba(255, 255, 255, 1) 100%);
@@ -20,6 +23,22 @@
             width: auto;
             min-width: 0;
             padding: 0;
+        }
+
+        > :nth-child(1){
+            grid-area: name;
+        }
+
+        > :nth-child(2){
+            grid-area: images;
+        }
+
+        > :nth-child(3){
+            grid-area: time;
+        }
+
+        > :nth-child(4){
+            grid-area: actions;
         }
     }
 
@@ -92,7 +111,7 @@
     }
     
     .status-label{
-        width: auto;
+        width: 100%;
         max-width: 100%;
         min-width: 0;
         min-height: 44px;
@@ -148,24 +167,28 @@
     }
 
     .actions{
-        display: flex;
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) 40px;
         align-items: center;
-        justify-content: flex-end;
-        gap: 10px;
+        justify-self: end;
+        align-self: center;
+        column-gap: 10px;
         padding-right: 0;
         min-width: 0;
+        width: 100%;
+        max-width: 248px;
+        margin-left: auto;
 
         .status-slot{
-            flex: 1 1 auto;
             min-width: 0;
             display: flex;
             justify-content: flex-end;
         }
 
         .status-link{
-            flex: 1 1 auto;
             min-width: 0;
             display: flex;
+            width: 100%;
             color: inherit;
 
             &:hover,
@@ -176,8 +199,8 @@
 
         .btn-group{
             display: inline-flex;
-            flex: 0 0 auto;
             align-items: center;
+            justify-self: end;
         }
     }
 
@@ -440,13 +463,14 @@
 
     @media (max-width: 1199px){
         > .row{
-            grid-template-columns: minmax(0, 1.5fr) minmax(120px, auto) minmax(220px, auto);
+            grid-template-columns: minmax(0, 1fr) 90px 110px 236px;
         }
     }
 
     @media (max-width: 991px){
         > .row{
-            grid-template-columns: minmax(0, 1fr) minmax(220px, auto);
+            grid-template-columns: minmax(0, 1fr) 236px;
+            grid-template-areas: "name actions";
         }
 
         .details{
@@ -457,6 +481,9 @@
     @media (max-width: 576px){
         > .row{
             grid-template-columns: 1fr;
+            grid-template-areas:
+                "name"
+                "actions";
             padding: 16px;
         }
 
@@ -465,10 +492,15 @@
         }
 
         .actions{
+            display: flex;
             justify-content: space-between;
+            justify-self: stretch;
+            width: 100%;
+            max-width: none;
 
             .status-slot{
                 justify-content: flex-start;
+                min-width: 0;
             }
         }
 

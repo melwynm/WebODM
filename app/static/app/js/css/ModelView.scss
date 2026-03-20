@@ -22,11 +22,21 @@
         filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#4f4f4f', endColorstr='#161616',GradientType=1 );
     	position: relative;
     	padding: 0;
+        overflow: hidden;
+        border-radius: 22px;
     }
     .dg{
+        text-shadow: none;
+
 	    &.main{
 		    position: absolute;
-		    right: 0px;
+		    top: 16px;
+		    right: 16px;
+            width: 320px;
+            max-width: calc(100% - 32px);
+            max-height: calc(100% - 32px);
+            overflow-y: auto;
+            z-index: 4;
 	    }
 	    .c{
 	    	select{
@@ -64,9 +74,15 @@
     }
     .model-action-buttons{
         position: absolute;
-        z-index: 1;
-        bottom: 12px;
-        right: 6px;
+        z-index: 4;
+        bottom: 16px;
+        right: 16px;
+        width: 220px;
+        max-width: calc(100% - 32px);
+        display: flex;
+        flex-direction: column;
+        align-items: stretch;
+        gap: 10px;
 
         &.modal-open{
             z-index: 999999;
@@ -77,13 +93,22 @@
         }
         .asset-download-buttons{
             .dropdown-menu{
-                left: -150px;
+                left: auto;
+                right: 0;
             }
         }
 
         & > *{
-            display: inline-block;
-            margin-right: 8px;
+            display: flex;
+            width: 100%;
+            margin-right: 0;
+            max-width: 100%;
+        }
+
+        .shareButton > button,
+        .switchModeButton{
+            width: 100% !important;
+            min-height: 42px;
         }
     }
 
@@ -144,18 +169,42 @@
     }
 
     #potree_sidebar_container{
+        position: absolute;
+        top: 0;
+        left: 0;
+        bottom: 0;
+        width: 320px;
+        max-width: calc(100% - 24px);
         overflow-y: auto;
         background-color: #19282c;
+        border-right: 1px solid rgba(148, 163, 184, 0.18);
+        box-shadow: 18px 0 38px -30px rgba(15, 23, 42, 0.78);
+        z-index: 3;
+
+        *{
+            text-shadow: none !important;
+        }
 
         a{
-            color: #111;
+            color: #bfdbfe;
         }  
 
+        label,
+        span,
+        div,
+        li,
+        h3{
+            color: #e2e8f0;
+        }
+
         #sidebar_root{
-            width: 300px;
+            width: 100%;
+            max-width: 100%;
+            box-sizing: border-box;
+            padding: 16px;
 
             .pv-menu-list{
-                padding-right: 12px;
+                padding-right: 0;
 
                 .divider{
                     padding: 10px 0px 15px 0px;
@@ -170,9 +219,9 @@
                 cursor: pointer;
             }
 
-            position: absolute; 
+            position: relative; 
             min-height: 100%; 
-            height: 100%;
+            height: auto;
 
             .potree_sidebar_brand{
                 display: flex; 
@@ -208,6 +257,20 @@
             &:hover{
                 opacity: 1;
             }
+        }
+    }
+
+    @media (max-width: 768px){
+        .model-action-buttons{
+            width: 180px;
+            max-width: calc(100% - 24px);
+            right: 12px;
+            bottom: 12px;
+        }
+
+        #potree_sidebar_container{
+            width: 280px;
+            max-width: calc(100% - 24px);
         }
     }
 }
