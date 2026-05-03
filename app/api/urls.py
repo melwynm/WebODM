@@ -58,8 +58,8 @@ urlpatterns = [
     re_path(r'projects/(?P<project_pk>[^/.]+)/monitoring/timeline$', MonitoringTimeline.as_view()),
     re_path(r'projects/(?P<project_pk>[^/.]+)/tasks/(?P<pk>[^/.]+)/monitoring/candidates$', MonitoringCandidates.as_view()),
     re_path(r'projects/(?P<project_pk>[^/.]+)/tasks/(?P<pk>[^/.]+)/monitoring/compare$', MonitoringCompare.as_view()),
-    re_path(r'projects/(?P<project_pk>[^/.]+)/tasks/(?P<pk>[^/.]+)/monitoring/(?P<compare_task_pk>[^/.]+)/(?P<layer_type>aligned|change)/tiles/(?P<z>[\d]+)/(?P<x>[\d]+)/(?P<y>[\d]+)\.(?P<ext>png|jpg|webp)$', MonitoringTiles.as_view()),
-    re_path(r'projects/(?P<project_pk>[^/.]+)/tasks/(?P<pk>[^/.]+)/monitoring/(?P<compare_task_pk>[^/.]+)/(?P<layer_type>aligned|change)/tiles/(?P<z>[\d]+)/(?P<x>[\d]+)/(?P<y>[\d]+)@(?P<scale>[\d]+)x\.(?P<ext>png|jpg|webp)$', MonitoringTiles.as_view()),
+    re_path(r'projects/(?P<project_pk>[^/.]+)/tasks/(?P<pk>[^/.]+)/monitoring/(?P<compare_task_pk>[^/.]+)/(?P<layer_type>aligned|change|dsm_delta|dtm_delta)/tiles/(?P<z>[\d]+)/(?P<x>[\d]+)/(?P<y>[\d]+)\.(?P<ext>png|jpg|webp)$', MonitoringTiles.as_view()),
+    re_path(r'projects/(?P<project_pk>[^/.]+)/tasks/(?P<pk>[^/.]+)/monitoring/(?P<compare_task_pk>[^/.]+)/(?P<layer_type>aligned|change|dsm_delta|dtm_delta)/tiles/(?P<z>[\d]+)/(?P<x>[\d]+)/(?P<y>[\d]+)@(?P<scale>[\d]+)x\.(?P<ext>png|jpg|webp)$', MonitoringTiles.as_view()),
 
     re_path(r'workers/check/(?P<celery_task_id>.+)', CheckTask.as_view()),
     re_path(r'workers/get/(?P<celery_task_id>.+)', GetTaskResult.as_view()),

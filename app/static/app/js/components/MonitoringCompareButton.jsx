@@ -276,12 +276,14 @@ class MonitoringCompareButton extends React.Component {
     const shift = comparison.alignment && comparison.alignment.shift_meters ? comparison.alignment.shift_meters : {x: 0, y: 0};
     const confidence = comparison.alignment && comparison.alignment.confidence !== undefined ? comparison.alignment.confidence : null;
     const warnings = comparison.alignment && comparison.alignment.warnings ? comparison.alignment.warnings : [];
+    const terrainLayers = Object.keys(comparison.layers || {}).filter(key => (comparison.layers[key] || {}).stats);
 
     return (
       <div className="monitoring-summary">
         <div className="summary-title">{referenceTask.name || referenceTask.id || '-'} {_('vs')} {compareTask.name || compareTask.id || '-'}</div>
         <div>{_('Correction')}: {shift.x}m / {shift.y}m</div>
         {confidence !== null ? <div>{_('Confidence')}: {confidence}</div> : ''}
+        {terrainLayers.length > 0 ? <div>{_('Terrain products')}: {terrainLayers.length}</div> : ''}
         {warnings.length > 0 ? <div className="summary-warning">{warnings[0]}</div> : ''}
       </div>
     );

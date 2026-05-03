@@ -198,7 +198,8 @@ class Map extends React.Component {
         compareCreatedAt: compareTask.created_at || null,
         shiftMeters: comparison.alignment.shift_meters,
         confidence: comparison.alignment.confidence,
-        warnings: comparison.alignment.warnings || []
+        warnings: comparison.alignment.warnings || [],
+        stats: layerConfig.stats || null
       },
       mapRef: this.map
     };
@@ -225,22 +226,24 @@ class Map extends React.Component {
       }
     }
 
-    const alignedLayer = this.buildMonitoringLayer(comparison.layers.aligned_overlay, comparison, false);
-    const changeLayer = this.buildMonitoringLayer(comparison.layers.change_overlay, comparison, true);
+    const monitoringLayerConfigs = Object.keys(comparison.layers || {}).map(key => comparison.layers[key]);
+    const builtLayers = monitoringLayerConfigs.map(layerConfig =>
+      this.buildMonitoringLayer(layerConfig, comparison, !layerConfig.side_by_side)
+    );
 
     if (this.props.mapType === 'orthophoto'){
-      alignedLayer.addTo(this.map);
-      changeLayer.addTo(this.map);
+      builtLayers.forEach(layer => layer.addTo(this.map));
     }
 
     this.setState({
-      imageryLayers: imageryLayers.concat([alignedLayer]),
-      overlays: overlays.concat([changeLayer]),
+      imageryLayers: imageryLayers.concat(builtLayers.filter(layer => layer[Symbol.for("meta")].raster)),
+      overlays: overlays.concat(builtLayers.filter(layer => !layer[Symbol.for("meta")].raster)),
       rightLayers,
       monitoringComparison: comparison
     }, () => {
-      if (alignedLayer && alignedLayer.options && alignedLayer.options.bounds){
-        this.map.fitBounds(alignedLayer.options.bounds);
+      const firstLayer = builtLayers[0];
+      if (firstLayer && firstLayer.options && firstLayer.options.bounds){
+        this.map.fitBounds(firstLayer.options.bounds);
       }
     });
   }

@@ -363,6 +363,7 @@ export default class LayersControlLayer extends React.Component {
     const info = this.meta.monitoringInfo || {};
     const shift = info.shiftMeters || {x: 0, y: 0};
     const warnings = info.warnings || [];
+    const stats = info.stats || null;
 
     return (<div className="layer-expanded">
         <ErrorMessage bind={[this, "error"]} />
@@ -371,6 +372,10 @@ export default class LayersControlLayer extends React.Component {
             <div><strong>{_('Compared Task')}:</strong> {info.compareTaskName || '-'}</div>
             <div><strong>{_('Correction')}:</strong> {shift.x}m / {shift.y}m</div>
             {info.confidence !== undefined ? <div><strong>{_('Confidence')}:</strong> {info.confidence}</div> : ''}
+            {stats ? <div><strong>{_('Fill Volume')}:</strong> {stats.positive_volume}</div> : ''}
+            {stats ? <div><strong>{_('Cut Volume')}:</strong> {Math.abs(stats.negative_volume)}</div> : ''}
+            {stats ? <div><strong>{_('Net Volume')}:</strong> {stats.net_volume}</div> : ''}
+            {stats && stats.min_delta !== null ? <div><strong>{_('Delta Range')}:</strong> {stats.min_delta} / {stats.max_delta}</div> : ''}
             {warnings.length > 0 ? <div className="text-warning">{warnings[0]}</div> : ''}
         </div>
         {this.props.separator ? <hr className="layer-separator" /> : ''}
@@ -480,5 +485,4 @@ export default class LayersControlLayer extends React.Component {
 
    }
 }
-
 

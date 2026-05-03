@@ -31,12 +31,16 @@ class TestMonitoring(BootTestCase):
         pattern[34:52, 10:24] = 40
         return pattern
 
-    def create_task_with_orthophoto(self, name, transform, created_at=None):
+    def create_task_with_orthophoto(self, name, transform, created_at=None, with_dem=False, dem_offset=0):
+        available_assets = ['orthophoto.tif']
+        if with_dem:
+            available_assets += ['dsm.tif', 'dtm.tif']
+
         task = Task.objects.create(
             project=self.project,
             name=name,
             status=status_codes.COMPLETED,
-            available_assets=['orthophoto.tif'],
+            available_assets=available_assets,
             created_at=created_at or timezone.now(),
         )
 
@@ -60,6 +64,27 @@ class TestMonitoring(BootTestCase):
             dst.write((base * 0.8).astype('uint8'), 2)
             dst.write((255 - base).astype('uint8'), 3)
             dst.colorinterp = (ColorInterp.red, ColorInterp.green, ColorInterp.blue)
+
+        if with_dem:
+            grid_y, grid_x = np.indices((64, 64))
+            dsm = (100 + grid_x * 0.1 + grid_y * 0.05 + dem_offset).astype('float32')
+            dtm = (95 + grid_x * 0.08 + grid_y * 0.03 + dem_offset).astype('float32')
+            for asset_name, values in (('dsm.tif', dsm), ('dtm.tif', dtm)):
+                dem_path = task.get_asset_download_path(asset_name)
+                os.makedirs(os.path.dirname(dem_path), exist_ok=True)
+                with rasterio.open(
+                    dem_path,
+                    'w',
+                    driver='GTiff',
+                    width=64,
+                    height=64,
+                    count=1,
+                    dtype='float32',
+                    crs='EPSG:32615',
+                    transform=transform,
+                    nodata=-9999,
+                ) as dst:
+                    dst.write(values, 1)
 
         return task
 
@@ -93,8 +118,8 @@ class TestMonitoring(BootTestCase):
         self.assertEqual(payload['results'][1]['next_task_id'], str(newest.id))
 
     def test_monitoring_compare_api_generates_layers(self):
-        reference = self.create_task_with_orthophoto('Current', from_origin(500000, 1000, 1, 1))
-        compare = self.create_task_with_orthophoto('Previous', from_origin(500002, 999, 1, 1))
+        reference = self.create_task_with_orthophoto('Current', from_origin(500000, 1000, 1, 1), with_dem=True, dem_offset=2)
+        compare = self.create_task_with_orthophoto('Previous', from_origin(500002, 999, 1, 1), with_dem=True, dem_offset=0)
 
         candidates = self.client.get(f'/api/projects/{self.project.id}/tasks/{reference.id}/monitoring/candidates')
         self.assertEqual(candidates.status_code, 200)
@@ -115,11 +140,30 @@ class TestMonitoring(BootTestCase):
         self.assertEqual(output['compare_task']['id'], str(compare.id))
         self.assertIn('/monitoring/', output['layers']['aligned_overlay']['url'])
         self.assertIn('/monitoring/', output['layers']['change_overlay']['url'])
+        self.assertIn('/monitoring/', output['layers']['dsm_delta']['url'])
+        self.assertIn('/monitoring/', output['layers']['dtm_delta']['url'])
+        self.assertGreater(output['layers']['dsm_delta']['stats']['positive_volume'], 0)
+        self.assertAlmostEqual(output['layers']['dsm_delta']['stats']['negative_volume'], 0, delta=0.001)
 
         aligned_tile_url = output['layers']['aligned_overlay']['url'].replace('{z}', '0').replace('{x}', '0').replace('{y}', '0')
         tile_response = self.client.get(aligned_tile_url + '?size=256')
         self.assertEqual(tile_response.status_code, 200)
         self.assertEqual(tile_response['Content-Type'], 'image/png')
+
+        dsm_tile_url = output['layers']['dsm_delta']['url'].replace('{z}', '0').replace('{x}', '0').replace('{y}', '0')
+        dsm_tile_response = self.client.get(dsm_tile_url + '?size=256')
+        self.assertEqual(dsm_tile_response.status_code, 200)
+        self.assertEqual(dsm_tile_response['Content-Type'], 'image/png')
+
+    def test_monitoring_keeps_working_without_terrain_assets(self):
+        reference = self.create_task_with_orthophoto('Current', from_origin(500000, 1000, 1, 1))
+        compare = self.create_task_with_orthophoto('Previous', from_origin(500002, 999, 1, 1))
+
+        metadata = ensure_monitoring_products(reference, compare)
+
+        self.assertIn('aligned_overlay', metadata)
+        self.assertIn('change_overlay', metadata)
+        self.assertEqual(metadata['terrain_deltas'], {})
 
     def test_monitoring_cache_invalidates_when_input_timestamp_changes(self):
         reference = self.create_task_with_orthophoto('Current', from_origin(500000, 1000, 1, 1))

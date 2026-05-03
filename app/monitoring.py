@@ -18,11 +18,13 @@ from webodm import settings
 
 logger = logging.getLogger("app.logger")
 
-MONITORING_CACHE_VERSION = 2
+MONITORING_CACHE_VERSION = 3
 PREVIEW_LONG_SIDE = 2048
 MIN_VALID_PIXELS = 4096
 CHANGE_ALPHA_THRESHOLD = 18.0
 CHANGE_ALPHA_GAIN = 3.4
+TERRAIN_ALPHA_THRESHOLD = 0.05
+TERRAIN_ALPHA_GAIN = 48.0
 
 
 class MonitoringError(Exception):
@@ -66,16 +68,20 @@ def clear_monitoring_cache_for_task(task_id):
 
 
 def monitoring_task_input(task):
-    orthophoto_path = task.get_asset_download_path("orthophoto.tif")
-    asset_mtime = None
-    if os.path.isfile(orthophoto_path):
-        asset_mtime = round(float(os.path.getmtime(orthophoto_path)), 6)
+    assets = {}
+    for asset_name in ("orthophoto.tif", "dsm.tif", "dtm.tif"):
+        asset_path = task.get_asset_download_path(asset_name)
+        asset_mtime = None
+        if os.path.isfile(asset_path):
+            asset_mtime = round(float(os.path.getmtime(asset_path)), 6)
+        assets[asset_name] = asset_mtime
 
     return {
         "task_id": str(task.id),
         "task_name": task.name,
         "task_created_at": task.created_at.isoformat() if task.created_at else None,
-        "asset_mtime": asset_mtime,
+        "asset_mtime": assets["orthophoto.tif"],
+        "assets": assets,
     }
 
 
@@ -115,8 +121,29 @@ def ensure_monitoring_products(reference_task, compare_task, progress_callback=N
     _progress(progress_callback, "Generating aligned overlay", 0.45)
     aligned_info = build_aligned_overlay(reference_path, compare_path, alignment, aligned_path)
 
-    _progress(progress_callback, "Generating change heatmap", 0.8)
+    _progress(progress_callback, "Generating change heatmap", 0.7)
     build_change_overlay(reference_path, aligned_path, alignment, change_path)
+
+    terrain_deltas = {}
+    for asset_name, label, progress in (
+        ("dsm.tif", "DSM", 0.82),
+        ("dtm.tif", "DTM", 0.92),
+    ):
+        reference_dem_path = reference_task.get_asset_download_path(asset_name)
+        compare_dem_path = compare_task.get_asset_download_path(asset_name)
+        if not os.path.isfile(reference_dem_path) or not os.path.isfile(compare_dem_path):
+            continue
+
+        _progress(progress_callback, f"Generating {label} delta", progress)
+        layer_type = asset_name.split(".")[0]
+        output_path = os.path.join(cache_dir, f"{layer_type}_delta.tif")
+        terrain_deltas[layer_type] = build_terrain_delta_overlay(
+            reference_dem_path,
+            compare_dem_path,
+            alignment,
+            output_path,
+        )
+        terrain_deltas[layer_type]["path"] = os.path.basename(output_path)
 
     metadata = {
         "version": MONITORING_CACHE_VERSION,
@@ -132,6 +159,7 @@ def ensure_monitoring_products(reference_task, compare_task, progress_callback=N
             "path": os.path.basename(change_path),
             "bounds": aligned_info["bounds"],
         },
+        "terrain_deltas": terrain_deltas,
     }
 
     with open(metadata_path, "w", encoding="utf-8") as f:
@@ -398,10 +426,158 @@ def build_change_overlay(reference_path, aligned_path, alignment, output_path):
                     output_ds.write(rgba, window=window)
 
 
+def build_terrain_delta_overlay(reference_path, compare_path, alignment, output_path):
+    with rasterio.open(reference_path) as reference_ds, rasterio.open(compare_path) as compare_ds:
+        output_window, output_bounds = overlap_window_after_shift(reference_ds, compare_ds, alignment)
+        if output_window.width <= 0 or output_window.height <= 0:
+            raise MonitoringError("The terrain delta overlap area is empty")
+
+        output_transform = window_transform(output_window, reference_ds.transform)
+        output_width = int(output_window.width)
+        output_height = int(output_window.height)
+        shifted_transform = shifted_dataset_transform(compare_ds.transform, alignment)
+
+        profile = reference_ds.profile.copy()
+        profile.update(
+            driver="GTiff",
+            width=output_width,
+            height=output_height,
+            transform=output_transform,
+            crs=reference_ds.crs,
+            count=4,
+            dtype="uint8",
+            tiled=True,
+            compress="DEFLATE",
+            BIGTIFF="IF_SAFER",
+            nodata=0,
+        )
+
+        pixel_area = abs(float(output_transform.a) * float(output_transform.e))
+        positive_volume = 0.0
+        negative_volume = 0.0
+        min_delta = None
+        max_delta = None
+        valid_pixels = 0
+
+        block_size = 1024
+        with rasterio.open(output_path, "w", **profile) as output_ds:
+            output_ds.colorinterp = (
+                ColorInterp.red,
+                ColorInterp.green,
+                ColorInterp.blue,
+                ColorInterp.alpha,
+            )
+
+            for row in range(0, output_height, block_size):
+                for col in range(0, output_width, block_size):
+                    window = Window(
+                        col,
+                        row,
+                        min(block_size, output_width - col),
+                        min(block_size, output_height - row),
+                    )
+                    bounds = rasterio.windows.bounds(window, output_transform)
+                    local_transform = window_transform(window, output_transform)
+                    ref_window = from_bounds(*bounds, transform=reference_ds.transform)
+                    ref_window = clamp_window(ref_window, reference_ds.width, reference_ds.height)
+
+                    reference_nodata = reference_ds.nodata if reference_ds.nodata is not None else 0
+                    compare_nodata = compare_ds.nodata if compare_ds.nodata is not None else 0
+
+                    reference_block = reference_ds.read(
+                        indexes=1,
+                        window=ref_window,
+                        out_shape=(int(window.height), int(window.width)),
+                        boundless=True,
+                        masked=True,
+                        fill_value=reference_nodata,
+                        resampling=Resampling.bilinear,
+                    ).astype(np.float32)
+
+                    with WarpedVRT(
+                        compare_ds,
+                        crs=reference_ds.crs,
+                        transform=local_transform,
+                        width=int(window.width),
+                        height=int(window.height),
+                        resampling=Resampling.bilinear,
+                        nodata=compare_nodata,
+                    ) as compare_vrt:
+                        compare_block = compare_vrt.read(
+                            indexes=1,
+                            masked=True,
+                            out_dtype="float32",
+                        )
+
+                    delta = np.ma.array(reference_block - compare_block)
+                    valid = ~np.ma.getmaskarray(delta)
+                    if valid.any():
+                        values = delta.data[valid].astype(np.float64)
+                        positive_volume += float(values[values > 0].sum() * pixel_area)
+                        negative_volume += float(values[values < 0].sum() * pixel_area)
+                        valid_pixels += int(valid.sum())
+                        block_min = float(values.min())
+                        block_max = float(values.max())
+                        min_delta = block_min if min_delta is None else min(min_delta, block_min)
+                        max_delta = block_max if max_delta is None else max(max_delta, block_max)
+
+                    output_ds.write(build_terrain_delta_rgba(delta, valid), window=window)
+
+        return {
+            "bounds": list(map(float, output_bounds)),
+            "stats": {
+                "positive_volume": round(positive_volume, 3),
+                "negative_volume": round(negative_volume, 3),
+                "net_volume": round(positive_volume + negative_volume, 3),
+                "min_delta": round(min_delta, 3) if min_delta is not None else None,
+                "max_delta": round(max_delta, 3) if max_delta is not None else None,
+                "valid_pixels": valid_pixels,
+                "units": "source CRS units cubed",
+            },
+        }
+
+
 def render_layer_payload(reference_task, compare_task, metadata):
     aligned = metadata["aligned_overlay"]
     change = metadata["change_overlay"]
     alignment = metadata["alignment"]
+    terrain_deltas = metadata.get("terrain_deltas") or {}
+    layers = {
+        "aligned_overlay": {
+            "name": f"Aligned: {compare_task.name or compare_task.id}",
+            "icon": "fa fa-layer-group fa-fw",
+            "bounds": aligned["bounds"],
+            "rescale": aligned["rescale"],
+            "url": monitoring_tile_url(reference_task, compare_task, "aligned"),
+            "maxzoom": 24,
+            "side_by_side": True,
+            "opacity": 1.0,
+        },
+        "change_overlay": {
+            "name": f"Change Heatmap: {compare_task.name or compare_task.id}",
+            "icon": "fa fa-fire fa-fw",
+            "bounds": change["bounds"],
+            "url": monitoring_tile_url(reference_task, compare_task, "change"),
+            "maxzoom": 24,
+            "side_by_side": False,
+            "opacity": 0.8,
+        },
+    }
+
+    for terrain_type, label in (("dsm", "DSM Delta"), ("dtm", "DTM Delta")):
+        terrain = terrain_deltas.get(terrain_type)
+        if not terrain:
+            continue
+        layers[f"{terrain_type}_delta"] = {
+            "name": f"{label}: {compare_task.name or compare_task.id}",
+            "icon": "fa fa-mountain fa-fw",
+            "bounds": terrain["bounds"],
+            "url": monitoring_tile_url(reference_task, compare_task, f"{terrain_type}_delta"),
+            "maxzoom": 24,
+            "side_by_side": False,
+            "opacity": 0.75,
+            "stats": terrain["stats"],
+        }
 
     return {
         "reference_task": {
@@ -422,27 +598,8 @@ def render_layer_payload(reference_task, compare_task, metadata):
             "compare_task_id": str(compare_task.id),
         },
         "alignment": alignment,
-        "layers": {
-            "aligned_overlay": {
-                "name": f"Aligned: {compare_task.name or compare_task.id}",
-                "icon": "fa fa-layer-group fa-fw",
-                "bounds": aligned["bounds"],
-                "rescale": aligned["rescale"],
-                "url": monitoring_tile_url(reference_task, compare_task, "aligned"),
-                "maxzoom": 24,
-                "side_by_side": True,
-                "opacity": 1.0,
-            },
-            "change_overlay": {
-                "name": f"Change Heatmap: {compare_task.name or compare_task.id}",
-                "icon": "fa fa-fire fa-fw",
-                "bounds": change["bounds"],
-                "url": monitoring_tile_url(reference_task, compare_task, "change"),
-                "maxzoom": 24,
-                "side_by_side": False,
-                "opacity": 0.8,
-            },
-        },
+        "terrain": terrain_deltas,
+        "layers": layers,
     }
 
 
@@ -458,6 +615,8 @@ def monitoring_layer_path(reference_task, compare_task, layer_type):
     filename = {
         "aligned": "aligned_overlay.tif",
         "change": "change_overlay.tif",
+        "dsm_delta": "dsm_delta.tif",
+        "dtm_delta": "dtm_delta.tif",
     }.get(layer_type)
     if filename is None:
         raise MonitoringError("Invalid monitoring layer requested")
@@ -705,6 +864,24 @@ def build_change_rgba(reference_block, compare_block, reference_range, compare_r
     return rgba
 
 
+def build_terrain_delta_rgba(delta, valid):
+    values = np.ma.filled(delta, 0).astype(np.float32)
+    magnitude = np.abs(values)
+    alpha = np.clip((magnitude - TERRAIN_ALPHA_THRESHOLD) * TERRAIN_ALPHA_GAIN, 0, 220).astype(np.uint8)
+    alpha[~valid] = 0
+
+    positive = values >= 0
+    rgba = np.zeros((4, values.shape[0], values.shape[1]), dtype=np.uint8)
+    rgba[0][positive] = 46
+    rgba[1][positive] = 160
+    rgba[2][positive] = 67
+    rgba[0][~positive] = 215
+    rgba[1][~positive] = 48
+    rgba[2][~positive] = 39
+    rgba[3] = alpha
+    return rgba
+
+
 def intersect_bounds(bounds_a, bounds_b):
     minx = max(bounds_a[0], bounds_b[0])
     miny = max(bounds_a[1], bounds_b[1])
@@ -735,6 +912,11 @@ def _load_cached_metadata(cache_dir, metadata_path, reference_task=None, compare
         if not os.path.isfile(aligned_path) or not os.path.isfile(change_path):
             return None
 
+        for terrain in (metadata.get("terrain_deltas") or {}).values():
+            terrain_path = os.path.join(cache_dir, terrain["path"])
+            if not os.path.isfile(terrain_path):
+                return None
+
         if reference_task is not None and compare_task is not None:
             if metadata.get("inputs") != monitoring_inputs(reference_task, compare_task):
                 return None
@@ -749,4 +931,6 @@ def _with_paths(cache_dir, metadata):
     payload = json.loads(json.dumps(metadata))
     payload["aligned_overlay"]["absolute_path"] = os.path.join(cache_dir, payload["aligned_overlay"]["path"])
     payload["change_overlay"]["absolute_path"] = os.path.join(cache_dir, payload["change_overlay"]["path"])
+    for terrain in (payload.get("terrain_deltas") or {}).values():
+        terrain["absolute_path"] = os.path.join(cache_dir, terrain["path"])
     return payload
