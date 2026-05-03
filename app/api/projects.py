@@ -12,6 +12,7 @@ from django.contrib.postgres.aggregates import StringAgg
 from django.db.models import Q
 
 from app import models
+from nodeodm import status_codes
 from .tasks import TaskIDsSerializer
 from .tags import TagsField, parse_tags_input
 from .common import get_and_check_project
@@ -29,6 +30,8 @@ class ProjectSerializer(serializers.ModelSerializer):
     created_at = serializers.ReadOnlyField()
     permissions = serializers.SerializerMethodField()
     tags = TagsField(required=False)
+    tasks_count = serializers.SerializerMethodField()
+    processing_tasks_count = serializers.SerializerMethodField()
 
     def get_permissions(self, obj):
         if 'request' in self.context:
@@ -42,6 +45,15 @@ class ProjectSerializer(serializers.ModelSerializer):
             user = self.context['request'].user
             return user.is_superuser or obj.owner.id == user.id
         return False
+
+    def get_tasks_count(self, obj):
+        return len(obj.task_set.all())
+
+    def get_processing_tasks_count(self, obj):
+        return len([
+            task for task in obj.task_set.all()
+            if task.status in [status_codes.QUEUED, status_codes.RUNNING]
+        ])
 
     class Meta:
         model = models.Project
@@ -216,4 +228,3 @@ class ProjectViewSet(viewsets.ModelViewSet):
                 perm = p + "_project"
                 remove_perm(perm, request.user, project)
             return Response(status=status.HTTP_204_NO_CONTENT)
-        

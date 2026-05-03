@@ -1,3 +1,1 @@
-"""
-WebODM geometry_correction plugin package.
-"""
+from .plugin import *

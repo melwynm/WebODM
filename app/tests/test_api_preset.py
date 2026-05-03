@@ -29,9 +29,14 @@ class TestApiPreset(BootTestCase):
         self.assertTrue(Preset.objects.filter(name="3D Model", system=True).exists())
         self.assertTrue(Preset.objects.filter(name="Multispectral", system=True).exists())
         self.assertTrue(Preset.objects.filter(name="Thermal", system=True).exists())
+        self.assertTrue(Preset.objects.filter(name="DJI Drone", system=True).exists())
 
         thermal = Preset.objects.get(name="Thermal", system=True)
         self.assertTrue(any(option.get('name') == 'texturing-skip-global-seam-leveling' and option.get('value') is True for option in thermal.options))
+
+        dji = Preset.objects.get(name="DJI Drone", system=True)
+        self.assertTrue(any(option.get('name') == 'sfm-algorithm' and option.get('value') == 'triangulation' for option in dji.options))
+        self.assertTrue(any(option.get('name') == 'feature-quality' and option.get('value') == 'ultra' for option in dji.options))
 
     def test_preset(self):
         client = APIClient()
@@ -64,6 +69,7 @@ class TestApiPreset(BootTestCase):
         self.assertTrue(len(res.data) > 0)
         self.assertTrue('My Local Preset' in [preset['name'] for preset in res.data])
         self.assertTrue('High Resolution' in [preset['name'] for preset in res.data])
+        self.assertTrue('DJI Drone' in [preset['name'] for preset in res.data])
         self.assertTrue('Global Preset #1' in [preset['name'] for preset in res.data])
         self.assertTrue('Global Preset #2' in [preset['name'] for preset in res.data])
         self.assertFalse('Local Preset #1' in [preset['name'] for preset in res.data])

@@ -13,6 +13,7 @@ import csrf from '../django/csrf';
 import HistoryNav from '../classes/HistoryNav';
 import PropTypes from 'prop-types';
 import ResizeModes from '../classes/ResizeModes';
+import StatusCodes from '../classes/StatusCodes';
 import Tags from '../classes/Tags';
 import exifr from '../vendor/exifr';
 import { _, interpolate } from '../classes/gettext';
@@ -618,6 +619,36 @@ class ProjectListItem extends React.Component {
     });
   }
 
+  getProjectStatus(){
+    const data = this.state.data;
+    const tasks = data.tasks || [];
+    const tasksCount = data.tasks_count !== undefined ? data.tasks_count : tasks.length;
+
+    if (tasksCount === 0) return "new";
+    if (data.processing_tasks_count > 0) return "processing";
+
+    const taskObjects = tasks.filter(task => task && typeof task === "object");
+    if (taskObjects.some(task => task.status === StatusCodes.RUNNING || task.status === StatusCodes.QUEUED)) return "processing";
+
+    return "ready";
+  }
+
+  getProjectStatusLabel(status){
+    if (status === "processing") return _("Processing");
+    if (status === "ready") return _("Ready");
+    return _("New");
+  }
+
+  getUpdatedLabel(){
+    const value = this.state.data.created_at;
+    if (!value) return "";
+
+    const date = new Date(value);
+    if (isNaN(date.getTime())) return value;
+
+    return date.toLocaleDateString();
+  }
+
   onOpenFilter = () => {
     if (this.state.filterTags.length === 0){
       setTimeout(() => {
@@ -628,10 +659,13 @@ class ProjectListItem extends React.Component {
 
   render() {
     const { refreshing, data, filterTags } = this.state;
-    const numTasks = data.tasks.length;
+    const tasks = data.tasks || [];
+    const numTasks = data.tasks_count !== undefined ? data.tasks_count : tasks.length;
     const canEdit = this.hasPermission("change");
     const userTags = Tags.userTags(data.tags);
     const showActionBar = this.hasPermission("add") || this.state.upload.uploading || this.state.buttons.length > 0;
+    const projectStatus = this.getProjectStatus();
+    const updatedLabel = this.getUpdatedLabel();
     let deleteWarning = _("All tasks, images and models associated with this project will be permanently deleted. Are you sure you want to continue?");
     if (!data.owned) deleteWarning = _("This project was shared with you. It will not be deleted, but simply hidden from your dashboard. Continue?")
 
@@ -661,6 +695,28 @@ class ProjectListItem extends React.Component {
             />
         : ""}
 
+        <div className="project-card-preview" aria-hidden="true">
+          <div className="project-card-preview__grid"></div>
+          <div className="project-card-preview__terrain project-card-preview__terrain--a"></div>
+          <div className="project-card-preview__terrain project-card-preview__terrain--b"></div>
+          <svg className="project-card-preview__path" viewBox="0 0 300 120" preserveAspectRatio="none">
+            <polyline points="18,86 82,53 142,42 214,58 282,45" />
+            <circle cx="82" cy="53" r="4" />
+            <circle cx="142" cy="42" r="4" />
+            <circle cx="214" cy="58" r="4" />
+          </svg>
+          <span className={`project-status-badge project-status-badge--${projectStatus}`}>
+            <span className="project-status-badge__dot"></span>
+            {this.getProjectStatusLabel(projectStatus)}
+          </span>
+          {numTasks > 0 ?
+            <span className="project-card-preview__tasks">
+              <i className="fa fa-tasks"></i>
+              {interpolate(_("%(count)s Tasks"), { count: numTasks})}
+            </span>
+          : ""}
+        </div>
+
         <div className="project-card-body">
           <ErrorMessage bind={[this, 'error']} />
 
@@ -672,9 +728,16 @@ class ProjectListItem extends React.Component {
                   userTags.map((t, i) => <div key={i} className="tag-badge small-badge" onClick={this.handleTagClick(t)}>{t}</div>)
                   : ""}
               </div>
-              <div className="project-description">
-                {data.description}
-              </div>
+              {updatedLabel ?
+                <div className="project-updated">
+                  {interpolate(_("Updated %(date)s"), {date: updatedLabel})}
+                </div>
+              : ""}
+              {data.description ?
+                <div className="project-description">
+                  {data.description}
+                </div>
+              : ""}
             </div>
 
             {showActionBar ?

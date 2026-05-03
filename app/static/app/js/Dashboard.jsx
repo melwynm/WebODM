@@ -68,23 +68,21 @@ class Dashboard extends React.Component {
     return (
       <Router basename="/dashboard">
         <div className="dashboard-app">
-          <div className="dashboard-hero">
-            <div className="dashboard-hero__text">
+          <div className="dashboard-topbar">
+            <div className="dashboard-topbar__title">
               <h1>{_("Your Projects")}</h1>
-              <p>{_("Track progress, upload new datasets and collaborate with ease from your modernized dashboard.")}</p>
+              <p>{_("Manage datasets, process aerial imagery, and collaborate across your workspace.")}</p>
             </div>
             {canCreateProjects ?
-              <div className="dashboard-hero__actions">
-                <button
-                  type="button"
-                  className="btn btn-primary btn-modern"
-                  onClick={this.handleAddProject}>
-                  <span className="btn-modern__icon" aria-hidden="true">
-                    <i className="fas fa-plus"></i>
-                  </span>
-                  <span className="btn-modern__label">{_("Add Project")}</span>
-                </button>
-              </div>
+              <button
+                type="button"
+                className="btn btn-primary btn-modern dashboard-add-project"
+                onClick={this.handleAddProject}>
+                <span className="btn-modern__icon" aria-hidden="true">
+                  <i className="fas fa-plus"></i>
+                </span>
+                <span className="btn-modern__label">{_("Add Project")}</span>
+              </button>
             : ""}
           </div>
 
@@ -93,9 +91,7 @@ class Dashboard extends React.Component {
             ref={(domNode) => { this.projectDialog = domNode; }}
             />
 
-          <div className="dashboard-list-wrapper">
-            <Route path="/" component={projectList} />
-          </div>
+          <Route path="/" component={projectList} />
         </div>
       </Router>
     );

@@ -7,6 +7,7 @@ from pathlib import Path
 import tempfile
 import unittest
 from unittest import mock
+from importlib.metadata import PackageNotFoundError
 
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "webodm.settings")
 
@@ -17,9 +18,15 @@ django.setup()
 from app.plugins import PluginBase
 from app.plugins.functions import valid_plugin
 from coreplugins.geometry_correction.plugin import Plugin
+from coreplugins.geometry_correction.plugin import runtime_requirements_installed
 
 
 class TestPluginRuntime(unittest.TestCase):
+    def test_plugin_package_exports_plugin_class(self):
+        from coreplugins.geometry_correction import Plugin as PackagePlugin
+
+        self.assertIs(PackagePlugin, Plugin)
+
     def test_plugin_root_matches_webodm_plugin_layout(self):
         plugin_root = Path(__file__).resolve().parents[2]
         self.assertTrue(valid_plugin(str(plugin_root)))
@@ -75,6 +82,22 @@ class TestPluginRuntime(unittest.TestCase):
                 plugin.check_requirements()
 
             base_check.assert_called_once()
+
+    def test_runtime_requirements_installed_handles_extras(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            req_file = Path(tmp) / "requirements.txt"
+            req_file.write_text("laspy[lazrs]>=2.4.0\n", encoding="utf-8")
+
+            with mock.patch("coreplugins.geometry_correction.plugin.package_version", return_value="2.6.1"):
+                self.assertTrue(runtime_requirements_installed(req_file))
+
+    def test_runtime_requirements_installed_rejects_missing_package(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            req_file = Path(tmp) / "requirements.txt"
+            req_file.write_text("open3d>=0.17.0\n", encoding="utf-8")
+
+            with mock.patch("coreplugins.geometry_correction.plugin.package_version", side_effect=PackageNotFoundError):
+                self.assertFalse(runtime_requirements_installed(req_file))
 
 
 if __name__ == "__main__":
