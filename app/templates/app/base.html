@@ -81,6 +81,16 @@
     </style>
 </head>
 <body class="{% block body_class %}{% endblock %}" data-admin-utc-offset="{% now "Z" %}">
+<script>
+(function(){
+    try {
+        var theme = localStorage.getItem('webodm-shell-theme') || 'dark';
+        document.body.setAttribute('data-shell-theme', theme === 'light' ? 'light' : 'dark');
+    } catch (e) {
+        document.body.setAttribute('data-shell-theme', 'dark');
+    }
+})();
+</script>
 {% if desktop_mode %}
     <div class='topLine' style="background: #e7e7e7; position: absolute; left: 0; right: 0; height: 1px;"></div>
 {% endif %}

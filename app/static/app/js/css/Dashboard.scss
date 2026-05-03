@@ -189,3 +189,39 @@
         }
     }
 }
+
+body.app-shell[data-shell-theme="light"] #dashboard-app {
+    --odm-bg-base: #f5f7fb;
+    --odm-bg-card: #ffffff;
+    --odm-bg-card-hover: #ffffff;
+    --odm-bg-panel: #ffffff;
+    --odm-border: rgba(15, 23, 42, 0.09);
+    --odm-border-hover: rgba(15, 23, 42, 0.16);
+    --odm-accent: #0f9f84;
+    --odm-text-primary: #111827;
+    --odm-text-secondary: rgba(51, 65, 85, 0.86);
+    --odm-text-muted: rgba(100, 116, 139, 0.82);
+
+    .btn.btn-default.btn-modern,
+    .project-list-item .asset-download-buttons .btn:not(.btn-modern) {
+        background: rgba(15, 23, 42, 0.035);
+        border-color: rgba(15, 23, 42, 0.08);
+    }
+
+    .project-list-empty {
+        background: rgba(255, 255, 255, 0.75);
+        border-color: rgba(15, 23, 42, 0.12);
+    }
+
+    .modal-content {
+        background: #ffffff;
+        border-color: rgba(15, 23, 42, 0.12);
+        color: var(--odm-text-primary);
+        box-shadow: 0 24px 60px rgba(15, 23, 42, 0.18);
+    }
+
+    .form-control {
+        background: rgba(15, 23, 42, 0.035);
+        border-color: rgba(15, 23, 42, 0.1);
+    }
+}

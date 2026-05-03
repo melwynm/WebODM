@@ -26,7 +26,43 @@ window.React = React;
 // Expose set locale function globally
 window.setLocale = setLocale;
 
+function applyShellTheme(theme){
+    const nextTheme = theme === 'light' ? 'light' : 'dark';
+    document.body.setAttribute('data-shell-theme', nextTheme);
+
+    const toggle = document.querySelector('[data-shell-theme-toggle]');
+    if (!toggle) return;
+
+    const icon = toggle.querySelector('.shell-theme-toggle__icon');
+    const label = toggle.querySelector('.shell-theme-toggle__label');
+    if (icon){
+        icon.className = `fa fa-${nextTheme === 'light' ? 'sun' : 'moon'} fa-fw shell-theme-toggle__icon`;
+    }
+    if (label){
+        label.textContent = nextTheme === 'light' ? 'Light' : 'Dark';
+    }
+    toggle.setAttribute('aria-pressed', nextTheme === 'light' ? 'true' : 'false');
+}
+
 $(function(){
+    let storedTheme = 'dark';
+    try {
+        storedTheme = localStorage.getItem('webodm-shell-theme') || 'dark';
+    } catch (e) {
+        storedTheme = 'dark';
+    }
+    applyShellTheme(storedTheme);
+
+    $(document).on('click', '[data-shell-theme-toggle]', function(){
+        const currentTheme = document.body.getAttribute('data-shell-theme') === 'light' ? 'light' : 'dark';
+        const nextTheme = currentTheme === 'light' ? 'dark' : 'light';
+        try {
+            localStorage.setItem('webodm-shell-theme', nextTheme);
+        } catch (e) {
+            // Ignore private browsing/storage failures.
+        }
+        applyShellTheme(nextTheme);
+    });
+
     PluginsAPI.App.triggerReady();
 });
-

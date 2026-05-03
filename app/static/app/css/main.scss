@@ -482,7 +482,7 @@ footer{
     white-space: nowrap;
 }
 
-body.dashboard-shell {
+body.app-shell {
     --dash-shell-bg: #0d0f12;
     --dash-shell-panel: #111418;
     --dash-shell-panel-soft: rgba(255, 255, 255, 0.035);
@@ -561,6 +561,37 @@ body.dashboard-shell {
         .navbar-top-links {
             height: 64px;
             margin-right: 14px;
+        }
+
+        .shell-theme-toggle-item {
+            height: 64px;
+            display: flex;
+            align-items: center;
+        }
+
+        .shell-theme-toggle {
+            min-height: 38px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 7px;
+            padding: 8px 12px;
+            border: 1px solid var(--dash-shell-border-soft);
+            border-radius: 12px;
+            background: var(--dash-shell-panel-soft);
+            color: var(--dash-shell-muted);
+            font-size: 12px;
+            font-weight: 600;
+            line-height: 1;
+            transition: background-color 0.16s ease, border-color 0.16s ease, color 0.16s ease;
+
+            &:hover,
+            &:focus {
+                background: rgba(0, 212, 170, 0.1);
+                border-color: rgba(0, 212, 170, 0.18);
+                color: var(--dash-shell-accent);
+                outline: none;
+            }
         }
 
         .user-menu-dropdown {
@@ -745,6 +776,10 @@ body.dashboard-shell {
                 justify-content: flex-end;
                 margin: 8px 10px;
             }
+
+            .shell-theme-toggle-item {
+                height: auto;
+            }
         }
 
         .navbar-default.sidebar {
@@ -756,5 +791,33 @@ body.dashboard-shell {
                 padding: 10px;
             }
         }
+    }
+}
+
+body.app-shell[data-shell-theme="light"] {
+    --dash-shell-bg: #f5f7fb;
+    --dash-shell-panel: #ffffff;
+    --dash-shell-panel-soft: rgba(15, 23, 42, 0.045);
+    --dash-shell-border: rgba(15, 23, 42, 0.12);
+    --dash-shell-border-soft: rgba(15, 23, 42, 0.08);
+    --dash-shell-accent: #0f9f84;
+    --dash-shell-text: #111827;
+    --dash-shell-muted: rgba(71, 85, 105, 0.86);
+
+    #navbar-top {
+        background: rgba(255, 255, 255, 0.96);
+
+        .navbar-header {
+            background: rgba(15, 23, 42, 0.025);
+        }
+
+        .user-menu-dropdown > .dropdown-menu {
+            background: #ffffff;
+            box-shadow: 0 18px 44px rgba(15, 23, 42, 0.18);
+        }
+    }
+
+    .navbar-default.sidebar {
+        background: #ffffff;
     }
 }

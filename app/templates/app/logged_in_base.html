@@ -1,6 +1,8 @@
 {% extends "app/base.html" %}
 {% load i18n static settings %}
 
+{% block body_class %}app-shell{% endblock %}
+
 {% block navbar-top-links %}
     {% is_single_user_mode as single_user %}
 
@@ -11,6 +13,12 @@
         {% url 'password_change' as current_user_settings_url %}
     {% endif %}
     <ul class="nav navbar-top-links navbar-right">
+        <li class="shell-theme-toggle-item">
+            <button type="button" class="shell-theme-toggle" data-shell-theme-toggle title="{% trans 'Switch theme' %}">
+                <i class="fa fa-moon fa-fw shell-theme-toggle__icon"></i>
+                <span class="shell-theme-toggle__label">{% trans 'Dark' %}</span>
+            </button>
+        </li>
         <li class="dropdown user-menu-dropdown">
             <a class="user-menu-settings-link" href="{{ current_user_settings_url }}">
                 <i class="fa fa-user fa-fw"></i>
