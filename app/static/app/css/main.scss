@@ -514,6 +514,143 @@ body.app-shell {
         padding: 0;
     }
 
+    h1,
+    h2,
+    h3,
+    h4,
+    h5,
+    h6,
+    p,
+    label,
+    legend,
+    dt,
+    dd,
+    .help,
+    .help-block,
+    .text-muted,
+    .quiet,
+    .small,
+    .breadcrumbs {
+        color: var(--dash-shell-text);
+    }
+
+    a {
+        color: #37a7ff;
+
+        &:hover,
+        &:focus {
+            color: #70c2ff;
+        }
+    }
+
+    .breadcrumb,
+    .breadcrumbs {
+        background: transparent;
+        border-bottom: 1px solid var(--dash-shell-border-soft);
+    }
+
+    .panel,
+    .well,
+    .module,
+    .inline-group,
+    fieldset,
+    .form-row,
+    #content-main,
+    #content-related {
+        background: transparent;
+        color: var(--dash-shell-text);
+        border-color: var(--dash-shell-border);
+    }
+
+    .panel-default > .panel-heading,
+    .module h2,
+    .module caption,
+    .inline-group h2 {
+        background: var(--dash-shell-panel);
+        color: var(--dash-shell-text);
+        border-color: var(--dash-shell-border);
+    }
+
+    .table,
+    table,
+    table.processing-node-info,
+    #changelist table {
+        color: var(--dash-shell-text);
+        background: transparent;
+
+        > thead > tr > th,
+        > tbody > tr > th,
+        > tfoot > tr > th,
+        > thead > tr > td,
+        > tbody > tr > td,
+        > tfoot > tr > td,
+        th,
+        td {
+            color: var(--dash-shell-text);
+            background: var(--dash-shell-bg);
+            border-color: var(--dash-shell-border);
+        }
+
+        > thead > tr > th,
+        th {
+            background: var(--dash-shell-panel);
+            color: var(--dash-shell-text);
+        }
+
+        > tbody > tr:nth-child(odd) > td,
+        > tbody > tr:nth-child(odd) > th,
+        tr.row1 td,
+        tr.row1 th {
+            background: #11161d;
+        }
+
+        > tbody > tr:nth-child(even) > td,
+        > tbody > tr:nth-child(even) > th,
+        tr.row2 td,
+        tr.row2 th {
+            background: #0d1117;
+        }
+    }
+
+    .table-hover > tbody > tr:hover > td,
+    .table-hover > tbody > tr:hover > th,
+    #changelist table tbody tr:hover td,
+    #changelist table tbody tr:hover th {
+        background: rgba(0, 212, 170, 0.08);
+        color: var(--dash-shell-text);
+    }
+
+    input,
+    select,
+    textarea,
+    .form-control,
+    .select2-container .select2-choice,
+    .select2-container--default .select2-selection--single {
+        background: #e8eef7;
+        color: #111827;
+        border-color: rgba(226, 232, 240, 0.42);
+    }
+
+    input::placeholder,
+    textarea::placeholder {
+        color: #526173;
+    }
+
+    pre,
+    code,
+    .CodeMirror,
+    textarea.vLargeTextField,
+    textarea.jsonfield {
+        background: #eef3f9;
+        color: #0f172a;
+        border-color: rgba(226, 232, 240, 0.5);
+    }
+
+    .alert,
+    .messagelist li {
+        color: #111827;
+    }
+
     #navbar-top {
         height: 64px;
         min-height: 64px;
@@ -819,5 +956,55 @@ body.app-shell[data-shell-theme="light"] {
 
     .navbar-default.sidebar {
         background: #ffffff;
+    }
+
+    .breadcrumb,
+    .breadcrumbs {
+        border-bottom-color: var(--dash-shell-border-soft);
+    }
+
+    .panel-default > .panel-heading,
+    .module h2,
+    .module caption,
+    .inline-group h2 {
+        background: #ffffff;
+    }
+
+    .table,
+    table,
+    table.processing-node-info,
+    #changelist table {
+        > thead > tr > th,
+        th {
+            background: #eef2f7;
+        }
+
+        > tbody > tr > td,
+        > tbody > tr > th,
+        td,
+        th {
+            background: #ffffff;
+        }
+
+        > tbody > tr:nth-child(odd) > td,
+        > tbody > tr:nth-child(odd) > th,
+        tr.row1 td,
+        tr.row1 th {
+            background: #ffffff;
+        }
+
+        > tbody > tr:nth-child(even) > td,
+        > tbody > tr:nth-child(even) > th,
+        tr.row2 td,
+        tr.row2 th {
+            background: #f8fafc;
+        }
+    }
+
+    .table-hover > tbody > tr:hover > td,
+    .table-hover > tbody > tr:hover > th,
+    #changelist table tbody tr:hover td,
+    #changelist table tbody tr:hover th {
+        background: rgba(15, 159, 132, 0.08);
     }
 }

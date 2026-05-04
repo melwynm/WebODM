@@ -34,6 +34,7 @@
 
 <script>
 (function(){
+    var chartTextColor = document.body.getAttribute('data-shell-theme') === 'light' ? '#111827' : '#e1e4f0';
     var ctx = document.getElementById('diskChart').getContext('2d');
     var labels = {
         "{% trans 'Used' context 'Megabytes of storage space' %}": '{{ used_disk_space|filesizeformat }}',
@@ -54,7 +55,10 @@
         },
         options: {
             legend:{
-                reverse: true
+                reverse: true,
+                labels: {
+                    fontColor: chartTextColor
+                }
             },
             tooltips: {
                 callbacks: {
@@ -69,6 +73,7 @@
 
 {% if total_memory %}
 (function(){
+    var chartTextColor = document.body.getAttribute('data-shell-theme') === 'light' ? '#111827' : '#e1e4f0';
     var ctx = document.getElementById('memoryChart').getContext('2d');
     var labels = {
         "{% trans 'Used' context 'Megabytes of memory space' %}": '{{ used_memory|filesizeformat }}',
@@ -89,7 +94,10 @@
         },
         options: {
             legend:{
-                reverse: true
+                reverse: true,
+                labels: {
+                    fontColor: chartTextColor
+                }
             },
             tooltips: {
                 callbacks: {
