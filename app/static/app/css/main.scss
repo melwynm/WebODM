@@ -651,6 +651,28 @@ body.app-shell {
         color: #111827;
     }
 
+    input.theme-color-picker {
+        width: 220px;
+        height: 38px;
+        padding: 3px;
+        border-radius: 5px;
+        cursor: pointer;
+    }
+
+    input.theme-color-picker::-webkit-color-swatch-wrapper {
+        padding: 0;
+    }
+
+    input.theme-color-picker::-webkit-color-swatch {
+        border: 0;
+        border-radius: 3px;
+    }
+
+    input.theme-color-picker::-moz-color-swatch {
+        border: 0;
+        border-radius: 3px;
+    }
+
     #navbar-top {
         height: 64px;
         min-height: 64px;

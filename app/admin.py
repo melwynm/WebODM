@@ -64,7 +64,39 @@ class SettingAdmin(admin.ModelAdmin):
 admin.site.register(Setting, SettingAdmin)
 
 
+class ThemeColorInput(forms.TextInput):
+    input_type = 'color'
+
+    def __init__(self, attrs=None):
+        default_attrs = {'class': 'theme-color-picker'}
+        if attrs:
+            default_attrs.update(attrs)
+        super().__init__(default_attrs)
+
+    def format_value(self, value):
+        value = super().format_value(value) or '#000000'
+        if value and not value.startswith('#'):
+            value = '#{}'.format(value)
+        return value
+
+
 class ThemeModelForm(forms.ModelForm):
+    COLOR_FIELDS = (
+        'primary',
+        'secondary',
+        'tertiary',
+        'button_primary',
+        'button_default',
+        'button_danger',
+        'header_background',
+        'header_primary',
+        'border',
+        'highlight',
+        'dialog_warning',
+        'failed',
+        'success',
+    )
+
     css = forms.CharField(help_text=_("Enter custom CSS"),
                           label=_("CSS"),
                           required=False,
@@ -90,6 +122,11 @@ class ThemeModelForm(forms.ModelForm):
     class Meta:
         model = Theme
         fields = '__all__'
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        for field_name in self.COLOR_FIELDS:
+            self.fields[field_name].widget = ThemeColorInput()
 
 
 class ThemeAdmin(admin.ModelAdmin):
