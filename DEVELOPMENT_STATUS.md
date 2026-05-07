@@ -1,6 +1,6 @@
 # Development Status
 
-Last updated: 2026-03-19
+Last updated: 2026-05-07
 
 ## Purpose
 
@@ -61,6 +61,13 @@ This file tracks the current state of this fork so future work can start from th
 - Tracks processed dataset fingerprints in a cache state file to avoid duplicate task creation on repeated runs
 - Supports `WO_ONEDRIVE_INTAKE_DIR`, `--folder`, `--min-age`, `--dry-run`, and `--no-process`
 
+### Change Issues And Annotations
+
+- Added project-level issue and annotation tracking for detected changes, defects, progress notes, and review annotations
+- Added nested project issue API endpoints with project-level permission checks and GeoJSON geometry validation
+- Added a dashboard issues panel for creating issues, listing current issues, and updating issue status
+- Added Django admin management and regression coverage for create/list/update, project permission enforcement, task ownership validation, and geometry validation
+
 ### Default NodeODM Repair
 
 - Added a `syncdefaultnodes` management command to repair legacy default-node aliases such as `nodeodm`
@@ -82,6 +89,7 @@ This file tracks the current state of this fork so future work can start from th
 - Monitoring compare for orthophotos with automatic translational alignment correction
 - Monitoring compare from a project timeline view with timeline-based task selection
 - DSM/DTM terrain delta overlays and cut/fill-style volume stats when compared tasks include DEM assets
+- Project issues and annotations from the dashboard via each project's `Issues` panel
 - OneDrive-synced folder task intake via `python manage.py onedriveintake --project <id> --folder <path>`
 - NodeODM stale-hostname repair via `python manage.py syncdefaultnodes --count 1`
 
@@ -92,7 +100,7 @@ This file tracks the current state of this fork so future work can start from th
 - Monitoring still uses orthophoto-to-orthophoto comparison as the required alignment baseline
 - DSM/DTM terrain products are available only when both compared tasks have matching DEM assets
 - Alignment correction is translational only
-- No rotation, scale, rubber-sheet, design/BIM comparison workflow, or change issue workflow yet
+- No rotation, scale, rubber-sheet, or design/BIM comparison workflow yet
 
 ### Operations
 
@@ -106,6 +114,7 @@ This file tracks the current state of this fork so future work can start from th
 docker compose build webapp
 docker-compose up -d webapp worker
 docker exec webapp python manage.py test app.tests.test_monitoring --keepdb
+docker exec webapp python manage.py test app.tests.test_api_project_issues --keepdb
 docker exec webapp python manage.py test app.tests.test_onedrive_intake --keepdb
 docker exec webapp python manage.py test app.tests.test_app.TestApp.test_syncdefaultnodes_repairs_legacy_default_node --keepdb
 docker exec webapp python manage.py syncdefaultnodes --count 1

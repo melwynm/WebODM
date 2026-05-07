@@ -12,6 +12,7 @@ from .token import ObtainJSONWebTokenView, TokenView, TokenRegenerateView
 from .tiler import TileJson, Bounds, Metadata, Tiles, Export
 from .potree import Scene, CameraView
 from .monitoring import MonitoringCandidates, MonitoringCompare, MonitoringTiles, MonitoringTimeline
+from .issues import ProjectIssueViewSet
 from .workers import CheckTask, GetTaskResult
 from .users import UsersList
 from .externalauth import ExternalTokenAuth
@@ -24,6 +25,7 @@ router.register(r'presets', PresetViewSet, basename='presets')
 
 tasks_router = routers.NestedSimpleRouter(router, r'projects', lookup='project')
 tasks_router.register(r'tasks', TaskViewSet, basename='projects-tasks')
+tasks_router.register(r'issues', ProjectIssueViewSet, basename='projects-issues')
 
 admin_router = routers.DefaultRouter()
 admin_router.register(r'admin/users', AdminUserViewSet, basename='admin-users')

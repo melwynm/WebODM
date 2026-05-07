@@ -4,6 +4,7 @@ import update from 'immutability-helper';
 import TaskList from './TaskList';
 import NewTaskPanel from './NewTaskPanel';
 import ImportTaskPanel from './ImportTaskPanel';
+import ProjectIssuesPanel from './ProjectIssuesPanel';
 import UploadProgressBar from './UploadProgressBar';
 import ErrorMessage from './ErrorMessage';
 import EditProjectDialog from './EditProjectDialog';
@@ -40,6 +41,7 @@ class ProjectListItem extends React.Component {
       data: props.data,
       refreshing: false,
       importing: false,
+      showIssues: false,
       buttons: [],
       sortKey: "-created_at",
       filterTags: [],
@@ -59,6 +61,7 @@ class ProjectListItem extends React.Component {
       }];
 
     this.toggleTaskList = this.toggleTaskList.bind(this);
+    this.toggleIssues = this.toggleIssues.bind(this);
     this.closeUploadError = this.closeUploadError.bind(this);
     this.cancelUpload = this.cancelUpload.bind(this);
     this.handleCancel = this.handleCancel.bind(this);
@@ -130,6 +133,10 @@ class ProjectListItem extends React.Component {
 
   hasPermission(perm){
     return this.state.data.permissions.indexOf(perm) !== -1;
+  }
+
+  toggleIssues(){
+    this.setState({showIssues: !this.state.showIssues});
   }
 
   componentDidMount(){
@@ -843,6 +850,11 @@ class ProjectListItem extends React.Component {
                 </a>]
             : ""}
 
+            <i className='fa fa-map-marker'></i>
+            <a href="javascript:void(0);" onClick={this.toggleIssues}>
+              {_("Issues")} <i className={'fa fa-caret-' + (this.state.showIssues ? 'down' : 'right')}></i>
+            </a>
+
             {!canEdit && !data.owned ? 
               [<i key="edit-icon" className='far fa-eye-slash'></i>
               ,<a key="edit-text" href="javascript:void(0);" onClick={this.handleHideProject(deleteWarning, this.handleDelete)}> {_("Delete")}
@@ -880,6 +892,13 @@ class ProjectListItem extends React.Component {
               onImported={this.newTaskAdded}
               onCancel={this.handleCancelImportTask}
               projectId={this.state.data.id}
+            />
+          : ""}
+
+          {this.state.showIssues ?
+            <ProjectIssuesPanel
+              projectId={this.state.data.id}
+              canEdit={this.hasPermission("change")}
             />
           : ""}
 

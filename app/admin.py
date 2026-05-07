@@ -22,7 +22,7 @@ from app.models import Plugin
 from app.models import Profile
 from app.plugins import get_plugin_by_name, enable_plugin, disable_plugin, delete_plugin, valid_plugin, \
     get_plugins_persistent_path, clear_plugins_cache, init_plugins
-from .models import Project, Task, Setting, Theme
+from .models import Project, Task, Setting, Theme, ProjectIssue
 from django import forms
 from codemirror2.widgets import CodeMirrorEditor
 from webodm import settings
@@ -51,6 +51,16 @@ class TaskAdmin(admin.ModelAdmin):
 admin.site.register(Task, TaskAdmin)
 
 admin.site.register(Preset, admin.ModelAdmin)
+
+
+class ProjectIssueAdmin(admin.ModelAdmin):
+    list_display = ('id', 'title', 'project', 'task', 'issue_type', 'status', 'priority', 'created_by', 'assigned_to', 'updated_at')
+    list_filter = ('issue_type', 'status', 'priority', 'created_at', 'updated_at')
+    search_fields = ('title', 'description', 'project__name', 'task__name', 'created_by__username', 'assigned_to__username')
+    readonly_fields = ('created_at', 'updated_at', 'closed_at')
+
+
+admin.site.register(ProjectIssue, ProjectIssueAdmin)
 
 
 class SettingAdmin(admin.ModelAdmin):
