@@ -1,6 +1,6 @@
 # Development Status
 
-Last updated: 2026-05-07
+Last updated: 2026-05-08
 
 ## Purpose
 
@@ -68,6 +68,14 @@ This file tracks the current state of this fork so future work can start from th
 - Added a dashboard issues panel for creating issues, listing current issues, and updating issue status
 - Added Django admin management and regression coverage for create/list/update, project permission enforcement, task ownership validation, and geometry validation
 
+### Stakeholder Progress Reports
+
+- Added a project progress report API for dashboard/client reporting
+- Added printable stakeholder web reports with a `Print / Save PDF` action
+- Reports summarize project metadata, task counts, latest deliverables, exported assets, and open issues/annotations
+- Added a dashboard `Report` link for each project
+- Added regression coverage for JSON reports, printable HTML, and project-scoped permissions
+
 ### Default NodeODM Repair
 
 - Added a `syncdefaultnodes` management command to repair legacy default-node aliases such as `nodeodm`
@@ -90,6 +98,7 @@ This file tracks the current state of this fork so future work can start from th
 - Monitoring compare from a project timeline view with timeline-based task selection
 - DSM/DTM terrain delta overlays and cut/fill-style volume stats when compared tasks include DEM assets
 - Project issues and annotations from the dashboard via each project's `Issues` panel
+- Stakeholder progress reports from the dashboard via each project's `Report` link
 - OneDrive-synced folder task intake via `python manage.py onedriveintake --project <id> --folder <path>`
 - NodeODM stale-hostname repair via `python manage.py syncdefaultnodes --count 1`
 
@@ -115,6 +124,7 @@ docker compose build webapp
 docker-compose up -d webapp worker
 docker exec webapp python manage.py test app.tests.test_monitoring --keepdb
 docker exec webapp python manage.py test app.tests.test_api_project_issues --keepdb
+docker exec webapp python manage.py test app.tests.test_api_project_reports --keepdb
 docker exec webapp python manage.py test app.tests.test_onedrive_intake --keepdb
 docker exec webapp python manage.py test app.tests.test_app.TestApp.test_syncdefaultnodes_repairs_legacy_default_node --keepdb
 docker exec webapp python manage.py syncdefaultnodes --count 1

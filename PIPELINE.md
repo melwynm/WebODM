@@ -1,6 +1,6 @@
 # Consolidated Pipeline
 
-Last updated: 2026-05-07
+Last updated: 2026-05-08
 
 This file is the single source of truth for the project pipeline in this fork.
 It combines:
@@ -37,7 +37,7 @@ Improve alignment from translation-only correction to affine or local feature-ba
 | 14 | DSM/DTM Delta and Cut/Fill | Workflow | Working | Add terrain change products beyond orthophoto-only comparison. |
 | 15 | Change Issues and Annotations | Workflow | Working | Promote detected changes into trackable issues and annotations with status. |
 | 16 | Advanced Alignment | Workflow | Next | Improve alignment from translation-only correction to affine or local feature-based warping. |
-| 17 | Stakeholder Reports | Workflow | Planned | Export monitoring and progress reports for external review and communication. |
+| 17 | Stakeholder Reports | Workflow | Working | Export project progress as stakeholder-friendly web reports with print-to-PDF support. |
 | 18 | OneDrive Folder Task Intake | Workflow | Working | Create import tasks from a configured OneDrive-synced folder via the `onedriveintake` management command. |
 
 ## Interpretation Rules

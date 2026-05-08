@@ -513,6 +513,10 @@ class ProjectListItem extends React.Component {
     location.href = `/map/project/${this.state.data.id}/`;
   }
 
+  viewProgressReport = () => {
+    window.open(`/api/projects/${this.state.data.id}/reports/progress?format=html`, "_blank", "noopener");
+  }
+
   handleImportTask = () => {
     this.setState({importing: true});
   }
@@ -853,6 +857,11 @@ class ProjectListItem extends React.Component {
             <i className='fa fa-map-marker'></i>
             <a href="javascript:void(0);" onClick={this.toggleIssues}>
               {_("Issues")} <i className={'fa fa-caret-' + (this.state.showIssues ? 'down' : 'right')}></i>
+            </a>
+
+            <i className='fa fa-file-pdf'></i>
+            <a href="javascript:void(0);" onClick={this.viewProgressReport}>
+              {_("Report")}
             </a>
 
             {!canEdit && !data.owned ? 
