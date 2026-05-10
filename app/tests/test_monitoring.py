@@ -10,8 +10,8 @@ from django.utils import timezone
 from rasterio.enums import ColorInterp
 from rasterio.transform import Affine, from_origin
 
-from app.monitoring import aligned_dataset_transform, ensure_monitoring_products, estimate_alignment, monitoring_cache_dir
 from app.models import Project, Task
+from app.services.monitoring import aligned_dataset_transform, ensure_monitoring_products, estimate_alignment, monitoring_cache_dir
 from nodeodm import status_codes
 
 from .classes import BootTestCase

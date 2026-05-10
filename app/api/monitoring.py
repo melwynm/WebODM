@@ -10,7 +10,7 @@ from rio_tiler.utils import has_alpha_band, non_alpha_indexes
 
 from app.api.permissions import ProjectPermissionPolicy
 from app.api.tasks import TaskNestedView
-from app.monitoring import MonitoringError, ensure_monitoring_products, monitoring_layer_path
+from app.services.monitoring import MonitoringError, ensure_monitoring_products, monitoring_layer_path
 from nodeodm import status_codes
 from worker import tasks as worker_tasks
 

@@ -212,7 +212,7 @@ def process_pending_tasks():
 @app.task(bind=True, time_limit=settings.WORKERS_MAX_TIME_LIMIT)
 def generate_monitoring_compare(self, reference_task_id, compare_task_id):
     try:
-        from app.monitoring import ensure_monitoring_products, render_layer_payload
+        from app.services.monitoring import ensure_monitoring_products, render_layer_payload
 
         reference_task = Task.objects.get(pk=reference_task_id)
         compare_task = Task.objects.get(pk=compare_task_id)

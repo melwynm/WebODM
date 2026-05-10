@@ -1632,7 +1632,7 @@ class Task(models.Model):
             return
 
         try:
-            from app.monitoring import clear_monitoring_cache_for_task
+            from app.services.monitoring import clear_monitoring_cache_for_task
             clear_monitoring_cache_for_task(self.id)
         except Exception as e:
             logger.warning("Cannot clear monitoring cache for task {}: {}".format(self, str(e)))

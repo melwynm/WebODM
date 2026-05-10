@@ -91,7 +91,8 @@ This file tracks the current state of this fork so future work can start from th
 - Moved project progress report construction and HTML rendering from the API view into `app/services/project_reports.py`
 - Added `ProjectPermissionPolicy` as a central project-scoped API permission entry point
 - Updated newer project-scoped APIs to use the permission policy instead of duplicating direct project access checks
-- Split monitoring implementation out of `app/monitoring.py` into focused services for alignment, cache, overlays, payloads, and product orchestration
+- Split monitoring implementation into focused services for alignment, cache, overlays, payloads, and product orchestration
+- Removed the legacy `app/monitoring.py` compatibility facade and moved runtime callers to service imports
 
 ### Default NodeODM Repair
 

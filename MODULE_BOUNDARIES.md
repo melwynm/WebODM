@@ -50,7 +50,7 @@ Bad service input examples:
 
 ## Monitoring
 
-`app/monitoring.py` remains the compatibility facade for existing imports. Monitoring implementation now lives in focused services:
+Monitoring implementation lives in focused services:
 
 - `app/services/monitoring/alignment.py`: alignment estimation and preview matching
 - `app/services/monitoring/cache.py`: cache paths, input fingerprints, metadata loading, and invalidation
@@ -59,7 +59,7 @@ Bad service input examples:
 - `app/services/monitoring/products.py`: orchestration for generating a comparison product set
 - `app/services/monitoring/common.py`: shared raster helpers, constants, transforms, and errors
 
-Keep public compatibility functions in `app/monitoring.py` until callers are migrated.
+Do not recreate an `app/monitoring.py` facade. Runtime callers should import the service package or the specific owning service module.
 
 ## Reports
 
