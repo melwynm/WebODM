@@ -15,7 +15,7 @@ import GCPPopup from './GCPPopup';
 import SwitchModeButton from './SwitchModeButton';
 import ShareButton from './ShareButton';
 import AssetDownloads from '../classes/AssetDownloads';
-import {addTempLayer} from '../classes/TempLayer';
+import {addTempLayer, addRemoteLayer} from '../classes/TempLayer';
 import PropTypes from 'prop-types';
 import PluginsAPI from '../classes/plugins/API';
 import Basemaps from '../classes/Basemaps';
@@ -86,6 +86,64 @@ class Map extends React.Component {
     this.loadImageryLayers = this.loadImageryLayers.bind(this);
     this.updatePopupFor = this.updatePopupFor.bind(this);
     this.handleMapMouseDown = this.handleMapMouseDown.bind(this);
+  }
+
+  getProjectId = () => {
+    const project = this.props.project || {};
+    return project.id || (this.props.tiles[0] && this.props.tiles[0].project);
+  }
+
+  addDesignOverlayLayer = (overlay) => {
+    if (!overlay || !overlay.is_map_overlay || !overlay.file_url) return;
+
+    addRemoteLayer(overlay.file_url, overlay.source_filename || overlay.name, (err, layer) => {
+      if (err){
+        this.setState({ error: err.message || JSON.stringify(err) });
+        return;
+      }
+
+      layer.addTo(this.map);
+      layer[Symbol.for("meta")] = {
+        name: overlay.name,
+        designOverlay: true,
+        source: overlay
+      };
+      this.setState(update(this.state, {
+        overlays: {$push: [layer]}
+      }));
+    });
+  }
+
+  loadDesignOverlays = () => {
+    const projectId = this.getProjectId();
+    if (!projectId) return;
+
+    $.getJSON(`/api/projects/${projectId}/design-overlays/`)
+      .done(overlays => overlays.forEach(this.addDesignOverlayLayer))
+      .fail(xhr => {
+        if (xhr.status !== 404) this.setState({ error: xhr.responseText || _("Cannot load design overlays") });
+      });
+  }
+
+  uploadDesignOverlay = (file, done) => {
+    const projectId = this.getProjectId();
+    if (!projectId){
+      done(new Error(_("Cannot save overlay without a project.")));
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('name', file.name.replace(/\.[^/.]+$/, ''));
+
+    $.ajax({
+      url: `/api/projects/${projectId}/design-overlays/`,
+      method: 'POST',
+      data: formData,
+      processData: false,
+      contentType: false
+    }).done(overlay => done(null, overlay))
+      .fail(xhr => done(new Error(xhr.responseText || _("Cannot save design overlay."))));
   }
 
 
@@ -890,10 +948,17 @@ _('Example:'),
         const mapTempLayerDrop = new Dropzone(container, opts);
         mapTempLayerDrop.on("addedfile", (file) => {
           this.setState({showLoading: true});
-          addTempLayer(file, (err, tempLayer, filename) => {
+          const addLayerFromFile = overlay => {
+            const layerSource = overlay && overlay.file_url ?
+              (cb => addRemoteLayer(overlay.file_url, overlay.source_filename || overlay.name, cb)) :
+              (cb => addTempLayer(file, cb));
+
+            layerSource((err, tempLayer, filename) => {
             if (!err){
               tempLayer.addTo(this.map);
-              tempLayer[Symbol.for("meta")] = {name: filename};
+              tempLayer[Symbol.for("meta")] = overlay && overlay.id ?
+                {name: overlay.name, designOverlay: true, source: overlay} :
+                {name: filename};
               this.setState(update(this.state, {
                  overlays: {$push: [tempLayer]}
               }));
@@ -904,7 +969,20 @@ _('Example:'),
             }
     
             this.setState({showLoading: false});
-          });
+            });
+          };
+
+          if (opts.persistProjectOverlay){
+            this.uploadDesignOverlay(file, (err, overlay) => {
+              if (err){
+                this.setState({ error: err.message || JSON.stringify(err), showLoading: false });
+              }else{
+                addLayerFromFile(overlay);
+              }
+            });
+          }else{
+            addLayerFromFile();
+          }
         });
         mapTempLayerDrop.on("error", (file) => {
           mapTempLayerDrop.removeFile(file);
@@ -922,17 +1000,20 @@ _('Example:'),
             this.container = Leaflet.DomUtil.create('div', 'leaflet-control-add-overlay leaflet-bar leaflet-control');
             Leaflet.DomEvent.disableClickPropagation(this.container);
             const btn = Leaflet.DomUtil.create('a', 'leaflet-control-add-overlay-button leaflet-bar-part theme-secondary');
-            const overlayTitle = _("Add a temporary GeoJSON (.json) or ShapeFile (.zip) overlay");
+            const overlayTitle = _("Add a design overlay to this project");
             btn.setAttribute("href", "javascript:void(0);");
             decorateControlButton(btn, 'fa fa-plus', overlayTitle);
 
             this.container.append(btn);
-            addDnDZone(btn, {url: "/", clickable: true});
+            addDnDZone(btn, {url: "/", clickable: true, persistProjectOverlay: true});
             
             return this.container;
         }
     });
-    new AddOverlayCtrl().addTo(this.map);
+    if (this.props.permissions.indexOf("change") !== -1 || this.props.publicEdit){
+      new AddOverlayCtrl().addTo(this.map);
+    }
+    this.loadDesignOverlays();
 
     if (this.props.permissions.indexOf("change") !== -1){
       const updateCropArea = geojson => {

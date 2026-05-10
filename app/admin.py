@@ -22,7 +22,7 @@ from app.models import Plugin
 from app.models import Profile
 from app.plugins import get_plugin_by_name, enable_plugin, disable_plugin, delete_plugin, valid_plugin, \
     get_plugins_persistent_path, clear_plugins_cache, init_plugins
-from .models import Project, Task, Setting, Theme, ProjectIssue
+from .models import Project, Task, Setting, Theme, ProjectIssue, ProjectDesignOverlay
 from django import forms
 from codemirror2.widgets import CodeMirrorEditor
 from webodm import settings
@@ -61,6 +61,15 @@ class ProjectIssueAdmin(admin.ModelAdmin):
 
 
 admin.site.register(ProjectIssue, ProjectIssueAdmin)
+
+
+class ProjectDesignOverlayAdmin(admin.ModelAdmin):
+    list_display = ('name', 'project', 'source_filename', 'created_by', 'updated_at')
+    search_fields = ('name', 'description', 'source_filename', 'project__name')
+    list_filter = ('created_at', 'updated_at')
+
+
+admin.site.register(ProjectDesignOverlay, ProjectDesignOverlayAdmin)
 
 
 class SettingAdmin(admin.ModelAdmin):

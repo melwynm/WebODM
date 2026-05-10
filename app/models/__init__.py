@@ -7,6 +7,7 @@ from .plugin_datum import PluginDatum
 from .plugin import Plugin
 from .profile import Profile
 from .project_issue import ProjectIssue
+from .project_design_overlay import ProjectDesignOverlay
 
 # deprecated
 def image_directory_path(image_upload, filename):

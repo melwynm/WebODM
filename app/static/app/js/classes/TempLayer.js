@@ -85,3 +85,16 @@ export function addTempLayer(file, cb) {
     cb(null, tempLayer, file.name);
   }
 }
+
+export function addRemoteLayer(url, filename, cb) {
+  fetch(url, { credentials: 'same-origin' })
+    .then(response => {
+      if (!response.ok) throw new Error(interpolate(_("Cannot load overlay: %(file)s"), { file: filename }));
+      return response.blob();
+    })
+    .then(blob => {
+      const file = new File([blob], filename || "design-overlay.geojson", { type: blob.type });
+      addTempLayer(file, cb);
+    })
+    .catch(cb);
+}

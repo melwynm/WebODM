@@ -13,9 +13,9 @@ The next item is the first stage marked `Next`.
 
 ## Current Next Item
 
-`20. Design/BIM/Plan Overlays`
+`21. Mobile/Field Photo Capture`
 
-Compare actual site outputs against design drawings, plans, or BIM/IFC references.
+Attach ground photos or 360 photos to map locations for field context.
 
 ## Pipeline Stages
 
@@ -40,8 +40,8 @@ Compare actual site outputs against design drawings, plans, or BIM/IFC reference
 | 17 | Stakeholder Reports | Workflow | Working | Export project progress as stakeholder-friendly web reports with print-to-PDF support. |
 | 18 | OneDrive Folder Task Intake | Workflow | Working | Create import tasks from a configured OneDrive-synced folder via the `onedriveintake` management command. |
 | 19 | Core Platform Hardening | Platform | Working | Keep core modules thin, modular, testable, and upgrade-friendly. |
-| 20 | Design/BIM/Plan Overlays | Workflow | Next | Compare actual site outputs against design drawings, plans, or BIM/IFC references. |
-| 21 | Mobile/Field Photo Capture | Workflow | Planned | Attach ground photos or 360 photos to map locations for field context. |
+| 20 | Design/BIM/Plan Overlays | Workflow | Working | Store project design overlays and render supported GeoJSON/Shapefile references on 2D maps. |
+| 21 | Mobile/Field Photo Capture | Workflow | Next | Attach ground photos or 360 photos to map locations for field context. |
 | 22 | AI-Assisted Issue Detection | Workflow | Planned | Use object/change detection to create reviewable project issues. |
 | 23 | Client Sharing Portal | Workflow | Planned | Provide polished client links, roles, comments, and read-only review. |
 

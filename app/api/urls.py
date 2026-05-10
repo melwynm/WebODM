@@ -13,6 +13,7 @@ from .tiler import TileJson, Bounds, Metadata, Tiles, Export
 from .potree import Scene, CameraView
 from .monitoring import MonitoringCandidates, MonitoringCompare, MonitoringTiles, MonitoringTimeline
 from .issues import ProjectIssueViewSet
+from .design_overlays import ProjectDesignOverlayViewSet
 from .reports import ProjectProgressReport
 from .workers import CheckTask, GetTaskResult
 from .users import UsersList
@@ -27,6 +28,7 @@ router.register(r'presets', PresetViewSet, basename='presets')
 tasks_router = routers.NestedSimpleRouter(router, r'projects', lookup='project')
 tasks_router.register(r'tasks', TaskViewSet, basename='projects-tasks')
 tasks_router.register(r'issues', ProjectIssueViewSet, basename='projects-issues')
+tasks_router.register(r'design-overlays', ProjectDesignOverlayViewSet, basename='projects-design-overlays')
 
 admin_router = routers.DefaultRouter()
 admin_router.register(r'admin/users', AdminUserViewSet, basename='admin-users')

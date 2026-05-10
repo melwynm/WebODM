@@ -19,6 +19,14 @@ This file tracks the current state of this fork so future work can start from th
 
 ## Recently Completed
 
+### Design/BIM/Plan Overlays
+
+- Added project-scoped design overlay records with upload, list, and delete API support
+- Added permission checks so project viewers can load overlays and project editors can manage them
+- Render supported GeoJSON and zipped Shapefile overlays automatically in the 2D map layer control
+- Reused the existing map overlay parser path so temporary and persistent overlays stay consistent
+- Added regression coverage for overlay create/list/delete, file validation, and project permissions
+
 ### Object Detection Stability
 
 - Fixed object detection worker failures caused by serialized worker execution not having access to module-level imports
