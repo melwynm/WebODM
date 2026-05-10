@@ -1,4 +1,4 @@
-const measureBuildVersion = '20260320-ui-tune2';
+const measureBuildVersion = '20260510-visible-map-measure';
 
 PluginsAPI.Map.willAddControls([
     	`measure/build/app.js?v=${measureBuildVersion}`,

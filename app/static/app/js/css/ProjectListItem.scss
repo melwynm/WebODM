@@ -294,6 +294,16 @@
             }
         }
 
+        .project-link-danger {
+            color: var(--odm-danger, #ff6b6b);
+
+            &:hover,
+            &:focus {
+                color: var(--odm-danger, #ff6b6b);
+                text-decoration: underline;
+            }
+        }
+
         i {
             color: currentColor;
         }

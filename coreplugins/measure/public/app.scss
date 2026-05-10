@@ -64,6 +64,8 @@
 
     .leaflet-control-measure-toggle i{
         font-size: 15px;
+        color: inherit;
+        pointer-events: none;
     }
 
     .leaflet-control-measure-interaction{

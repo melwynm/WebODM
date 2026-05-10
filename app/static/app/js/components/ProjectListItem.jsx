@@ -673,6 +673,7 @@ class ProjectListItem extends React.Component {
     const tasks = data.tasks || [];
     const numTasks = data.tasks_count !== undefined ? data.tasks_count : tasks.length;
     const canEdit = this.hasPermission("change");
+    const canDelete = this.hasPermission("delete");
     const userTags = Tags.userTags(data.tags);
     const showActionBar = this.hasPermission("add") || this.state.upload.uploading || this.state.buttons.length > 0;
     const projectStatus = this.getProjectStatus();
@@ -864,11 +865,15 @@ class ProjectListItem extends React.Component {
               {_("Report")}
             </a>
 
-            {!canEdit && !data.owned ? 
-              [<i key="edit-icon" className='far fa-eye-slash'></i>
-              ,<a key="edit-text" href="javascript:void(0);" onClick={this.handleHideProject(deleteWarning, this.handleDelete)}> {_("Delete")}
+            {canDelete ?
+              [<i key="delete-icon" className='fa fa-trash project-link-danger'></i>
+              ,<a key="delete-text" className="project-link-danger" href="javascript:void(0);" onClick={this.handleHideProject(deleteWarning, this.handleDelete)}> {data.owned ? _("Delete") : _("Hide")}
               </a>]
-            : ""}
+            : (!canEdit && !data.owned ?
+              [<i key="hide-icon" className='far fa-eye-slash'></i>
+              ,<a key="hide-text" href="javascript:void(0);" onClick={this.handleHideProject(deleteWarning, this.handleDelete)}> {_("Delete")}
+              </a>]
+            : "")}
 
           </div>
         </div>

@@ -15,6 +15,7 @@ export default class App{
         this.map = map;
 
         const measure = L.control.measure({
+          position: 'topright',
           labels:{
             measureDistancesAndAreas: _('Measure volume, area and length'),
             areaMeasurement: _('Measurement'),
@@ -106,10 +107,10 @@ export default class App{
         };
 
         if (measureToggle){
-          measureToggle.classList.add('map-control-button', 'leaflet-bar-part', 'theme-secondary');
+          measureToggle.classList.add('map-control-button', 'leaflet-bar-part', 'theme-secondary', 'webodm-measure-toggle');
           measureToggle.setAttribute('title', measureTitle);
           measureToggle.setAttribute('aria-label', measureTitle);
-          measureToggle.innerHTML = '<i class="fa fa-ruler-combined" aria-hidden="true"></i>';
+          measureToggle.innerHTML = '<i class="fas fa-ruler-combined" aria-hidden="true"></i>';
         }
 
         measure._setCaptureMarkerIcon = wrapCaptureMarkerIcon(measure._setCaptureMarkerIcon);
