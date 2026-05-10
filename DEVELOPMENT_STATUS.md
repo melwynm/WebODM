@@ -93,6 +93,7 @@ This file tracks the current state of this fork so future work can start from th
 - Updated newer project-scoped APIs to use the permission policy instead of duplicating direct project access checks
 - Split monitoring implementation into focused services for alignment, cache, overlays, payloads, and product orchestration
 - Removed the legacy `app/monitoring.py` compatibility facade and moved runtime callers to service imports
+- Replaced the test-named async result abstraction with `worker/results.py` so runtime APIs and plugins do not import test plumbing
 
 ### Default NodeODM Repair
 

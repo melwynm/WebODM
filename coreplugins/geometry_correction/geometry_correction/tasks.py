@@ -15,7 +15,7 @@ from app.models import Task
 from app.plugins.worker import task
 from nodeodm import status_codes
 from webodm import settings
-from worker.tasks import TestSafeAsyncResult
+from worker.results import get_async_result, store_task_result
 
 from . import config
 
@@ -135,7 +135,7 @@ def _query_worker_status(celery_task_id: Optional[str]):
     if not celery_task_id:
         return None
 
-    result = TestSafeAsyncResult(celery_task_id)
+    result = get_async_result(celery_task_id)
     if result.ready():
         return {
             "ready": True,
@@ -335,8 +335,7 @@ def run_geometry_correction(self, task_id: str, project_id: int, options: Option
         _notify_completion(task_obj, opts, "COMPLETED", results)
 
         result = {"output": final_payload, "status": "completed"}
-        if settings.TESTING:
-            TestSafeAsyncResult.set(self.request.id, result)
+        store_task_result(self.request.id, result)
         return result
     except Exception as exc:
         logger.exception("Geometry correction failed for task %s", task_obj.id)
@@ -351,6 +350,5 @@ def run_geometry_correction(self, task_id: str, project_id: int, options: Option
         _notify_completion(task_obj, opts, "FAILED", results, error=str(exc))
 
         result = {"error": str(exc), "output": failure_payload, "status": "failed"}
-        if settings.TESTING:
-            TestSafeAsyncResult.set(self.request.id, result)
+        store_task_result(self.request.id, result)
         return result

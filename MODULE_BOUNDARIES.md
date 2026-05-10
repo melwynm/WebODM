@@ -48,6 +48,10 @@ Bad service input examples:
 - a serializer instance
 - a viewset instance
 
+Tests should verify service contracts and module boundaries. Runtime code must not import test modules, test-named abstractions, or test-only substitutes in order to make a feature pass.
+
+Worker task result helpers belong under `worker/`, not under `app/services/`, so application services stay independent of Celery infrastructure.
+
 ## Monitoring
 
 Monitoring implementation lives in focused services:

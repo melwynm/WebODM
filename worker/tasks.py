@@ -18,8 +18,8 @@ from app.models import Task
 from nodeodm import status_codes
 from nodeodm.models import ProcessingNode
 from webodm import settings
-import worker
 from .celery import app
+from worker.results import store_task_result
 from app.raster_utils import export_raster as export_raster_sync, extension_for_export_format
 from app.pointcloud_utils import export_pointcloud as export_pointcloud_sync
 from django.utils import timezone
@@ -28,9 +28,6 @@ import redis
 
 logger = get_task_logger("app.logger")
 redis_client = redis.Redis.from_url(settings.CELERY_BROKER_URL)
-
-# What class to use for async results, since during testing we need to mock it
-TestSafeAsyncResult = worker.celery.MockAsyncResult if settings.TESTING else app.AsyncResult
 
 @app.task(ignore_result=True)
 def update_nodes_info():
@@ -225,8 +222,7 @@ def generate_monitoring_compare(self, reference_task_id, compare_task_id):
             'output': render_layer_payload(reference_task, compare_task, metadata)
         }
 
-        if settings.TESTING:
-            TestSafeAsyncResult.set(self.request.id, result)
+        store_task_result(self.request.id, result)
 
         return result
     except Exception as e:
@@ -244,8 +240,7 @@ def export_raster(self, input, **opts):
         export_raster_sync(input, tmpfile, progress_callback=progress_callback, **opts)
         result = {'file': tmpfile}
 
-        if settings.TESTING:
-            TestSafeAsyncResult.set(self.request.id, result)
+        store_task_result(self.request.id, result)
 
         return result
     except Exception as e:
@@ -261,8 +256,7 @@ def export_pointcloud(self, input, **opts):
         export_pointcloud_sync(input, tmpfile, **opts)
         result = {'file': tmpfile}
 
-        if settings.TESTING:
-            TestSafeAsyncResult.set(self.request.id, result)
+        store_task_result(self.request.id, result)
 
         return result
     except Exception as e:

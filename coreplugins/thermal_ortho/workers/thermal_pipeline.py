@@ -7,7 +7,7 @@ from pathlib import Path
 from types import SimpleNamespace
 
 from app.plugins.worker import run_function_async
-from worker.tasks import TestSafeAsyncResult
+from worker.results import get_async_result
 
 logger = logging.getLogger('app.logger')
 STATUS_FILE = 'thermal_ortho_status.json'
@@ -134,7 +134,7 @@ def _asset_url(task, asset_path):
 def _query_worker_status(celery_task_id):
     if not celery_task_id:
         return None
-    result = TestSafeAsyncResult(celery_task_id)
+    result = get_async_result(celery_task_id)
     if result.ready():
         return {'ready': True, 'result': result.get() or {}, 'state': getattr(result, 'state', 'SUCCESS')}
     return {'ready': False, 'info': getattr(result, 'info', None), 'state': getattr(result, 'state', 'PENDING')}

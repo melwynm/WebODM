@@ -17,7 +17,7 @@ from guardian.shortcuts import assign_perm
 from nodeodm import status_codes
 
 import worker
-from worker.tasks import TestSafeAsyncResult
+from worker.results import get_async_result
 
 from .utils import start_processing_node, clear_test_media_root, catch_signal
 
@@ -194,7 +194,7 @@ class TestApiTask(BootTransactionTestCase):
                             self.assertTrue("celery_task_id" in reply)
                             self.assertFalse("url" in reply)
 
-                            cres = TestSafeAsyncResult(celery_task_id)
+                            cres = get_async_result(celery_task_id)
                             c = 0
                             while not cres.ready():
                                 time.sleep(0.2)

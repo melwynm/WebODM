@@ -1,7 +1,7 @@
 import os
 import mimetypes
 
-from worker.tasks import TestSafeAsyncResult
+from worker.results import get_async_result
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status, permissions
@@ -14,7 +14,7 @@ class CheckTask(APIView):
     permission_classes = (permissions.AllowAny,)
 
     def get(self, request, celery_task_id=None, **kwargs):
-        res = TestSafeAsyncResult(celery_task_id)
+        res = get_async_result(celery_task_id)
 
         if not res.ready():
             out = {'ready': False}
@@ -54,7 +54,7 @@ class GetTaskResult(APIView):
     permission_classes = (permissions.AllowAny,)
 
     def get(self, request, celery_task_id=None, **kwargs):
-        res = TestSafeAsyncResult(celery_task_id)
+        res = get_async_result(celery_task_id)
         if res.ready():
             result = res.get()
             file = result.get('file', None) # File path
