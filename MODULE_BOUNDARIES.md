@@ -50,13 +50,14 @@ Bad service input examples:
 
 ## Monitoring
 
-`app/monitoring.py` remains the compatibility facade for existing imports. Future hardening should split it into focused services:
+`app/monitoring.py` remains the compatibility facade for existing imports. Monitoring implementation now lives in focused services:
 
-- alignment estimation
-- monitoring cache
-- orthophoto/change overlays
-- terrain delta overlays
-- layer payload rendering
+- `app/services/monitoring/alignment.py`: alignment estimation and preview matching
+- `app/services/monitoring/cache.py`: cache paths, input fingerprints, metadata loading, and invalidation
+- `app/services/monitoring/overlays.py`: aligned overlays, change heatmaps, and terrain delta rasters
+- `app/services/monitoring/payloads.py`: API layer payload and tile URL construction
+- `app/services/monitoring/products.py`: orchestration for generating a comparison product set
+- `app/services/monitoring/common.py`: shared raster helpers, constants, transforms, and errors
 
 Keep public compatibility functions in `app/monitoring.py` until callers are migrated.
 

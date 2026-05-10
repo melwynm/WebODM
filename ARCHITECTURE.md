@@ -62,7 +62,7 @@ Frontend modules should call stable API contracts. Repeated UI patterns should b
 
 These files are powerful but too broad and should be progressively split:
 
-- `app/monitoring.py`: alignment, cache, overlay generation, terrain delta, tile metadata, and raster helpers
+- `app/services/monitoring/`: monitoring is split by responsibility, but the raster-heavy services still need focused tests as new behavior is added
 - `app/models/task.py`: task persistence, file paths, image processing helpers, asset management, and processing orchestration
 - `app/api/tasks.py`: task serializers, task mutation APIs, imports, downloads, exports, and helper functions
 - `worker/tasks.py`: periodic tasks, processing orchestration, monitoring compare, and export jobs
