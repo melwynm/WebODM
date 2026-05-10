@@ -84,6 +84,14 @@ This file tracks the current state of this fork so future work can start from th
 - Reduced alignment preview size to keep monitoring comparisons responsive while preserving full-resolution output generation
 - Added regression coverage for translation stability and similarity-transform application
 
+### Core Platform Hardening
+
+- Added `ARCHITECTURE.md` and `MODULE_BOUNDARIES.md` to define core layer responsibilities, service boundaries, import direction, and upgrade-confidence rules
+- Added `app/services/` as the application service layer
+- Moved project progress report construction and HTML rendering from the API view into `app/services/project_reports.py`
+- Added `ProjectPermissionPolicy` as a central project-scoped API permission entry point
+- Updated newer project-scoped APIs to use the permission policy instead of duplicating direct project access checks
+
 ### Default NodeODM Repair
 
 - Added a `syncdefaultnodes` management command to repair legacy default-node aliases such as `nodeodm`

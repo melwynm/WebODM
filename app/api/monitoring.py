@@ -8,7 +8,7 @@ from rio_tiler.io import COGReader
 from rio_tiler.profiles import img_profiles
 from rio_tiler.utils import has_alpha_band, non_alpha_indexes
 
-from app.api.common import get_and_check_project
+from app.api.permissions import ProjectPermissionPolicy
 from app.api.tasks import TaskNestedView
 from app.monitoring import MonitoringError, ensure_monitoring_products, monitoring_layer_path
 from nodeodm import status_codes
@@ -49,7 +49,7 @@ class MonitoringTimeline(APIView):
     permission_classes = (AllowAny,)
 
     def get(self, request, project_pk=None):
-        project = get_and_check_project(request, project_pk)
+        project = ProjectPermissionPolicy.get_project(request, project_pk)
         context_task_id = request.query_params.get("task")
         timeline_tasks = completed_orthophoto_tasks(project)
 

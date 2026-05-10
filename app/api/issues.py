@@ -2,8 +2,8 @@ from django.utils import timezone
 from rest_framework import permissions, serializers, viewsets
 
 from app import models
+from app.api.permissions import ProjectPermissionPolicy
 from app.models.project_issue import validate_geojson_geometry
-from .common import get_and_check_project
 
 
 class ProjectIssueSerializer(serializers.ModelSerializer):
@@ -69,8 +69,8 @@ class ProjectIssueViewSet(viewsets.ModelViewSet):
         return super().paginate_queryset(queryset)
 
     def get_project(self, change=False):
-        perms = ('change_project',) if change else ('view_project',)
-        return get_and_check_project(self.request, self.kwargs.get('project_pk'), perms)
+        perms = ProjectPermissionPolicy.CHANGE if change else ProjectPermissionPolicy.VIEW
+        return ProjectPermissionPolicy.get_project(self.request, self.kwargs.get('project_pk'), perms)
 
     def get_queryset(self):
         project = self.get_project()
