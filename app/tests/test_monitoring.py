@@ -8,9 +8,9 @@ from django.contrib.auth.models import User
 from django.test import Client
 from django.utils import timezone
 from rasterio.enums import ColorInterp
-from rasterio.transform import from_origin
+from rasterio.transform import Affine, from_origin
 
-from app.monitoring import ensure_monitoring_products, estimate_alignment, monitoring_cache_dir
+from app.monitoring import aligned_dataset_transform, ensure_monitoring_products, estimate_alignment, monitoring_cache_dir
 from app.models import Project, Task
 from nodeodm import status_codes
 
@@ -99,7 +99,26 @@ class TestMonitoring(BootTestCase):
 
         self.assertAlmostEqual(alignment['shift_units']['x'], -2.0, delta=0.35)
         self.assertAlmostEqual(alignment['shift_units']['y'], 1.0, delta=0.35)
+        self.assertEqual(alignment['transform_type'], 'translation')
+        self.assertAlmostEqual(alignment['rotation_degrees'], 0.0, delta=0.001)
+        self.assertAlmostEqual(alignment['scale'], 1.0, delta=0.001)
         self.assertGreater(alignment['confidence'], 0.4)
+
+    def test_aligned_dataset_transform_supports_similarity_correction(self):
+        source_transform = from_origin(500000, 1000, 1, 1)
+        alignment = {
+            'shift_units': {'x': -2.0, 'y': 1.0},
+            'center_units': {'x': 500032.0, 'y': 968.0},
+            'rotation_degrees': 2.0,
+            'scale': 1.015,
+        }
+
+        transformed = aligned_dataset_transform(source_transform, alignment)
+        translation_only = Affine.translation(-2.0, 1.0) * source_transform
+
+        self.assertNotAlmostEqual(transformed.a, translation_only.a, delta=0.0001)
+        self.assertNotAlmostEqual(transformed.b, translation_only.b, delta=0.0001)
+        self.assertNotAlmostEqual(transformed.d, translation_only.d, delta=0.0001)
 
     def test_monitoring_timeline_api_returns_project_tasks_in_created_order(self):
         start = timezone.now() - timedelta(days=3)

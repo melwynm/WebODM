@@ -1,6 +1,6 @@
 # Development Status
 
-Last updated: 2026-05-08
+Last updated: 2026-05-10
 
 ## Purpose
 
@@ -76,6 +76,14 @@ This file tracks the current state of this fork so future work can start from th
 - Added a dashboard `Report` link for each project
 - Added regression coverage for JSON reports, printable HTML, and project-scoped permissions
 
+### Advanced Alignment
+
+- Added similarity alignment metadata for monitoring comparisons, including transform type, rotation, scale, center point, and translation
+- Added a conservative rotation/scale search path that runs only when the existing translation alignment has low confidence
+- Updated aligned overlay transform and overlap bounds calculations to support similarity transforms instead of translation-only shifts
+- Reduced alignment preview size to keep monitoring comparisons responsive while preserving full-resolution output generation
+- Added regression coverage for translation stability and similarity-transform application
+
 ### Default NodeODM Repair
 
 - Added a `syncdefaultnodes` management command to repair legacy default-node aliases such as `nodeodm`
@@ -95,6 +103,7 @@ This file tracks the current state of this fork so future work can start from th
 - Default local WebODM UI on port `8000`
 - Object detection, including the previously failing dog model path
 - Monitoring compare for orthophotos with automatic translational alignment correction
+- Monitoring alignment can now carry rotation and scale corrections when translation-only confidence is weak
 - Monitoring compare from a project timeline view with timeline-based task selection
 - DSM/DTM terrain delta overlays and cut/fill-style volume stats when compared tasks include DEM assets
 - Project issues and annotations from the dashboard via each project's `Issues` panel
@@ -108,8 +117,8 @@ This file tracks the current state of this fork so future work can start from th
 
 - Monitoring still uses orthophoto-to-orthophoto comparison as the required alignment baseline
 - DSM/DTM terrain products are available only when both compared tasks have matching DEM assets
-- Alignment correction is translational only
-- No rotation, scale, rubber-sheet, or design/BIM comparison workflow yet
+- Advanced alignment is a conservative similarity transform; it is not full local/rubber-sheet warping yet
+- No rubber-sheet/local warping or design/BIM comparison workflow yet
 
 ### Operations
 

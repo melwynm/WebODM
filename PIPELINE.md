@@ -1,6 +1,6 @@
 # Consolidated Pipeline
 
-Last updated: 2026-05-08
+Last updated: 2026-05-10
 
 This file is the single source of truth for the project pipeline in this fork.
 It combines:
@@ -13,9 +13,9 @@ The next item is the first stage marked `Next`.
 
 ## Current Next Item
 
-`16. Advanced Alignment`
+`19. Design/BIM/Plan Overlays`
 
-Improve alignment from translation-only correction to affine or local feature-based warping.
+Compare actual site outputs against design drawings, plans, or BIM/IFC references.
 
 ## Pipeline Stages
 
@@ -36,9 +36,13 @@ Improve alignment from translation-only correction to affine or local feature-ba
 | 13 | Project Timeline Monitoring | Workflow | Working | Monitoring now supports project-level timeline selection, timeline-driven compare launch, and cache invalidation for regenerated timeline comparisons. |
 | 14 | DSM/DTM Delta and Cut/Fill | Workflow | Working | Add terrain change products beyond orthophoto-only comparison. |
 | 15 | Change Issues and Annotations | Workflow | Working | Promote detected changes into trackable issues and annotations with status. |
-| 16 | Advanced Alignment | Workflow | Next | Improve alignment from translation-only correction to affine or local feature-based warping. |
+| 16 | Advanced Alignment | Workflow | Working | Improve alignment from translation-only correction to affine or local feature-based warping. |
 | 17 | Stakeholder Reports | Workflow | Working | Export project progress as stakeholder-friendly web reports with print-to-PDF support. |
 | 18 | OneDrive Folder Task Intake | Workflow | Working | Create import tasks from a configured OneDrive-synced folder via the `onedriveintake` management command. |
+| 19 | Design/BIM/Plan Overlays | Workflow | Next | Compare actual site outputs against design drawings, plans, or BIM/IFC references. |
+| 20 | Mobile/Field Photo Capture | Workflow | Planned | Attach ground photos or 360 photos to map locations for field context. |
+| 21 | AI-Assisted Issue Detection | Workflow | Planned | Use object/change detection to create reviewable project issues. |
+| 22 | Client Sharing Portal | Workflow | Planned | Provide polished client links, roles, comments, and read-only review. |
 
 ## Interpretation Rules
 

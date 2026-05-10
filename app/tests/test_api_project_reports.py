@@ -1,6 +1,7 @@
 from django.contrib.auth.models import User
 from django.test import Client
 from django.utils import timezone
+from guardian.shortcuts import assign_perm
 
 from app.models import Project, ProjectIssue, Task
 from nodeodm import status_codes
@@ -16,6 +17,8 @@ class TestProjectProgressReportsApi(BootTestCase):
         self.other_user = User.objects.get(username='testuser2')
         self.project = Project.objects.get(owner=self.user)
         self.other_project = Project.objects.get(owner=self.other_user)
+        for perm in ['view_project', 'add_project', 'change_project', 'delete_project']:
+            assign_perm(perm, self.user, self.project)
         self.completed_task = Task.objects.create(
             project=self.project,
             name='April Capture',

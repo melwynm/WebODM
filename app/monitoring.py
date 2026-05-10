@@ -11,6 +11,7 @@ from rasterio.transform import Affine
 from rasterio.vrt import WarpedVRT
 from rasterio.warp import transform as transform_points, transform_bounds, reproject
 from rasterio.windows import Window, from_bounds, transform as window_transform
+from scipy.ndimage import affine_transform as nd_affine_transform
 from scipy.ndimage import shift as nd_shift
 from scipy.ndimage import sobel
 
@@ -19,8 +20,11 @@ from webodm import settings
 logger = logging.getLogger("app.logger")
 
 MONITORING_CACHE_VERSION = 3
-PREVIEW_LONG_SIDE = 2048
+PREVIEW_LONG_SIDE = 768
 MIN_VALID_PIXELS = 4096
+ALIGNMENT_ROTATION_CANDIDATES = (-3.0, -1.5, 0.0, 1.5, 3.0)
+ALIGNMENT_SCALE_CANDIDATES = (0.985, 1.0, 1.015)
+ALIGNMENT_ADVANCED_SEARCH_CONFIDENCE = 0.35
 CHANGE_ALPHA_THRESHOLD = 18.0
 CHANGE_ALPHA_GAIN = 3.4
 TERRAIN_ALPHA_THRESHOLD = 0.05
@@ -204,24 +208,19 @@ def estimate_alignment(reference_path, compare_path):
         reference_feature = make_alignment_feature(reference_gray, valid)
         compare_feature = make_alignment_feature(compare_gray, valid)
 
-        shift_y_px, shift_x_px, peak = phase_correlation(reference_feature, compare_feature)
-
-        shifted_compare = nd_shift(
+        similarity = estimate_similarity_alignment(
+            reference_feature,
+            compare_feature,
+            reference_gray,
             compare_gray,
-            shift=(shift_y_px, shift_x_px),
-            order=1,
-            mode="constant",
-            cval=0.0,
-            prefilter=False,
+            compare_valid,
+            reference_valid,
         )
-        shifted_valid = nd_shift(
-            compare_valid.astype(np.float32),
-            shift=(shift_y_px, shift_x_px),
-            order=0,
-            mode="constant",
-            cval=0.0,
-            prefilter=False,
-        ) > 0.5
+        shifted_compare = similarity["aligned_gray"]
+        shifted_valid = similarity["aligned_valid"]
+        shift_y_px = similarity["shift_y_px"]
+        shift_x_px = similarity["shift_x_px"]
+        peak = similarity["phase_peak"]
 
         overlap_valid = reference_valid & shifted_valid
         if int(overlap_valid.sum()) < MIN_VALID_PIXELS:
@@ -252,8 +251,15 @@ def estimate_alignment(reference_path, compare_path):
 
         return {
             "reference_crs": reference_ds.crs.to_string(),
+            "transform_type": similarity["transform_type"],
             "overlap_bounds": list(map(float, overlap_bounds)),
             "preview_size": [preview_width, preview_height],
+            "rotation_degrees": round(float(similarity["rotation_degrees"]), 4),
+            "scale": round(float(similarity["scale"]), 6),
+            "center_units": {
+                "x": round(float(center_x), 6),
+                "y": round(float(center_y), 6),
+            },
             "shift_pixels": {
                 "x": round(float(shift_x_px), 3),
                 "y": round(float(shift_y_px), 3),
@@ -653,9 +659,11 @@ def render_indexes(dataset):
 
 
 def shifted_dataset_transform(transform, alignment):
-    shift_x = alignment["shift_units"]["x"]
-    shift_y = alignment["shift_units"]["y"]
-    return Affine(transform.a, transform.b, transform.c + shift_x, transform.d, transform.e, transform.f + shift_y)
+    return aligned_dataset_transform(transform, alignment)
+
+
+def aligned_dataset_transform(transform, alignment):
+    return alignment_similarity_transform(alignment) * transform
 
 
 def overlap_window_after_shift(reference_ds, compare_ds, alignment):
@@ -666,12 +674,7 @@ def overlap_window_after_shift(reference_ds, compare_ds, alignment):
         densify_pts=21,
     )
 
-    shifted_bounds = (
-        compare_bounds_in_reference[0] + alignment["shift_units"]["x"],
-        compare_bounds_in_reference[1] + alignment["shift_units"]["y"],
-        compare_bounds_in_reference[2] + alignment["shift_units"]["x"],
-        compare_bounds_in_reference[3] + alignment["shift_units"]["y"],
-    )
+    shifted_bounds = aligned_bounds(compare_bounds_in_reference, alignment)
 
     overlap_bounds = intersect_bounds(tuple(reference_ds.bounds), shifted_bounds)
     if overlap_bounds is None:
@@ -682,6 +685,36 @@ def overlap_window_after_shift(reference_ds, compare_ds, alignment):
     snapped_bounds = list(rasterio.windows.bounds(window, reference_ds.transform))
     alignment["aligned_overlay_bounds"] = list(map(float, snapped_bounds))
     return window, snapped_bounds
+
+
+def aligned_bounds(bounds, alignment):
+    transform = alignment_similarity_transform(alignment)
+    points = [
+        transform * (bounds[0], bounds[1]),
+        transform * (bounds[0], bounds[3]),
+        transform * (bounds[2], bounds[1]),
+        transform * (bounds[2], bounds[3]),
+    ]
+    xs = [point[0] for point in points]
+    ys = [point[1] for point in points]
+    return min(xs), min(ys), max(xs), max(ys)
+
+
+def alignment_similarity_transform(alignment):
+    shift_x = alignment["shift_units"]["x"]
+    shift_y = alignment["shift_units"]["y"]
+    center = alignment.get("center_units") or {}
+    center_x = float(center.get("x", 0.0))
+    center_y = float(center.get("y", 0.0))
+    rotation = float(alignment.get("rotation_degrees", 0.0))
+    scale = float(alignment.get("scale", 1.0))
+    return (
+        Affine.translation(shift_x, shift_y)
+        * Affine.translation(center_x, center_y)
+        * Affine.rotation(rotation)
+        * Affine.scale(scale, scale)
+        * Affine.translation(-center_x, -center_y)
+    )
 
 
 def clamp_window(window, width, height):
@@ -797,6 +830,108 @@ def phase_correlation(reference, compare):
     shift_x += quadratic_offset(corr[peak_y, :], peak_x)
 
     return shift_y, shift_x, peak_value
+
+
+def estimate_similarity_alignment(reference_feature, compare_feature, reference_gray, compare_gray, compare_valid, reference_valid):
+    best = score_similarity_candidate(
+        reference_feature,
+        compare_feature,
+        reference_gray,
+        compare_gray,
+        compare_valid,
+        reference_valid,
+        0.0,
+        1.0,
+    )
+    if best["confidence"] >= ALIGNMENT_ADVANCED_SEARCH_CONFIDENCE:
+        return best
+
+    for rotation in ALIGNMENT_ROTATION_CANDIDATES:
+        for scale in ALIGNMENT_SCALE_CANDIDATES:
+            candidate = score_similarity_candidate(
+                reference_feature,
+                compare_feature,
+                reference_gray,
+                compare_gray,
+                compare_valid,
+                reference_valid,
+                rotation,
+                scale,
+            )
+            if candidate["score"] > best["score"]:
+                best = candidate
+
+    return best
+
+
+def score_similarity_candidate(reference_feature, compare_feature, reference_gray, compare_gray, compare_valid, reference_valid, rotation, scale):
+    transformed_feature = warp_preview_similarity(compare_feature, rotation, scale, order=1)
+    shift_y, shift_x, peak = phase_correlation(reference_feature, transformed_feature)
+    transformed_gray = warp_preview_similarity(compare_gray, rotation, scale, order=1)
+    transformed_valid = warp_preview_similarity(compare_valid.astype(np.float32), rotation, scale, order=0) > 0.5
+
+    aligned_gray = nd_shift(
+        transformed_gray,
+        shift=(shift_y, shift_x),
+        order=1,
+        mode="constant",
+        cval=0.0,
+        prefilter=False,
+    )
+    aligned_valid = nd_shift(
+        transformed_valid.astype(np.float32),
+        shift=(shift_y, shift_x),
+        order=0,
+        mode="constant",
+        cval=0.0,
+        prefilter=False,
+    ) > 0.5
+    valid = reference_valid & aligned_valid
+    confidence = correlation(reference_gray, aligned_gray, valid)
+    score = confidence - (abs(rotation) * 0.01) - (abs(scale - 1.0) * 1.0)
+
+    return {
+        "transform_type": "similarity" if abs(rotation) > 1e-6 or abs(scale - 1.0) > 1e-6 else "translation",
+        "rotation_degrees": rotation,
+        "scale": scale,
+        "shift_y_px": shift_y,
+        "shift_x_px": shift_x,
+        "phase_peak": peak,
+        "confidence": confidence,
+        "score": score,
+        "aligned_gray": aligned_gray,
+        "aligned_valid": aligned_valid,
+    }
+
+
+def warp_preview_similarity(values, rotation_degrees, scale, order=1):
+    if abs(rotation_degrees) < 1e-9 and abs(scale - 1.0) < 1e-9:
+        return values.copy()
+
+    height, width = values.shape
+    center = np.array([(height - 1) / 2.0, (width - 1) / 2.0], dtype=np.float64)
+    theta = np.deg2rad(rotation_degrees)
+    cos_t = np.cos(theta) * scale
+    sin_t = np.sin(theta) * scale
+    forward = np.array(
+        [
+            [cos_t, -sin_t],
+            [sin_t, cos_t],
+        ],
+        dtype=np.float64,
+    )
+    inverse = np.linalg.inv(forward)
+    offset = center - inverse @ center
+    return nd_affine_transform(
+        values,
+        inverse,
+        offset=offset,
+        output_shape=values.shape,
+        order=order,
+        mode="constant",
+        cval=0.0,
+        prefilter=False,
+    )
 
 
 def signed_shift(value, size):
