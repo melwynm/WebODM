@@ -1,5 +1,49 @@
 {% extends "app/plugins/templates/base.html" %}
 
 {% block content %}
-    <iframe src="node_modules/webodm-posm-gcpi/index.html" style="border: none; display: block; min-height: 420px; width: 100%;" class="full-height"></iframe>
+    <iframe id="gcp-interface-frame" src="node_modules/webodm-posm-gcpi/index.html" style="border: none; display: block; min-height: 420px; width: 100%;" class="full-height"></iframe>
+    <script>
+        (function(){
+            var frame = document.getElementById('gcp-interface-frame');
+
+            function getTheme(){
+                return document.body.getAttribute('data-shell-theme') === 'light' ? 'light' : 'dark';
+            }
+
+            function themeCss(){
+                return [
+                    ':root{--gcp-bg:#0d0f12;--gcp-panel:#111418;--gcp-panel-soft:rgba(255,255,255,.035);--gcp-border:rgba(255,255,255,.08);--gcp-text:rgba(225,228,240,.96);--gcp-muted:rgba(140,148,168,.82);--gcp-accent:#00d4aa;--gcp-input:#161b22;}',
+                    'body[data-webodm-shell-theme="light"]{--gcp-bg:#f5f7fb;--gcp-panel:#fff;--gcp-panel-soft:rgba(15,23,42,.045);--gcp-border:rgba(15,23,42,.12);--gcp-text:#111827;--gcp-muted:rgba(71,85,105,.86);--gcp-accent:#0f9f84;--gcp-input:#fff;}',
+                    'html,body,#root{background:var(--gcp-bg)!important;color:var(--gcp-text)!important;}',
+                    'h1,h2,h3,h4,h5,h6,p,label,li,span,button{color:inherit;}',
+                    '.bg-white,.sliding-panel,.images-module,.modal-dialog .inner,.image-point .actions,.add-point-wrapper .helper{background:var(--gcp-panel)!important;color:var(--gcp-text)!important;}',
+                    '.image-nav,.control-points-i,.leaflet-map-providers h4,.leaflet-map-providers li,.leaflet-zoom-controls .leaflet-control-zoom.leaflet-bar a,.leaflet-control-geocoder{background:var(--gcp-panel)!important;color:var(--gcp-text)!important;}',
+                    '.directions,.images-module .details .img-name,.images-module .gcp-controls button,.export-btn,.modal-dialog .output p{color:var(--gcp-muted)!important;}',
+                    '.input,.select,.textarea,input,select,textarea{background:var(--gcp-input)!important;border-color:var(--gcp-border)!important;color:var(--gcp-text)!important;}',
+                    '.export-btn,.border,.border-top,.border-right,.border-bottom,.border-left{border-color:var(--gcp-border)!important;}',
+                    '.btn-primary,.modal-dialog .head,.modal-dialog .actions button{background:var(--gcp-accent)!important;border-color:var(--gcp-accent)!important;color:var(--gcp-bg)!important;}',
+                    'a{color:var(--gcp-accent)!important;}',
+                    '.leaflet-container{background:var(--gcp-bg)!important;}'
+                ].join('\n');
+            }
+
+            function applyTheme(){
+                if (!frame || !frame.contentDocument) return;
+                var doc = frame.contentDocument;
+                doc.body.setAttribute('data-webodm-shell-theme', getTheme());
+                var style = doc.getElementById('webodm-gcp-shell-theme');
+                if (!style) {
+                    style = doc.createElement('style');
+                    style.id = 'webodm-gcp-shell-theme';
+                    doc.head.appendChild(style);
+                }
+                style.textContent = themeCss();
+            }
+
+            if (frame) {
+                frame.addEventListener('load', applyTheme);
+                setInterval(applyTheme, 1000);
+            }
+        })();
+    </script>
 {% endblock %}

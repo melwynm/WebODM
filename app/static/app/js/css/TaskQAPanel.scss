@@ -1,9 +1,9 @@
 .task-qa-panel {
-  background: #fff;
-  border: 1px solid #e1e4e8;
+  background: var(--odm-bg-card, var(--dash-shell-panel, #fff));
+  border: 1px solid var(--odm-border, var(--dash-shell-border, #e1e4e8));
   border-radius: 4px;
   padding: 16px;
-  color: #333;
+  color: var(--odm-text-primary, var(--dash-shell-text, #333));
   font-size: 14px;
 
   .task-qa-header {
@@ -17,7 +17,7 @@
 
     .task-qa-description {
       margin: 0;
-      color: #6a737d;
+      color: var(--odm-text-secondary, var(--dash-shell-muted, #6a737d));
       font-size: 13px;
     }
   }
@@ -29,14 +29,14 @@
     margin-bottom: 16px;
 
     .task-qa-summary-item {
-      background: #f6f8fa;
+      background: var(--odm-bg-panel, var(--dash-shell-panel-soft, #f6f8fa));
       border-radius: 4px;
       padding: 8px 10px;
 
       .task-qa-summary-label {
         font-size: 12px;
         text-transform: uppercase;
-        color: #6a737d;
+        color: var(--odm-text-muted, var(--dash-shell-muted, #6a737d));
         margin-bottom: 4px;
       }
 
@@ -49,7 +49,7 @@
 
   .task-qa-empty {
     text-align: center;
-    color: #6a737d;
+    color: var(--odm-text-secondary, var(--dash-shell-muted, #6a737d));
     padding: 24px 0;
   }
 
@@ -61,23 +61,23 @@
     th,
     td {
       padding: 8px 10px;
-      border-bottom: 1px solid #e1e4e8;
+      border-bottom: 1px solid var(--odm-border, var(--dash-shell-border, #e1e4e8));
       text-align: left;
       vertical-align: middle;
     }
 
     th {
       font-weight: 600;
-      color: #6a737d;
+      color: var(--odm-text-muted, var(--dash-shell-muted, #6a737d));
       text-transform: uppercase;
       font-size: 12px;
     }
 
     .task-qa-row--warning {
-      background-color: #fff5f5;
+      background-color: color-mix(in srgb, var(--dash-shell-danger, #ef4444) 12%, transparent);
 
       td {
-        color: #a94442;
+        color: var(--dash-shell-danger, #a94442);
       }
     }
   }

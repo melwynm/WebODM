@@ -3,9 +3,6 @@
 
 {% block content %}
 
-{% load render_bundle from webpack_loader %}
-{% render_bundle 'Console' attrs='async' %}
-
 <table class="table table-bordered table-striped table-first-col-bold processing-node-info">
 	<tr>
 		<td>{% trans "Hostname" %}</td>
@@ -49,10 +46,41 @@
                                 {% trans "Never" %}
                         {% endif %}
                 </td>
-        </tr>
+	</tr>
 	<tr>
-		<td>{% trans "Options (JSON)" %}</td>
-		<td><div data-console data-console-lang="js" data-console-height="300">{{ available_options_json}}</div></td>
+		<td>{% trans "Options" %}</td>
+		<td>
+			{% if processing_node_options %}
+				<div class="processing-node-options-list">
+					{% for option in processing_node_options %}
+						<div class="processing-node-option" title="{{ option.help }}">
+							<div class="processing-node-option__summary">
+								<div>
+									<div class="processing-node-option__name">{{ option.name }}</div>
+									<div class="processing-node-option__type">{{ option.type }}</div>
+								</div>
+								{% if option.help %}
+									<span class="processing-node-option__help" tabindex="0" title="{{ option.help }}">
+										<i class="glyphicon glyphicon-info-sign"></i>
+									</span>
+								{% endif %}
+							</div>
+							{% if option.has_choices %}
+								<select class="form-control processing-node-option__control" aria-label="{{ option.name }}">
+									{% for choice in option.choices %}
+										<option value="{{ choice.value }}" {% if choice.selected %}selected{% endif %}>{{ choice.label }}</option>
+									{% endfor %}
+								</select>
+							{% else %}
+								<input class="form-control processing-node-option__control" type="text" value="{{ option.value }}" readonly aria-label="{{ option.name }}">
+							{% endif %}
+						</div>
+					{% endfor %}
+				</div>
+			{% else %}
+				<span class="text-muted">{% trans "No options reported." %}</span>
+			{% endif %}
+		</td>
 	</tr>
 </table>
 {% if user.is_superuser %} 

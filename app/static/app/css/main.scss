@@ -491,6 +491,24 @@ body.app-shell {
     --dash-shell-accent: #00d4aa;
     --dash-shell-text: rgba(225, 228, 240, 0.96);
     --dash-shell-muted: rgba(140, 148, 168, 0.8);
+    --dash-shell-input: #161b22;
+    --dash-shell-input-text: rgba(225, 228, 240, 0.96);
+    --dash-shell-code: #0d1117;
+    --dash-shell-hover: rgba(0, 212, 170, 0.08);
+    --dash-shell-danger: #ff6b6b;
+    --dash-shell-success: #22c55e;
+    --dash-shell-warning: #f59e0b;
+    --odm-bg-base: var(--dash-shell-bg);
+    --odm-bg-card: var(--dash-shell-panel);
+    --odm-bg-card-hover: color-mix(in srgb, var(--dash-shell-panel) 88%, var(--dash-shell-text));
+    --odm-bg-panel: var(--dash-shell-panel-soft);
+    --odm-border: var(--dash-shell-border);
+    --odm-border-hover: var(--dash-shell-border-soft);
+    --odm-accent: var(--dash-shell-accent);
+    --odm-danger: var(--dash-shell-danger);
+    --odm-text-primary: var(--dash-shell-text);
+    --odm-text-secondary: var(--dash-shell-muted);
+    --odm-text-muted: var(--dash-shell-muted);
 
     background: var(--dash-shell-bg);
     color: var(--dash-shell-text);
@@ -962,6 +980,10 @@ body.app-shell[data-shell-theme="light"] {
     --dash-shell-accent: #0f9f84;
     --dash-shell-text: #111827;
     --dash-shell-muted: rgba(71, 85, 105, 0.86);
+    --dash-shell-input: #ffffff;
+    --dash-shell-input-text: #111827;
+    --dash-shell-code: #f8fafc;
+    --dash-shell-hover: rgba(15, 159, 132, 0.08);
 
     #navbar-top {
         background: rgba(255, 255, 255, 0.96);
@@ -1028,5 +1050,328 @@ body.app-shell[data-shell-theme="light"] {
     #changelist table tbody tr:hover td,
     #changelist table tbody tr:hover th {
         background: rgba(15, 159, 132, 0.08);
+    }
+}
+
+body.app-shell .about-text {
+    max-width: 1040px;
+    margin: 0 auto;
+    padding: 32px 24px;
+    color: var(--dash-shell-text);
+
+    h2 {
+        margin-bottom: 16px;
+        color: var(--dash-shell-text) !important;
+        background: transparent !important;
+    }
+
+    .about-license {
+        margin-top: 18px;
+        padding: 16px 20px;
+        border: 1px solid var(--dash-shell-border);
+        border-radius: 10px;
+        background: var(--dash-shell-panel);
+        color: var(--dash-shell-muted);
+        font-size: 90%;
+        line-height: 1.55;
+    }
+}
+
+body.app-shell {
+    #navbar-top,
+    .navbar-default.sidebar,
+    #wrapper,
+    #page-wrapper,
+    section.main,
+    .content {
+        background: var(--dash-shell-bg);
+        color: var(--dash-shell-text);
+    }
+
+    #navbar-top .navbar-header,
+    .dropdown-menu,
+    .select2-drop,
+    .popover,
+    .modal-content,
+    .panel,
+    .well,
+    .module,
+    .inline-group,
+    .list-group-item,
+    .submit-row,
+    .paginator,
+    .card {
+        background: var(--dash-shell-panel);
+        border-color: var(--dash-shell-border);
+        color: var(--dash-shell-text);
+    }
+
+    h1,
+    h2,
+    h3,
+    h4,
+    h5,
+    h6,
+    p,
+    label,
+    legend,
+    dt,
+    dd,
+    .help,
+    .help-block,
+    .text-muted,
+    .quiet,
+    .small,
+    .breadcrumbs,
+    .readonly,
+    .datetime,
+    .datetimeshortcuts,
+    .selector,
+    .selector h2,
+    .selector .selector-filter label,
+    .dropdown-menu > li > a,
+    .dropdown-menu > li > button,
+    .list-group-item {
+        color: var(--dash-shell-text) !important;
+    }
+
+    .content a,
+    #page-wrapper a,
+    .dropdown-menu > li > a:hover,
+    .dropdown-menu > li > a:focus,
+    .object-tools a:hover,
+    .object-tools a:focus {
+        color: var(--dash-shell-accent) !important;
+    }
+
+    .dropdown-menu > li > a:hover,
+    .dropdown-menu > li > a:focus,
+    .table-hover > tbody > tr:hover > td,
+    .table-hover > tbody > tr:hover > th,
+    #changelist table tbody tr:hover td,
+    #changelist table tbody tr:hover th,
+    .select2-results .select2-highlighted,
+    .list-group-item:hover {
+        background: var(--dash-shell-hover);
+    }
+
+    .table-hover > tbody > tr:hover > td,
+    .table-hover > tbody > tr:hover > th,
+    #changelist table tbody tr:hover td,
+    #changelist table tbody tr:hover th {
+        background: var(--dash-shell-hover) !important;
+        color: var(--dash-shell-text) !important;
+    }
+
+    .table-hover > tbody > tr:hover a,
+    #changelist table tbody tr:hover a {
+        color: var(--dash-shell-accent) !important;
+    }
+
+    #changelist table tbody tr:hover .button,
+    #changelist table tbody tr:hover button,
+    #changelist table tbody tr:hover input[type="submit"],
+    #changelist table tbody tr:hover input[type="button"] {
+        color: var(--dash-shell-text) !important;
+        background: var(--dash-shell-panel-soft);
+        border-color: var(--dash-shell-border);
+    }
+
+    input,
+    select,
+    textarea,
+    .form-control,
+    .select2-container .select2-choice,
+    .select2-container--default .select2-selection--single {
+        background: var(--dash-shell-input);
+        border-color: var(--dash-shell-border);
+        color: var(--dash-shell-input-text);
+    }
+
+    input::placeholder,
+    textarea::placeholder {
+        color: var(--dash-shell-muted);
+    }
+
+    pre,
+    code,
+    .CodeMirror,
+    textarea.vLargeTextField,
+    textarea.jsonfield {
+        background: var(--dash-shell-code);
+        border-color: var(--dash-shell-border);
+        color: var(--dash-shell-input-text);
+    }
+
+    .table,
+    table,
+    table.processing-node-info,
+    #changelist table {
+        color: var(--dash-shell-text);
+        background: transparent;
+    }
+
+    .table > thead > tr > th,
+    .table > tbody > tr > th,
+    .table > tfoot > tr > th,
+    .table > thead > tr > td,
+    .table > tbody > tr > td,
+    .table > tfoot > tr > td,
+    table th,
+    table td,
+    #changelist table th,
+    #changelist table td {
+        color: var(--dash-shell-text);
+        border-color: var(--dash-shell-border);
+    }
+
+    .table > thead > tr > th,
+    table th,
+    #changelist table th {
+        background: var(--dash-shell-code);
+    }
+
+    .table > tbody > tr > td,
+    .table > tbody > tr > th,
+    table td,
+    table th,
+    #changelist table td,
+    #changelist table th {
+        background: var(--dash-shell-panel);
+    }
+
+    .btn-default,
+    button,
+    input[type="submit"],
+    input[type="button"],
+    .submit-row input {
+        background: var(--dash-shell-panel-soft);
+        border-color: var(--dash-shell-border);
+        color: var(--dash-shell-text);
+    }
+
+    .btn-primary,
+    input[type="submit"].default,
+    .submit-row input.default {
+        background: var(--dash-shell-accent);
+        border-color: var(--dash-shell-accent);
+        color: var(--dash-shell-bg);
+    }
+
+    .btn-danger,
+    .deletelink,
+    input[type="submit"].deletelink {
+        background: var(--dash-shell-danger);
+        border-color: var(--dash-shell-danger);
+        color: var(--dash-shell-bg);
+    }
+
+    .alert,
+    .messagelist li {
+        background: var(--dash-shell-panel);
+        border-color: var(--dash-shell-border);
+        color: var(--dash-shell-text);
+    }
+
+    .text-danger,
+    .errornote,
+    .errorlist,
+    .errors,
+    .theme-color-button-danger {
+        color: var(--dash-shell-danger) !important;
+    }
+
+    .text-success,
+    .success,
+    .theme-background-success {
+        color: var(--dash-shell-success) !important;
+    }
+
+    .processing-node-info {
+        td:first-child {
+            width: 24%;
+            min-width: 180px;
+            vertical-align: top;
+        }
+    }
+
+    .processing-node-options-list {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+        gap: 12px;
+        max-height: 520px;
+        overflow: auto;
+        padding: 4px;
+    }
+
+    .processing-node-option {
+        display: grid;
+        gap: 10px;
+        min-width: 0;
+        padding: 14px;
+        border: 1px solid var(--dash-shell-border);
+        border-radius: 10px;
+        background: var(--dash-shell-panel-soft);
+        color: var(--dash-shell-text);
+    }
+
+    .processing-node-option__summary {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 12px;
+        min-width: 0;
+    }
+
+    .processing-node-option__name {
+        color: var(--dash-shell-text);
+        font-weight: 700;
+        overflow-wrap: anywhere;
+    }
+
+    .processing-node-option__type {
+        margin-top: 2px;
+        color: var(--dash-shell-muted);
+        font-size: 12px;
+        text-transform: uppercase;
+        letter-spacing: 0;
+    }
+
+    .processing-node-option__help {
+        flex: 0 0 auto;
+        color: var(--dash-shell-accent);
+        cursor: help;
+    }
+
+    .processing-node-option__control {
+        min-width: 0;
+        width: 100%;
+    }
+}
+
+body.app-shell[data-shell-theme="light"] {
+    #navbar-top,
+    .navbar-default.sidebar,
+    #wrapper,
+    #page-wrapper,
+    section.main,
+    .content {
+        background: var(--dash-shell-bg);
+    }
+
+    #navbar-top .navbar-header,
+    .dropdown-menu,
+    .select2-drop,
+    .popover,
+    .modal-content,
+    .panel,
+    .well,
+    .module,
+    .inline-group,
+    .list-group-item,
+    .submit-row,
+    .paginator,
+    .card {
+        background: var(--dash-shell-panel);
     }
 }

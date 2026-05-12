@@ -128,6 +128,77 @@ def account_token(request):
         'masked_api_key': profile.masked_api_key(),
     })
 
+
+def _format_processing_node_option_value(value):
+    if value is None:
+        return ''
+    if isinstance(value, bool):
+        return _('Yes') if value else _('No')
+    return str(value)
+
+
+def _processing_node_option_choices(option):
+    domain = option.get('domain')
+    if isinstance(domain, dict):
+        return [
+            {
+                'value': _format_processing_node_option_value(value),
+                'label': _format_processing_node_option_value(label or value),
+            }
+            for value, label in domain.items()
+        ]
+    if isinstance(domain, (list, tuple)):
+        return [
+            {
+                'value': _format_processing_node_option_value(value),
+                'label': _format_processing_node_option_value(value) or _('Default'),
+            }
+            for value in domain
+        ]
+    if option.get('type') == 'bool':
+        return [
+            {'value': _('Yes'), 'label': _('Yes')},
+            {'value': _('No'), 'label': _('No')},
+        ]
+    return []
+
+
+def _processing_node_options_view_model(available_options):
+    if isinstance(available_options, str):
+        try:
+            available_options = json.loads(available_options)
+        except ValueError:
+            return []
+
+    if isinstance(available_options, dict):
+        available_options = available_options.get('options', [])
+
+    option_rows = []
+    for option in available_options or []:
+        if not isinstance(option, dict):
+            continue
+
+        value = _format_processing_node_option_value(option.get('value'))
+        choices = _processing_node_option_choices(option)
+        selected_values = {choice['value'] for choice in choices}
+        if choices and value and value not in selected_values:
+            choices.insert(0, {'value': value, 'label': value})
+
+        for choice in choices:
+            choice['selected'] = choice['value'] == value
+
+        option_rows.append({
+            'name': option.get('name') or _('Unnamed option'),
+            'type': option.get('type') or _('Option'),
+            'help': option.get('help') or '',
+            'value': value or _('Not set'),
+            'choices': choices,
+            'has_choices': len(choices) > 0,
+        })
+
+    return option_rows
+
+
 @login_required
 def processing_node(request, processing_node_id):
     pn = get_object_or_404(ProcessingNode, pk=processing_node_id)
@@ -138,7 +209,7 @@ def processing_node(request, processing_node_id):
             {
                 'title': _('Processing Node'), 
                 'processing_node': pn,
-                'available_options_json': pn.get_available_options_json(pretty=True)
+                'processing_node_options': _processing_node_options_view_model(pn.available_options)
             })
 
 class FirstUserForm(forms.ModelForm):

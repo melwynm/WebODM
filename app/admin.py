@@ -149,7 +149,14 @@ class ThemeModelForm(forms.ModelForm):
 
 
 class ThemeAdmin(admin.ModelAdmin):
-    form = ThemeModelForm
+    fields = ('name',)
+    readonly_fields = ('name',)
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return False
 
 
 admin.site.register(Theme, ThemeAdmin)
