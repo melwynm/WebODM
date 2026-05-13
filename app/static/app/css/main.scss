@@ -1375,3 +1375,147 @@ body.app-shell[data-shell-theme="light"] {
         background: var(--dash-shell-panel);
     }
 }
+
+/* Final contrast pass for legacy Django admin and mixed app surfaces. */
+body.app-shell {
+    .form-row,
+    fieldset,
+    .results,
+    #content-main,
+    #content-related,
+    .calendarbox,
+    .clockbox,
+    .selector,
+    .selector .selector-filter,
+    .selector .selector-chooser,
+    .selector select {
+        background: var(--dash-shell-panel);
+        border-color: var(--dash-shell-border);
+        color: var(--dash-shell-text);
+    }
+
+    .selector .selector-available h2,
+    .selector .selector-chosen h2,
+    .calendar caption,
+    .calendarbox h2,
+    .clockbox h2,
+    .inline-related h3,
+    .inline-related h4 {
+        background: var(--dash-shell-code);
+        border-color: var(--dash-shell-border);
+        color: var(--dash-shell-text) !important;
+    }
+
+    .aligned label,
+    .form-row label,
+    .required label,
+    .required,
+    .field-box,
+    .inline-related,
+    .inline-related h3,
+    .inline-related h4,
+    .collapse-toggle,
+    .selector .selector-chooser li,
+    .datetimeshortcuts,
+    .datetimeshortcuts a,
+    .datetimeshortcuts span {
+        color: var(--dash-shell-text) !important;
+    }
+
+    ::selection {
+        background: color-mix(in srgb, var(--dash-shell-accent) 35%, transparent);
+        color: var(--dash-shell-text);
+    }
+
+    input,
+    select,
+    textarea,
+    .vTextField,
+    .vURLField,
+    .vIntegerField,
+    .vPositiveSmallIntegerField,
+    .vLargeTextField,
+    .filtered,
+    .select2-search input {
+        background: var(--dash-shell-input) !important;
+        border-color: var(--dash-shell-border) !important;
+        color: var(--dash-shell-input-text) !important;
+    }
+
+    input:focus,
+    select:focus,
+    textarea:focus,
+    .form-control:focus {
+        border-color: var(--dash-shell-accent) !important;
+        box-shadow: 0 0 0 3px color-mix(in srgb, var(--dash-shell-accent) 18%, transparent);
+        outline: none;
+    }
+
+    input[disabled],
+    select[disabled],
+    textarea[disabled],
+    button[disabled],
+    .btn[disabled],
+    .button[disabled],
+    .disabled,
+    .disabled a {
+        background: var(--dash-shell-panel-soft) !important;
+        border-color: var(--dash-shell-border) !important;
+        color: var(--dash-shell-muted) !important;
+        opacity: 0.72;
+    }
+
+    .table-striped > tbody > tr:nth-of-type(odd) > td,
+    .table-striped > tbody > tr:nth-of-type(odd) > th,
+    #changelist table tbody tr.row1 td,
+    #changelist table tbody tr.row1 th {
+        background: var(--dash-shell-panel) !important;
+        color: var(--dash-shell-text) !important;
+    }
+
+    .table-striped > tbody > tr:nth-of-type(even) > td,
+    .table-striped > tbody > tr:nth-of-type(even) > th,
+    #changelist table tbody tr.row2 td,
+    #changelist table tbody tr.row2 th {
+        background: var(--dash-shell-code) !important;
+        color: var(--dash-shell-text) !important;
+    }
+
+    #changelist table tbody tr:hover td,
+    #changelist table tbody tr:hover th,
+    #changelist table tbody tr.selected td,
+    #changelist table tbody tr.selected th,
+    #changelist table tbody tr:focus-within td,
+    #changelist table tbody tr:focus-within th {
+        background: var(--dash-shell-hover) !important;
+        color: var(--dash-shell-text) !important;
+    }
+
+    #changelist table tbody tr:hover a,
+    #changelist table tbody tr:focus-within a {
+        color: var(--dash-shell-accent) !important;
+    }
+
+    .messagelist li.success,
+    .alert-success {
+        background: color-mix(in srgb, var(--dash-shell-success) 14%, var(--dash-shell-panel));
+        border-color: color-mix(in srgb, var(--dash-shell-success) 28%, var(--dash-shell-border));
+        color: var(--dash-shell-text);
+    }
+
+    .messagelist li.warning,
+    .alert-warning {
+        background: color-mix(in srgb, var(--dash-shell-warning) 16%, var(--dash-shell-panel));
+        border-color: color-mix(in srgb, var(--dash-shell-warning) 30%, var(--dash-shell-border));
+        color: var(--dash-shell-text);
+    }
+
+    .messagelist li.error,
+    .alert-danger,
+    .errornote,
+    .errorlist,
+    .errors {
+        background: color-mix(in srgb, var(--dash-shell-danger) 13%, var(--dash-shell-panel));
+        border-color: color-mix(in srgb, var(--dash-shell-danger) 30%, var(--dash-shell-border));
+    }
+}
