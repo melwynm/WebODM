@@ -199,6 +199,7 @@ class Task(models.Model):
                 'deferred_exclude_files': ('odm_textured_model_geo.glb', )
             },
             'textured_model.glb': os.path.join('odm_texturing', 'odm_textured_model_geo.glb'),
+            'textured_model.fbx.zip': os.path.join('odm_texturing', 'odm_textured_model_geo.obj'),
             '3d_tiles_model.zip': {
                 'deferred_path': '3d_tiles_model.zip',
                 'deferred_compress_dir': os.path.join('3d_tiles', 'model')
@@ -418,6 +419,10 @@ class Task(models.Model):
         :param asset: one of ASSETS_MAP keys
         :return: boolean
         """
+        if asset in ('textured_model.glb', 'textured_model.fbx.zip'):
+            from app.services.textured_model_exports import is_textured_model_export_available
+            return is_textured_model_export_available(self, asset)
+
         if asset in self.ASSETS_MAP:
             value = self.ASSETS_MAP[asset]
             if isinstance(value, str):
@@ -701,6 +706,10 @@ class Task(models.Model):
         :param asset: one of ASSETS_MAP keys
         :return: (path|stream)
         """
+        if asset in ('textured_model.glb', 'textured_model.fbx.zip'):
+            from app.services.textured_model_exports import get_textured_model_export_path
+            return get_textured_model_export_path(self, asset)
+
         if asset in self.ASSETS_MAP:
             value = self.ASSETS_MAP[asset]
             if isinstance(value, str):
@@ -738,6 +747,10 @@ class Task(models.Model):
         :param asset: one of ASSETS_MAP keys
         :return: path
         """
+        if asset in ('textured_model.glb', 'textured_model.fbx.zip'):
+            from app.services.textured_model_exports import get_textured_model_export_path
+            return get_textured_model_export_path(self, asset)
+
         if asset in self.ASSETS_MAP:
             value = self.ASSETS_MAP[asset]
             if isinstance(value, str):

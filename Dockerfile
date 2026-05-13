@@ -141,7 +141,7 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     apt-get install -y --no-install-recommends \
         python$PYTHON_VERSION python$PYTHON_VERSION-distutils gdal-bin pdal \
         nginx certbot gettext-base cron postgresql-client gettext tzdata git libimage-exiftool-perl \
-        libgl1 libglib2.0-0
+        libgl1 libglib2.0-0 assimp-utils
     npm config set fund false
     npm config set audit false
     # Install webpack, webpack CLI

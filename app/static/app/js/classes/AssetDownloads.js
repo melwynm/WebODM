@@ -58,7 +58,8 @@ const api = {
       new AssetDownload(_("Point Cloud (3D Tiles)"),"3d_tiles_pointcloud.zip","fa fa-cube"),
       new AssetDownload(_("Textured Model"),"textured_model.zip","fab fa-connectdevelop"),
       new AssetDownload(_("Textured Model (3D Tiles)"),"3d_tiles_model.zip","fab fa-connectdevelop"),
-      new AssetDownload(_("Textured Model (glTF)"),"textured_model.glb","fab fa-connectdevelop"),
+      new AssetDownload(_("Textured Model (GLB)"),"textured_model.glb","fab fa-connectdevelop"),
+      new AssetDownload(_("Textured Model (FBX)"),"textured_model.fbx.zip","fab fa-connectdevelop"),
       new AssetDownload(_("Camera Parameters"),"cameras.json","fa fa-camera"),
       new AssetDownload(_("Camera Shots"),"shots.geojson","fa fa-camera", vectorExportFormats),
       new AssetDownload(_("Ground Control Points"),"ground_control_points.geojson","far fa-dot-circle", vectorExportFormats),
@@ -77,7 +78,12 @@ const api = {
 
   // @param assets {String[]} list of assets (example: ['geotiff', 'las']))
   only: function(assets){
-    return api.all().filter(asset => assets.indexOf(asset.asset) !== -1);
+    const available = new Set(assets || []);
+    if (available.has("textured_model.zip")){
+      available.add("textured_model.glb");
+      available.add("textured_model.fbx.zip");
+    }
+    return api.all().filter(asset => available.has(asset.asset));
   }
 }
 
