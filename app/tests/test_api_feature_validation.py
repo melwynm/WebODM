@@ -90,3 +90,45 @@ class TestFeatureValidationApi(BootTestCase):
         self.assertEqual(response.status_code, 200)
         logger_info.assert_called_once()
         self.assertIn('Feature validation changed', logger_info.call_args[0][0])
+
+    def test_staff_validation_page_renders_and_updates_feature(self):
+        feature = FeatureValidation.objects.create(
+            key='client-sharing-portal',
+            name='Client Sharing Portal',
+            area='P3',
+            status=FeatureValidation.STATUS_UNTESTED,
+        )
+
+        response = self.client.get('/feature-validations/')
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'Client Sharing Portal')
+        self.assertContains(response, 'Add Feature')
+
+        response = self.client.post(
+            '/feature-validations/',
+            {
+                'feature_id': feature.id,
+                'key': feature.key,
+                'name': feature.name,
+                'area': feature.area,
+                'status': FeatureValidation.STATUS_TESTED,
+                'test_notes': 'Checked from the browser page.',
+                'maintenance_notes': 'Keep this visible for staff.',
+                'evidence_url': '',
+            },
+            follow=True,
+        )
+
+        self.assertEqual(response.status_code, 200)
+        feature.refresh_from_db()
+        self.assertEqual(feature.status, FeatureValidation.STATUS_TESTED)
+        self.assertEqual(feature.last_tested_by, self.admin_user)
+        self.assertIsNotNone(feature.last_tested_at)
+
+    def test_regular_user_cannot_view_validation_page(self):
+        self.client.logout()
+        self.client.login(username='testuser', password='test1234')
+
+        response = self.client.get('/feature-validations/')
+
+        self.assertEqual(response.status_code, 302)

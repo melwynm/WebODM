@@ -10,10 +10,13 @@ from guardian.shortcuts import get_objects_for_user
 from nodeodm.models import ProcessingNode
 from app.models import Profile, Project, Task
 from django.contrib import messages
-from django.contrib.auth.decorators import login_required
+from django.contrib.auth.decorators import login_required, user_passes_test
+from django.utils import timezone
 from django.utils.translation import gettext as _
 from django import forms
 from app.views.utils import get_permissions
+from app.models import FeatureValidation
+from app.services.feature_validation import log_feature_validation_change
 from webodm import settings
 
 def index(request):
@@ -126,6 +129,62 @@ def account_token(request):
     return render(request, 'app/account_token.html', {
         'title': _('API Token'),
         'masked_api_key': profile.masked_api_key(),
+    })
+
+
+class FeatureValidationForm(forms.ModelForm):
+    class Meta:
+        model = FeatureValidation
+        fields = (
+            'key',
+            'name',
+            'area',
+            'status',
+            'test_notes',
+            'maintenance_notes',
+            'evidence_url',
+        )
+
+
+@login_required
+@user_passes_test(lambda user: user.is_staff)
+def feature_validations(request):
+    if request.method == 'POST':
+        feature = None
+        feature_id = request.POST.get('feature_id')
+        if feature_id:
+            feature = get_object_or_404(FeatureValidation, pk=feature_id)
+
+        previous_status = feature.status if feature else None
+        form = FeatureValidationForm(request.POST, instance=feature)
+        if form.is_valid():
+            feature = form.save(commit=False)
+            if feature.status == FeatureValidation.STATUS_TESTED:
+                feature.last_tested_by = request.user
+                feature.last_tested_at = timezone.now()
+            feature.save()
+            log_feature_validation_change(feature, request.user, previous_status)
+            messages.success(request, _("Feature validation saved."))
+            return redirect('feature_validations')
+
+        messages.error(request, _("Could not save feature validation. Please check the fields."))
+
+    features = FeatureValidation.objects.select_related('last_tested_by').order_by('area', 'name')
+    status_summaries = [
+        {
+            'status': status,
+            'label': label,
+            'count': features.filter(status=status).count(),
+        }
+        for status, label in FeatureValidation.STATUS_CHOICES
+    ]
+
+    return render(request, 'app/feature_validations.html', {
+        'title': _('Feature Validation'),
+        'features': features,
+        'status_summaries': status_summaries,
+        'status_choices': FeatureValidation.STATUS_CHOICES,
+        'form': FeatureValidationForm(),
     })
 
 

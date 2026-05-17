@@ -40,7 +40,7 @@ These workflow and platform capabilities are already available and should be pro
 | Foundation | OneDrive Folder Task Intake | Workflow | Working | Create import tasks from a configured OneDrive-synced folder via the `onedriveintake` management command. |
 | Foundation | Core Platform Hardening | Platform | Working | Keep core modules thin, modular, testable, and upgrade-friendly. |
 | Foundation | Design/BIM/Plan Overlays | Workflow | Working | Store project design overlays and render supported GeoJSON/Shapefile references on 2D maps. |
-| Foundation | Feature Validation Ledger | Platform | Working | Track feature test status, evidence, maintenance notes, and status-change logs for future QA. |
+| Foundation | Feature Validation Ledger | Platform | Working | Track feature test status, evidence, maintenance notes, status-change logs, and staff browser review for future QA. |
 
 ## Runtime Processing Foundation
 
@@ -65,7 +65,7 @@ These are the standard WebODM processing stages. They remain the working runtime
 - `P1` is delivered and should remain stable.
 - `P2` is delivered and should remain stable.
 - `P3` is delivered as a first working portal slice and should remain stable.
-- Use the feature validation ledger to mark completed features as `tested`, `untested`, `failing`, or `blocked` after every smoke test or regression pass.
+- Use the feature validation ledger at `/feature-validations/` to mark completed features as `tested`, `untested`, `failing`, or `blocked` after every smoke test or regression pass.
 - `Foundation` means the stage is available in the fork today and should remain stable.
 - `Working` means the stage is available in the fork today.
 - `Next` means this is the immediate next delivery target.

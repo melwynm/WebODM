@@ -1,0 +1,238 @@
+{% extends "app/logged_in_base.html" %}
+{% load i18n %}
+
+{% block content %}
+<style>
+    .validation-header {
+        align-items: flex-start;
+        display: flex;
+        gap: 18px;
+        justify-content: space-between;
+        margin-bottom: 20px;
+    }
+    .validation-header h2 {
+        font-size: 24px;
+        font-weight: 600;
+        margin: 0 0 6px;
+    }
+    .validation-counts {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        justify-content: flex-end;
+    }
+    .validation-count {
+        background: #eef2f6;
+        border-radius: 6px;
+        color: #344054;
+        min-width: 92px;
+        padding: 8px 10px;
+        text-align: center;
+    }
+    .validation-count strong {
+        display: block;
+        font-size: 20px;
+        line-height: 1.1;
+    }
+    .validation-grid {
+        display: grid;
+        gap: 18px;
+        grid-template-columns: minmax(0, 1fr) 360px;
+    }
+    .validation-panel {
+        background: #fff;
+        border: 1px solid #d9e2ec;
+        border-radius: 6px;
+        padding: 16px;
+    }
+    .validation-table {
+        margin-bottom: 0;
+    }
+    .validation-table td {
+        vertical-align: top;
+    }
+    .validation-badge {
+        border-radius: 999px;
+        display: inline-block;
+        font-size: 12px;
+        font-weight: 600;
+        padding: 3px 8px;
+        text-transform: uppercase;
+    }
+    .validation-badge--tested { background: #e6f4ea; color: #276749; }
+    .validation-badge--untested { background: #f1f5f9; color: #475569; }
+    .validation-badge--testing { background: #e0f2fe; color: #075985; }
+    .validation-badge--failing { background: #fee2e2; color: #991b1b; }
+    .validation-badge--blocked { background: #fef3c7; color: #92400e; }
+    .validation-empty {
+        color: #697586;
+        padding: 24px 0;
+        text-align: center;
+    }
+    .validation-edit-form {
+        display: none;
+        margin-top: 12px;
+    }
+    .validation-edit-form.is-open {
+        display: block;
+    }
+    .validation-panel textarea {
+        min-height: 88px;
+        resize: vertical;
+    }
+    @media (max-width: 980px) {
+        .validation-header,
+        .validation-grid {
+            display: block;
+        }
+        .validation-counts {
+            justify-content: flex-start;
+            margin-top: 14px;
+        }
+    }
+</style>
+
+<div class="validation-header">
+    <div>
+        <h2>{% trans "Feature Validation" %}</h2>
+        <p class="text-muted">{% trans "Track what has been tested, what is failing, and what needs future review." %}</p>
+    </div>
+    <div class="validation-counts">
+        {% for summary in status_summaries %}
+            <div class="validation-count">
+                <strong>{{ summary.count }}</strong>
+                <span>{{ summary.label }}</span>
+            </div>
+        {% endfor %}
+    </div>
+</div>
+
+<div class="validation-grid">
+    <section class="validation-panel">
+        <table class="table validation-table">
+            <thead>
+                <tr>
+                    <th>{% trans "Feature" %}</th>
+                    <th>{% trans "Status" %}</th>
+                    <th>{% trans "Last Tested" %}</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for feature in features %}
+                    <tr>
+                        <td>
+                            <strong>{{ feature.name }}</strong>
+                            <div class="text-muted">{{ feature.area }} · {{ feature.key }}</div>
+                            {% if feature.test_notes %}
+                                <p>{{ feature.test_notes }}</p>
+                            {% endif %}
+                            {% if feature.maintenance_notes %}
+                                <small class="text-muted">{{ feature.maintenance_notes }}</small>
+                            {% endif %}
+                            <form class="validation-edit-form" id="feature-form-{{ feature.id }}" method="post">
+                                {% csrf_token %}
+                                <input type="hidden" name="feature_id" value="{{ feature.id }}">
+                                <input type="hidden" name="key" value="{{ feature.key }}">
+                                <div class="form-group">
+                                    <label>{% trans "Name" %}</label>
+                                    <input class="form-control" name="name" value="{{ feature.name }}" required>
+                                </div>
+                                <div class="form-group">
+                                    <label>{% trans "Area" %}</label>
+                                    <input class="form-control" name="area" value="{{ feature.area }}">
+                                </div>
+                                <div class="form-group">
+                                    <label>{% trans "Status" %}</label>
+                                    <select class="form-control" name="status">
+                                        {% for status, label in status_choices %}
+                                            <option value="{{ status }}" {% if feature.status == status %}selected{% endif %}>{{ label }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label>{% trans "Test Notes" %}</label>
+                                    <textarea class="form-control" name="test_notes">{{ feature.test_notes }}</textarea>
+                                </div>
+                                <div class="form-group">
+                                    <label>{% trans "Maintenance Notes" %}</label>
+                                    <textarea class="form-control" name="maintenance_notes">{{ feature.maintenance_notes }}</textarea>
+                                </div>
+                                <div class="form-group">
+                                    <label>{% trans "Evidence URL" %}</label>
+                                    <input class="form-control" name="evidence_url" value="{{ feature.evidence_url }}">
+                                </div>
+                                <button class="btn btn-primary" type="submit">{% trans "Save" %}</button>
+                            </form>
+                        </td>
+                        <td><span class="validation-badge validation-badge--{{ feature.status }}">{{ feature.get_status_display }}</span></td>
+                        <td>
+                            {% if feature.last_tested_at %}
+                                {{ feature.last_tested_at|date:"Y-m-d H:i" }}
+                                {% if feature.last_tested_by %}<div class="text-muted">{{ feature.last_tested_by.username }}</div>{% endif %}
+                            {% else %}
+                                <span class="text-muted">{% trans "Not tested" %}</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <button class="btn btn-default btn-sm" type="button" data-feature-form="{{ feature.id }}">
+                                <i class="fa fa-edit"></i>
+                            </button>
+                        </td>
+                    </tr>
+                {% empty %}
+                    <tr>
+                        <td class="validation-empty" colspan="4">{% trans "No feature validation records yet." %}</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </section>
+
+    <aside class="validation-panel">
+        <h3>{% trans "Add Feature" %}</h3>
+        <form method="post">
+            {% csrf_token %}
+            <div class="form-group">
+                <label>{% trans "Key" %}</label>
+                <input class="form-control" name="key" required>
+            </div>
+            <div class="form-group">
+                <label>{% trans "Name" %}</label>
+                <input class="form-control" name="name" required>
+            </div>
+            <div class="form-group">
+                <label>{% trans "Area" %}</label>
+                <input class="form-control" name="area">
+            </div>
+            <div class="form-group">
+                <label>{% trans "Status" %}</label>
+                <select class="form-control" name="status">
+                    {% for status, label in status_choices %}
+                        <option value="{{ status }}">{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="form-group">
+                <label>{% trans "Test Notes" %}</label>
+                <textarea class="form-control" name="test_notes"></textarea>
+            </div>
+            <div class="form-group">
+                <label>{% trans "Maintenance Notes" %}</label>
+                <textarea class="form-control" name="maintenance_notes"></textarea>
+            </div>
+            <div class="form-group">
+                <label>{% trans "Evidence URL" %}</label>
+                <input class="form-control" name="evidence_url">
+            </div>
+            <button class="btn btn-primary" type="submit">{% trans "Add" %}</button>
+        </form>
+    </aside>
+</div>
+
+<script>
+    $('[data-feature-form]').on('click', function() {
+        $('#feature-form-' + $(this).data('feature-form')).toggleClass('is-open');
+    });
+</script>
+{% endblock %}
