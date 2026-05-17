@@ -146,6 +146,221 @@ class Map extends React.Component {
       .fail(xhr => done(new Error(xhr.responseText || _("Cannot save design overlay."))));
   }
 
+  fieldPhotoTitle = (photo) => {
+    return photo.name || photo.source_filename || _("Field Photo");
+  }
+
+  buildFieldPhotoPopup = (photo, group, marker) => {
+    const container = document.createElement('div');
+    container.className = 'field-photo-popup';
+
+    const title = document.createElement('strong');
+    title.textContent = this.fieldPhotoTitle(photo);
+    container.appendChild(title);
+
+    if (photo.image_url){
+      const link = document.createElement('a');
+      link.href = photo.image_url;
+      link.target = '_blank';
+      link.rel = 'noopener noreferrer';
+
+      const image = document.createElement('img');
+      image.src = photo.image_url;
+      image.alt = this.fieldPhotoTitle(photo);
+      image.style.display = 'block';
+      image.style.maxWidth = '220px';
+      image.style.maxHeight = '180px';
+      image.style.marginTop = '8px';
+      image.style.objectFit = 'cover';
+      link.appendChild(image);
+      container.appendChild(link);
+    }
+
+    if (photo.description){
+      const description = document.createElement('div');
+      description.textContent = photo.description;
+      description.style.marginTop = '8px';
+      container.appendChild(description);
+    }
+
+    const meta = document.createElement('div');
+    meta.className = 'field-photo-popup-meta';
+    meta.style.marginTop = '6px';
+    meta.style.fontSize = '12px';
+    meta.textContent = photo.is_360 ? _("360 photo") : _("Ground photo");
+    container.appendChild(meta);
+
+    if (this.props.permissions.indexOf("change") !== -1 || this.props.publicEdit){
+      const deleteLink = document.createElement('a');
+      deleteLink.href = 'javascript:void(0);';
+      deleteLink.textContent = _("Delete");
+      deleteLink.style.display = 'inline-block';
+      deleteLink.style.marginTop = '8px';
+      deleteLink.onclick = () => {
+        if (!window.confirm(_("Are you sure you want to delete this?"))) return;
+        this.deleteFieldPhoto(photo, group, marker);
+      };
+      container.appendChild(deleteLink);
+    }
+
+    return container;
+  }
+
+  createFieldPhotoMarker = (photo, group) => {
+    if (!photo || !photo.location || !photo.location.coordinates) return null;
+
+    const latlng = [photo.location.coordinates[1], photo.location.coordinates[0]];
+    const marker = L.marker(latlng, {
+      icon: L.divIcon({
+        className: 'field-photo-marker',
+        html: '<i class="fa fa-camera"></i>',
+        iconSize: [28, 28],
+        iconAnchor: [14, 14]
+      })
+    });
+    marker.bindPopup(this.buildFieldPhotoPopup(photo, group, marker));
+    marker[Symbol.for("meta")] = {
+      name: this.fieldPhotoTitle(photo),
+      fieldPhoto: true,
+      source: photo
+    };
+    return marker;
+  }
+
+  addFieldPhotoLayer = (photos) => {
+    if (!photos || !photos.length) return;
+
+    const group = L.featureGroup();
+    photos.forEach(photo => {
+      const marker = this.createFieldPhotoMarker(photo, group);
+      if (marker) group.addLayer(marker);
+    });
+
+    if (!group.getLayers().length) return;
+
+    group.addTo(this.map);
+    group[Symbol.for("meta")] = {
+      name: _("Field Photos"),
+      icon: "fa fa-camera fa-fw",
+      fieldPhotos: true
+    };
+    this.setState(update(this.state, {
+      overlays: {$push: [group]}
+    }));
+  }
+
+  loadFieldPhotos = () => {
+    const projectId = this.getProjectId();
+    if (!projectId) return;
+
+    $.getJSON(`/api/projects/${projectId}/field-photos/`)
+      .done(photos => this.addFieldPhotoLayer(photos))
+      .fail(xhr => {
+        if (xhr.status !== 404) this.setState({ error: xhr.responseText || _("Cannot load field photos") });
+      });
+  }
+
+  fieldPhotoGroup = () => {
+    return this.state.overlays.find(layer => ((layer && layer[Symbol.for("meta")]) || {}).fieldPhotos);
+  }
+
+  uploadFieldPhoto = (latlng, file) => {
+    const projectId = this.getProjectId();
+    if (!projectId || !latlng || !file) return;
+
+    const formData = new FormData();
+    formData.append('image', file);
+    formData.append('name', file.name.replace(/\.[^/.]+$/, ''));
+    formData.append('location', JSON.stringify({
+      type: 'Point',
+      coordinates: [latlng.lng, latlng.lat]
+    }));
+    if (this.state.singleTask && this.state.singleTask.id){
+      formData.append('task', this.state.singleTask.id);
+    }
+
+    this.setState({showLoading: true});
+    $.ajax({
+      url: `/api/projects/${projectId}/field-photos/`,
+      method: 'POST',
+      data: formData,
+      processData: false,
+      contentType: false
+    }).done(photo => {
+      let group = this.fieldPhotoGroup();
+      let needsAdd = false;
+      if (!group){
+        group = L.featureGroup();
+        group[Symbol.for("meta")] = {
+          name: _("Field Photos"),
+          icon: "fa fa-camera fa-fw",
+          fieldPhotos: true
+        };
+        needsAdd = true;
+      }
+
+      const marker = this.createFieldPhotoMarker(photo, group);
+      if (marker) group.addLayer(marker);
+      if (needsAdd){
+        group.addTo(this.map);
+        this.setState(update(this.state, {
+          overlays: {$push: [group]},
+          showLoading: {$set: false}
+        }));
+      }else{
+        this.setState({showLoading: false});
+        this.updateLayersControl();
+      }
+    }).fail(xhr => {
+      this.setState({ error: xhr.responseText || _("Cannot save field photo."), showLoading: false });
+    });
+  }
+
+  deleteFieldPhoto = (photo, group, marker) => {
+    const projectId = this.getProjectId();
+    if (!projectId || !photo || !photo.id) return;
+
+    $.ajax({
+      url: `/api/projects/${projectId}/field-photos/${photo.id}/`,
+      method: 'DELETE'
+    }).done(() => {
+      if (group && marker) group.removeLayer(marker);
+      if (group && !group.getLayers().length){
+        group.remove();
+        this.setState({
+          overlays: this.state.overlays.filter(layer => layer !== group)
+        });
+      }else{
+        this.updateLayersControl();
+      }
+    }).fail(xhr => {
+      this.setState({ error: xhr.responseText || _("Cannot delete field photo.") });
+    });
+  }
+
+  chooseFieldPhotoFile = (latlng) => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'image/*';
+    input.onchange = () => {
+      const file = input.files && input.files[0];
+      if (file) this.uploadFieldPhoto(latlng, file);
+    };
+    input.click();
+  }
+
+  startFieldPhotoCapture = () => {
+    if (!this.map) return;
+
+    this.setState({ error: _("Click the map location for the field photo.") });
+    L.DomUtil.addClass(this.container, 'field-photo-capture-active');
+    this.map.once('click', e => {
+      L.DomUtil.removeClass(this.container, 'field-photo-capture-active');
+      this.setState({ error: "" });
+      this.chooseFieldPhotoFile(e.latlng);
+    });
+  }
+
 
   isMonitoringLayer = (layer) => {
     return !!((layer && layer[Symbol.for("meta")]) || {}).monitoring;
@@ -1014,6 +1229,28 @@ _('Example:'),
       new AddOverlayCtrl().addTo(this.map);
     }
     this.loadDesignOverlays();
+
+    const AddFieldPhotoCtrl = Leaflet.Control.extend({
+        options: {
+            position: 'topright'
+        },
+
+        onAdd: () => {
+            const container = Leaflet.DomUtil.create('div', 'leaflet-control-add-field-photo leaflet-bar leaflet-control');
+            Leaflet.DomEvent.disableClickPropagation(container);
+            const btn = Leaflet.DomUtil.create('a', 'leaflet-control-add-field-photo-button leaflet-bar-part theme-secondary');
+            btn.setAttribute("href", "javascript:void(0);");
+            decorateControlButton(btn, 'fa fa-camera', _("Add a field photo to this project"));
+            Leaflet.DomEvent.on(btn, 'click', Leaflet.DomEvent.stop);
+            Leaflet.DomEvent.on(btn, 'click', this.startFieldPhotoCapture);
+            container.append(btn);
+            return container;
+        }
+    });
+    if (this.props.permissions.indexOf("change") !== -1 || this.props.publicEdit){
+      new AddFieldPhotoCtrl().addTo(this.map);
+    }
+    this.loadFieldPhotos();
 
     if (this.props.permissions.indexOf("change") !== -1){
       const updateCropArea = geojson => {

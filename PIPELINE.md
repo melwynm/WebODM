@@ -1,25 +1,51 @@
-# Consolidated Pipeline
+# Priority Pipeline
 
-Last updated: 2026-05-10
+Last updated: 2026-05-17
 
 This file is the single source of truth for the project pipeline in this fork.
 It combines:
 
-- the runtime WebODM processing pipeline
+- the runtime WebODM processing foundation
 - the fork's monitoring and progress workflow roadmap
 
-When someone asks for "the pipeline" or "the next item in the pipeline", use this file.
-The next item is the first stage marked `Next`.
+When someone asks for "the pipeline", "the next item", or "what comes next", use this file.
+The next item is the first stage marked `Next` in the priority roadmap.
 
 ## Current Next Item
 
-`21. Mobile/Field Photo Capture`
+Backlog grooming / next priority selection
 
-Attach ground photos or 360 photos to map locations for field context.
+P1 through P3 now have working slices. Pick the next roadmap item before starting more feature work.
 
-## Pipeline Stages
+## Priority Roadmap
 
-| Order | Stage | Type | Status | Notes |
+| Priority | Stage | Type | Status | Why it matters |
+| --- | --- | --- | --- | --- |
+| P1 | Mobile/Field Photo Capture | Workflow | Working | Adds field context by attaching ground photos or 360 photos to map locations. |
+| P2 | AI-Assisted Issue Detection | Workflow | Working | Turns imagery and change products into reviewable project issues. |
+| P3 | Client Sharing Portal | Workflow | Working | Gives clients polished read-only access, comments, roles, and shareable review links. |
+
+## Working Product Foundation
+
+These workflow and platform capabilities are already available and should be protected while building the next priorities.
+
+| Priority Role | Stage | Type | Status | Notes |
+| --- | --- | --- | --- | --- |
+| Foundation | Monitoring Compare MVP | Workflow | Working | Compare orthophotos in single-task view with translational auto-alignment, overlay output, and change heatmap output. |
+| Foundation | Project Timeline Monitoring | Workflow | Working | Project-level timeline selection, timeline-driven compare launch, and regenerated comparison cache invalidation. |
+| Foundation | DSM/DTM Delta and Cut/Fill | Workflow | Working | Terrain change products beyond orthophoto-only comparison. |
+| Foundation | Change Issues and Annotations | Workflow | Working | Promote detected changes into trackable issues and annotations with status. |
+| Foundation | Advanced Alignment | Workflow | Working | Conservative rotation and scale correction when translation-only alignment confidence is weak. |
+| Foundation | Stakeholder Reports | Workflow | Working | Export project progress as stakeholder-friendly web reports with print-to-PDF support. |
+| Foundation | OneDrive Folder Task Intake | Workflow | Working | Create import tasks from a configured OneDrive-synced folder via the `onedriveintake` management command. |
+| Foundation | Core Platform Hardening | Platform | Working | Keep core modules thin, modular, testable, and upgrade-friendly. |
+| Foundation | Design/BIM/Plan Overlays | Workflow | Working | Store project design overlays and render supported GeoJSON/Shapefile references on 2D maps. |
+
+## Runtime Processing Foundation
+
+These are the standard WebODM processing stages. They remain the working runtime baseline, not the priority roadmap.
+
+| Runtime Order | Stage | Type | Status | Notes |
 | --- | --- | --- | --- | --- |
 | 1 | Load Dataset | Runtime | Working | Ingest imagery and validate the input set. |
 | 2 | Structure From Motion | Runtime | Working | Solve camera poses and sparse reconstruction. |
@@ -32,21 +58,13 @@ Attach ground photos or 360 photos to map locations for field context.
 | 9 | Orthophoto | Runtime | Working | Produce the orthomosaic. |
 | 10 | Report | Runtime | Working | Generate the standard processing report. |
 | 11 | Postprocess | Runtime | Working | Finalize assets and derived outputs. |
-| 12 | Monitoring Compare MVP | Workflow | Working | Compare orthophotos in single-task view with translational auto-alignment, overlay output, and change heatmap output. |
-| 13 | Project Timeline Monitoring | Workflow | Working | Monitoring now supports project-level timeline selection, timeline-driven compare launch, and cache invalidation for regenerated timeline comparisons. |
-| 14 | DSM/DTM Delta and Cut/Fill | Workflow | Working | Add terrain change products beyond orthophoto-only comparison. |
-| 15 | Change Issues and Annotations | Workflow | Working | Promote detected changes into trackable issues and annotations with status. |
-| 16 | Advanced Alignment | Workflow | Working | Improve alignment from translation-only correction to affine or local feature-based warping. |
-| 17 | Stakeholder Reports | Workflow | Working | Export project progress as stakeholder-friendly web reports with print-to-PDF support. |
-| 18 | OneDrive Folder Task Intake | Workflow | Working | Create import tasks from a configured OneDrive-synced folder via the `onedriveintake` management command. |
-| 19 | Core Platform Hardening | Platform | Working | Keep core modules thin, modular, testable, and upgrade-friendly. |
-| 20 | Design/BIM/Plan Overlays | Workflow | Working | Store project design overlays and render supported GeoJSON/Shapefile references on 2D maps. |
-| 21 | Mobile/Field Photo Capture | Workflow | Next | Attach ground photos or 360 photos to map locations for field context. |
-| 22 | AI-Assisted Issue Detection | Workflow | Planned | Use object/change detection to create reviewable project issues. |
-| 23 | Client Sharing Portal | Workflow | Planned | Provide polished client links, roles, comments, and read-only review. |
 
 ## Interpretation Rules
 
+- `P1` is delivered and should remain stable.
+- `P2` is delivered and should remain stable.
+- `P3` is delivered as a first working portal slice and should remain stable.
+- `Foundation` means the stage is available in the fork today and should remain stable.
 - `Working` means the stage is available in the fork today.
 - `Next` means this is the immediate next delivery target.
 - `Planned` means the stage is queued after the current next item.

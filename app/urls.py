@@ -4,7 +4,7 @@ from django.views.decorators.cache import cache_page
 from django.utils.cache import patch_vary_headers
 from django.utils.translation import get_language_from_request
 
-from .views import app as app_views, public as public_views, dev as dev_views
+from .views import app as app_views, public as public_views, dev as dev_views, client_portal as client_portal_views
 from .plugins.views import app_view_handler, root_url_patterns
 
 from app.boot import boot
@@ -44,6 +44,7 @@ urlpatterns = [
     re_path(r'^public/task/(?P<task_pk>[^/.]+)/3d/$', public_views.model_display, name='public_3d'),
     re_path(r'^public/task/(?P<task_pk>[^/.]+)/iframe/3d/$', public_views.model_display_iframe, name='public_iframe_3d'),
     re_path(r'^public/task/(?P<task_pk>[^/.]+)/json/$', public_views.task_json, name='public_json'),
+    re_path(r'^client/projects/(?P<token>[^/.]+)/$', client_portal_views.project_portal, name='client_portal'),
 
     re_path(r'^processingnode/([\d]+)/$', app_views.processing_node, name='processing_node'),
 

@@ -1,6 +1,6 @@
 # Development Status
 
-Last updated: 2026-05-10
+Last updated: 2026-05-17
 
 ## Purpose
 
@@ -18,6 +18,31 @@ This file tracks the current state of this fork so future work can start from th
 - Reduce operational issues in local Docker and NodeODM setups
 
 ## Recently Completed
+
+### Client Sharing Portal
+
+- Added project-scoped client share links with viewer and reviewer roles
+- Added tokenized client portal access without requiring a WebODM user account or making the whole project public
+- Added reviewer-only client comments with optional project task, issue, and GeoJSON geometry association
+- Added portal JSON and comment APIs for integration with richer client review screens
+- Added a lightweight client portal page that summarizes deliverables, open review items, access role, and comments
+- Added regression coverage for share management permissions, anonymous portal access, reviewer comments, read-only viewer behavior, expired/disabled links, and portal rendering
+
+### AI-Assisted Issue Detection
+
+- Added server-side OpenAI API key and model settings under the singleton application Settings record
+- Added a backend AI issue detection service that prepares safe image previews from field photos or orthophoto previews
+- Added a project AI issue detection API that calls OpenAI from the server and creates reviewable `in_review` project issues
+- Preserved the human-review loop by storing AI-created issues as normal project issues with AI metadata and confidence
+- Added regression coverage for OpenAI request wiring, missing API key handling, issue creation, and project permissions
+
+### Mobile/Field Photo Capture
+
+- Added project-scoped field photo records for ground photos and 360 photos with GeoJSON point locations
+- Added upload, list, update, and delete API support with project permission checks and optional task association
+- Added map markers and photo popups for field photos in the 2D map
+- Added a map camera control so project editors can attach a field photo to a clicked map location
+- Added regression coverage for create/list/delete, file validation, location validation, and project permissions
 
 ### Design/BIM/Plan Overlays
 
@@ -126,6 +151,9 @@ This file tracks the current state of this fork so future work can start from th
 - Monitoring compare from a project timeline view with timeline-based task selection
 - DSM/DTM terrain delta overlays and cut/fill-style volume stats when compared tasks include DEM assets
 - Project issues and annotations from the dashboard via each project's `Issues` panel
+- Project field photos from the 2D map via the camera control and field-photo marker layer
+- AI-assisted issue detection via server-side OpenAI configuration and the project issue review workflow
+- Client sharing portal links with viewer/reviewer roles and tokenized client comments
 - Stakeholder progress reports from the dashboard via each project's `Report` link
 - OneDrive-synced folder task intake via `python manage.py onedriveintake --project <id> --folder <path>`
 - NodeODM stale-hostname repair via `python manage.py syncdefaultnodes --count 1`
@@ -153,6 +181,7 @@ docker-compose up -d webapp worker
 docker exec webapp python manage.py test app.tests.test_monitoring --keepdb
 docker exec webapp python manage.py test app.tests.test_api_project_issues --keepdb
 docker exec webapp python manage.py test app.tests.test_api_project_reports --keepdb
+docker exec webapp python manage.py test app.tests.test_api_client_portal --keepdb
 docker exec webapp python manage.py test app.tests.test_onedrive_intake --keepdb
 docker exec webapp python manage.py test app.tests.test_app.TestApp.test_syncdefaultnodes_repairs_legacy_default_node --keepdb
 docker exec webapp python manage.py syncdefaultnodes --count 1

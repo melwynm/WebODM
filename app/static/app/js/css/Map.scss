@@ -176,6 +176,45 @@
         z-index: 999;
     }
 
+    .leaflet-control-add-field-photo{
+        z-index: 999;
+    }
+
+    .field-photo-capture-active{
+        cursor: crosshair;
+    }
+
+    .field-photo-marker{
+        width: 28px;
+        height: 28px;
+        border-radius: 50%;
+        background: #ffffff;
+        color: #0f766e;
+        border: 2px solid #0f766e;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 12px 28px -16px rgba(15, 23, 42, 0.75);
+
+        i{
+            font-size: 12px;
+            line-height: 1;
+        }
+    }
+
+    .field-photo-popup{
+        min-width: 220px;
+
+        a{
+            color: #2563eb;
+        }
+
+        img{
+            border-radius: 8px;
+            border: 1px solid rgba(148, 163, 184, 0.28);
+        }
+    }
+
     .leaflet-container{
         background: linear-gradient(180deg, #dbeafe 0%, #f8fafc 100%);
 

@@ -14,7 +14,10 @@ from .potree import Scene, CameraView
 from .monitoring import MonitoringCandidates, MonitoringCompare, MonitoringTiles, MonitoringTimeline
 from .issues import ProjectIssueViewSet
 from .design_overlays import ProjectDesignOverlayViewSet
+from .field_photos import ProjectFieldPhotoViewSet
+from .client_portal import ClientPortalAPIView, ClientPortalCommentsAPIView, ProjectClientShareViewSet
 from .reports import ProjectProgressReport
+from .ai_issues import AIIssueDetection
 from .workers import CheckTask, GetTaskResult
 from .status import APIStatus
 from .users import UsersList
@@ -30,6 +33,8 @@ tasks_router = routers.NestedSimpleRouter(router, r'projects', lookup='project')
 tasks_router.register(r'tasks', TaskViewSet, basename='projects-tasks')
 tasks_router.register(r'issues', ProjectIssueViewSet, basename='projects-issues')
 tasks_router.register(r'design-overlays', ProjectDesignOverlayViewSet, basename='projects-design-overlays')
+tasks_router.register(r'field-photos', ProjectFieldPhotoViewSet, basename='projects-field-photos')
+tasks_router.register(r'client-shares', ProjectClientShareViewSet, basename='projects-client-shares')
 
 admin_router = routers.DefaultRouter()
 admin_router.register(r'admin/users', AdminUserViewSet, basename='admin-users')
@@ -64,6 +69,9 @@ urlpatterns = [
     re_path(r'projects/(?P<project_pk>[^/.]+)/tasks/(?P<pk>[^/.]+)/3d/cameraview$', CameraView.as_view()),
     re_path(r'projects/(?P<project_pk>[^/.]+)/monitoring/timeline$', MonitoringTimeline.as_view()),
     re_path(r'projects/(?P<project_pk>[^/.]+)/reports/progress$', ProjectProgressReport.as_view()),
+    re_path(r'projects/(?P<project_pk>[^/.]+)/ai/issue-detection$', AIIssueDetection.as_view()),
+    re_path(r'client-shares/(?P<token>[^/.]+)/$', ClientPortalAPIView.as_view(), name='api_client_portal'),
+    re_path(r'client-shares/(?P<token>[^/.]+)/comments/$', ClientPortalCommentsAPIView.as_view(), name='api_client_portal_comments'),
     re_path(r'projects/(?P<project_pk>[^/.]+)/tasks/(?P<pk>[^/.]+)/monitoring/candidates$', MonitoringCandidates.as_view()),
     re_path(r'projects/(?P<project_pk>[^/.]+)/tasks/(?P<pk>[^/.]+)/monitoring/compare$', MonitoringCompare.as_view()),
     re_path(r'projects/(?P<project_pk>[^/.]+)/tasks/(?P<pk>[^/.]+)/monitoring/(?P<compare_task_pk>[^/.]+)/(?P<layer_type>aligned|change|dsm_delta|dtm_delta)/tiles/(?P<z>[\d]+)/(?P<x>[\d]+)/(?P<y>[\d]+)\.(?P<ext>png|jpg|webp)$', MonitoringTiles.as_view()),

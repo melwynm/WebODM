@@ -32,6 +32,8 @@ class Setting(models.Model):
     organization_website = models.URLField(default='https://github.com/OpenDroneMap/WebODM/', max_length=255, blank=True, null=True, help_text=_("The website URL of your organization"), verbose_name=_("Organization website"))
     theme = models.ForeignKey(Theme, blank=False, null=False, on_delete=models.DO_NOTHING, verbose_name=_("Theme"),
                               help_text=_("Active theme"))
+    openai_api_key = models.CharField(default='', max_length=255, blank=True, help_text=_("Server-side OpenAI API key for AI-assisted issue detection. Never expose this key to browsers or clients."), verbose_name=_("OpenAI API key"))
+    openai_model = models.CharField(default='gpt-4.1-mini', max_length=80, blank=True, help_text=_("OpenAI model used for AI-assisted issue detection."), verbose_name=_("OpenAI model"))
 
     def __init__(self, *args, **kwargs):
         super(Setting, self).__init__(*args, **kwargs)
@@ -86,5 +88,4 @@ def setting_pre_save(sender, instance, **kwargs):
 @receiver(signals.post_save, sender=Setting, dispatch_uid="setting_post_save")
 def setting_post_save(sender, instance, created, **kwargs):
     update_theme_css()
-
 

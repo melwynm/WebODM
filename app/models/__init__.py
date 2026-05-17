@@ -8,6 +8,8 @@ from .plugin import Plugin
 from .profile import Profile
 from .project_issue import ProjectIssue
 from .project_design_overlay import ProjectDesignOverlay
+from .project_field_photo import ProjectFieldPhoto
+from .project_client_share import ProjectClientShare, ProjectClientComment
 
 # deprecated
 def image_directory_path(image_upload, filename):

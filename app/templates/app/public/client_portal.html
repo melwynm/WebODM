@@ -1,0 +1,193 @@
+{% extends "app/base.html" %}
+{% load i18n %}
+
+{% block page-wrapper %}
+<div id="page-wrapper" class="client-portal">
+    <style>
+        .client-portal {
+            background: #f7f9fb;
+            color: #1f2933;
+            min-height: calc(100vh - 50px);
+            padding: 28px 0 48px;
+        }
+        .client-portal .portal-shell {
+            max-width: 1120px;
+            margin: 0 auto;
+            padding: 0 18px;
+        }
+        .client-portal .portal-header {
+            border-bottom: 1px solid #d9e2ec;
+            margin-bottom: 22px;
+            padding-bottom: 18px;
+        }
+        .client-portal .portal-header h1 {
+            font-size: 28px;
+            font-weight: 600;
+            margin: 0 0 8px;
+        }
+        .client-portal .portal-meta {
+            color: #52606d;
+            font-size: 14px;
+        }
+        .client-portal .portal-grid {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 18px;
+        }
+        .client-portal .portal-panel {
+            background: #fff;
+            border: 1px solid #d9e2ec;
+            border-radius: 6px;
+            margin-bottom: 18px;
+            padding: 18px;
+        }
+        .client-portal .portal-panel h2 {
+            font-size: 18px;
+            font-weight: 600;
+            margin: 0 0 14px;
+        }
+        .client-portal .portal-list {
+            list-style: none;
+            margin: 0;
+            padding: 0;
+        }
+        .client-portal .portal-list li {
+            border-top: 1px solid #eef2f6;
+            padding: 12px 0;
+        }
+        .client-portal .portal-list li:first-child {
+            border-top: 0;
+            padding-top: 0;
+        }
+        .client-portal .portal-pill {
+            background: #e6f4ea;
+            border-radius: 999px;
+            color: #276749;
+            display: inline-block;
+            font-size: 12px;
+            font-weight: 600;
+            padding: 3px 8px;
+            text-transform: uppercase;
+        }
+        .client-portal .muted {
+            color: #697586;
+        }
+        .client-portal textarea {
+            min-height: 120px;
+            resize: vertical;
+        }
+        @media (max-width: 860px) {
+            .client-portal .portal-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+    <div class="portal-shell">
+        <div class="portal-header">
+            <h1>{{ project.name }}</h1>
+            <div class="portal-meta">
+                {{ share.name }} · {{ share.get_role_display }} ·
+                {% trans "Updated" %} {{ project.last_update|date:"Y-m-d H:i" }}
+            </div>
+        </div>
+
+        {% if messages %}
+            {% for message in messages %}
+                <div class="alert alert-{{ message.tags|default:'info' }}">{{ message }}</div>
+            {% endfor %}
+        {% endif %}
+
+        <div class="portal-grid">
+            <main>
+                <section class="portal-panel">
+                    <h2>{% trans "Open Review Items" %}</h2>
+                    {% if issues %}
+                        <ul class="portal-list">
+                            {% for issue in issues %}
+                                <li>
+                                    <strong>{{ issue.title }}</strong>
+                                    <div class="muted">
+                                        {{ issue.get_status_display }} · {{ issue.get_priority_display }}
+                                        {% if issue.task %} · {{ issue.task.name }}{% endif %}
+                                    </div>
+                                    {% if issue.description %}
+                                        <p>{{ issue.description }}</p>
+                                    {% endif %}
+                                </li>
+                            {% endfor %}
+                        </ul>
+                    {% else %}
+                        <p class="muted">{% trans "No open review items." %}</p>
+                    {% endif %}
+                </section>
+
+                <section class="portal-panel">
+                    <h2>{% trans "Client Comments" %}</h2>
+                    {% if comments %}
+                        <ul class="portal-list">
+                            {% for comment in comments %}
+                                <li>
+                                    <strong>{{ comment.author_name }}</strong>
+                                    <span class="muted"> · {{ comment.created_at|date:"Y-m-d H:i" }}</span>
+                                    <p>{{ comment.body }}</p>
+                                </li>
+                            {% endfor %}
+                        </ul>
+                    {% else %}
+                        <p class="muted">{% trans "No client comments yet." %}</p>
+                    {% endif %}
+                </section>
+            </main>
+
+            <aside>
+                <section class="portal-panel">
+                    <h2>{% trans "Deliverables" %}</h2>
+                    {% if tasks %}
+                        <ul class="portal-list">
+                            {% for task in tasks %}
+                                <li>
+                                    <strong>{{ task.name }}</strong>
+                                    <div class="muted">{{ task.created_at|date:"Y-m-d H:i" }}</div>
+                                </li>
+                            {% endfor %}
+                        </ul>
+                    {% else %}
+                        <p class="muted">{% trans "No task deliverables yet." %}</p>
+                    {% endif %}
+                </section>
+
+                <section class="portal-panel">
+                    <h2>{% trans "Portal Access" %}</h2>
+                    <p><span class="portal-pill">{{ share.get_role_display }}</span></p>
+                    <p class="muted">{% trans "Portal API" %}: <code>{{ api_url }}</code></p>
+                    {% if share.expires_at %}
+                        <p class="muted">{% trans "Expires" %}: {{ share.expires_at|date:"Y-m-d H:i" }}</p>
+                    {% endif %}
+                </section>
+
+                {% if share.role == "reviewer" %}
+                    <section class="portal-panel">
+                        <h2>{% trans "Add Comment" %}</h2>
+                        <form method="post">
+                            {% csrf_token %}
+                            <div class="form-group">
+                                <label for="author_name">{% trans "Name" %}</label>
+                                <input id="author_name" name="author_name" class="form-control" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="author_email">{% trans "Email" %}</label>
+                                <input id="author_email" name="author_email" type="email" class="form-control">
+                            </div>
+                            <div class="form-group">
+                                <label for="body">{% trans "Comment" %}</label>
+                                <textarea id="body" name="body" class="form-control" required></textarea>
+                            </div>
+                            <button type="submit" class="btn btn-primary">{% trans "Add Comment" %}</button>
+                        </form>
+                    </section>
+                {% endif %}
+            </aside>
+        </div>
+    </div>
+</div>
+{% endblock %}

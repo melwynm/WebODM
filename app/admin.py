@@ -22,7 +22,8 @@ from app.models import Plugin
 from app.models import Profile
 from app.plugins import get_plugin_by_name, enable_plugin, disable_plugin, delete_plugin, valid_plugin, \
     get_plugins_persistent_path, clear_plugins_cache, init_plugins
-from .models import Project, Task, Setting, Theme, ProjectIssue, ProjectDesignOverlay
+from .models import Project, Task, Setting, Theme, ProjectIssue, ProjectDesignOverlay, ProjectFieldPhoto, \
+    ProjectClientShare, ProjectClientComment
 from django import forms
 from codemirror2.widgets import CodeMirrorEditor
 from webodm import settings
@@ -72,7 +73,55 @@ class ProjectDesignOverlayAdmin(admin.ModelAdmin):
 admin.site.register(ProjectDesignOverlay, ProjectDesignOverlayAdmin)
 
 
+class ProjectFieldPhotoAdmin(admin.ModelAdmin):
+    list_display = ('name', 'project', 'task', 'is_360', 'source_filename', 'created_by', 'updated_at')
+    search_fields = ('name', 'description', 'source_filename', 'project__name', 'task__name', 'created_by__username')
+    list_filter = ('is_360', 'created_at', 'updated_at')
+    readonly_fields = ('created_at', 'updated_at')
+
+
+admin.site.register(ProjectFieldPhoto, ProjectFieldPhotoAdmin)
+
+
+class ProjectClientShareAdmin(admin.ModelAdmin):
+    list_display = ('name', 'project', 'role', 'enabled', 'expires_at', 'created_by', 'updated_at')
+    list_filter = ('role', 'enabled', 'created_at', 'updated_at')
+    search_fields = ('name', 'project__name', 'created_by__username', 'token')
+    readonly_fields = ('token', 'created_at', 'updated_at')
+
+
+admin.site.register(ProjectClientShare, ProjectClientShareAdmin)
+
+
+class ProjectClientCommentAdmin(admin.ModelAdmin):
+    list_display = ('author_name', 'project', 'share', 'task', 'issue', 'created_at')
+    list_filter = ('created_at',)
+    search_fields = ('author_name', 'author_email', 'body', 'project__name', 'share__name')
+    readonly_fields = ('created_at',)
+
+
+admin.site.register(ProjectClientComment, ProjectClientCommentAdmin)
+
+
+class SettingAdminForm(forms.ModelForm):
+    class Meta:
+        model = Setting
+        fields = '__all__'
+        widgets = {
+            'openai_api_key': forms.PasswordInput(render_value=True),
+        }
+
+
 class SettingAdmin(admin.ModelAdmin):
+    form = SettingAdminForm
+    fieldsets = (
+        (None, {
+            'fields': ('app_name', 'app_logo', 'organization_name', 'organization_website', 'theme')
+        }),
+        (_("AI-assisted issue detection"), {
+            'fields': ('openai_api_key', 'openai_model')
+        }),
+    )
 
     def has_add_permission(self, request):
         # if there's already an entry, do not allow adding
