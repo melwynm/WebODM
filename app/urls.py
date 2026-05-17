@@ -46,6 +46,7 @@ urlpatterns = [
     re_path(r'^public/task/(?P<task_pk>[^/.]+)/iframe/3d/$', public_views.model_display_iframe, name='public_iframe_3d'),
     re_path(r'^public/task/(?P<task_pk>[^/.]+)/json/$', public_views.task_json, name='public_json'),
     re_path(r'^client/projects/(?P<token>[^/.]+)/$', client_portal_views.project_portal, name='client_portal'),
+    re_path(r'^client/projects/(?P<token>[^/.]+)/tasks/(?P<task_pk>[^/.]+)/3d/$', client_portal_views.model_display, name='client_portal_3d'),
 
     re_path(r'^processingnode/([\d]+)/$', app_views.processing_node, name='processing_node'),
 

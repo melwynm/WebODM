@@ -15,8 +15,11 @@ from .monitoring import MonitoringCandidates, MonitoringCompare, MonitoringTiles
 from .issues import ProjectIssueViewSet
 from .design_overlays import ProjectDesignOverlayViewSet
 from .field_photos import ProjectFieldPhotoViewSet
-from .client_portal import ClientPortalAPIView, ClientPortalCommentsAPIView, ProjectClientShareViewSet
+from .client_portal import ClientPortalAPIView, ClientPortalCommentsAPIView, ClientPortalTaskAssetsAPIView, \
+    ClientPortalTaskQAAPIView, ClientPortalTaskSceneAPIView, ClientPortalTaskTexturedModelAPIView, \
+    ProjectClientShareViewSet
 from .feature_validation import FeatureValidationViewSet
+from .textured_model_qa import TexturedModelQA
 from .reports import ProjectProgressReport
 from .ai_issues import AIIssueDetection
 from .workers import CheckTask, GetTaskResult
@@ -60,6 +63,7 @@ urlpatterns = [
 
     re_path(r'projects/(?P<project_pk>[^/.]+)/tasks/(?P<pk>[^/.]+)/download/(?P<asset>.+)$', TaskDownloads.as_view()),
     re_path(r'projects/(?P<project_pk>[^/.]+)/tasks/(?P<pk>[^/.]+)/textured_model/$', TaskSafeTexturedModel.as_view()),
+    re_path(r'projects/(?P<project_pk>[^/.]+)/tasks/(?P<pk>[^/.]+)/3d/qa$', TexturedModelQA.as_view()),
     re_path(r'projects/(?P<project_pk>[^/.]+)/tasks/(?P<pk>[^/.]+)/assets/(?P<unsafe_asset_path>.+)$', TaskAssets.as_view()),
     re_path(r'projects/(?P<project_pk>[^/.]+)/tasks/import$', TaskAssetsImport.as_view()),
     re_path(r'projects/(?P<project_pk>[^/.]+)/tasks/(?P<pk>[^/.]+)/thumbnail$', TaskThumbnail.as_view()),
@@ -74,6 +78,10 @@ urlpatterns = [
     re_path(r'projects/(?P<project_pk>[^/.]+)/ai/issue-detection$', AIIssueDetection.as_view()),
     re_path(r'client-shares/(?P<token>[^/.]+)/$', ClientPortalAPIView.as_view(), name='api_client_portal'),
     re_path(r'client-shares/(?P<token>[^/.]+)/comments/$', ClientPortalCommentsAPIView.as_view(), name='api_client_portal_comments'),
+    re_path(r'client-shares/(?P<token>[^/.]+)/tasks/(?P<task_pk>[^/.]+)/3d/qa$', ClientPortalTaskQAAPIView.as_view(), name='api_client_portal_task_qa'),
+    re_path(r'client-shares/(?P<token>[^/.]+)/tasks/(?P<task_pk>[^/.]+)/3d/scene$', ClientPortalTaskSceneAPIView.as_view(), name='api_client_portal_task_scene'),
+    re_path(r'client-shares/(?P<token>[^/.]+)/tasks/(?P<task_pk>[^/.]+)/textured_model/$', ClientPortalTaskTexturedModelAPIView.as_view(), name='api_client_portal_task_textured_model'),
+    re_path(r'client-shares/(?P<token>[^/.]+)/tasks/(?P<task_pk>[^/.]+)/assets/(?P<unsafe_asset_path>.+)$', ClientPortalTaskAssetsAPIView.as_view(), name='api_client_portal_task_assets'),
     re_path(r'projects/(?P<project_pk>[^/.]+)/tasks/(?P<pk>[^/.]+)/monitoring/candidates$', MonitoringCandidates.as_view()),
     re_path(r'projects/(?P<project_pk>[^/.]+)/tasks/(?P<pk>[^/.]+)/monitoring/compare$', MonitoringCompare.as_view()),
     re_path(r'projects/(?P<project_pk>[^/.]+)/tasks/(?P<pk>[^/.]+)/monitoring/(?P<compare_task_pk>[^/.]+)/(?P<layer_type>aligned|change|dsm_delta|dtm_delta)/tiles/(?P<z>[\d]+)/(?P<x>[\d]+)/(?P<y>[\d]+)\.(?P<ext>png|jpg|webp)$', MonitoringTiles.as_view()),

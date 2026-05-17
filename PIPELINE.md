@@ -15,7 +15,7 @@ The next item is the first stage marked `Next` in the priority roadmap.
 
 Backlog grooming / next priority selection
 
-P1 through P3 now have working slices. The feature validation ledger is available to record whether each workflow has been tested, is untested, is failing, or is blocked.
+P1 through P4 now have working slices. The feature validation ledger is available to record whether each workflow has been tested, is untested, is failing, or is blocked.
 
 ## Priority Roadmap
 
@@ -24,6 +24,7 @@ P1 through P3 now have working slices. The feature validation ledger is availabl
 | P1 | Mobile/Field Photo Capture | Workflow | Working | Adds field context by attaching ground photos or 360 photos to map locations. |
 | P2 | AI-Assisted Issue Detection | Workflow | Working | Turns imagery and change products into reviewable project issues. |
 | P3 | Client Sharing Portal | Workflow | Working | Gives clients polished read-only access, comments, roles, and shareable review links. |
+| P4 | Textured Model QA + Sharing | Workflow | Working | Adds textured-model readiness checks and tokenized client 3D review access. |
 
 ## Working Product Foundation
 
@@ -65,6 +66,7 @@ These are the standard WebODM processing stages. They remain the working runtime
 - `P1` is delivered and should remain stable.
 - `P2` is delivered and should remain stable.
 - `P3` is delivered as a first working portal slice and should remain stable.
+- `P4` is delivered as a first textured-model QA and tokenized sharing slice and should remain stable.
 - Use the feature validation ledger at `/feature-validations/` to mark completed features as `tested`, `untested`, `failing`, or `blocked` after every smoke test or regression pass.
 - `Foundation` means the stage is available in the fork today and should remain stable.
 - `Working` means the stage is available in the fork today.

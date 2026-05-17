@@ -19,6 +19,15 @@ This file tracks the current state of this fork so future work can start from th
 
 ## Recently Completed
 
+### Textured Model QA And Sharing
+
+- Added a textured-model QA service that reports model, GLB, point cloud, camera-shot, and 3D tile asset readiness
+- Added project task QA API at `/api/projects/<project>/tasks/<task>/3d/qa`
+- Added tokenized client 3D review pages from client share links without requiring the task or project to be public
+- Added client-share asset, safe textured model, scene, and QA API routes for read-only 3D model access
+- Added client portal links to open 3D review when model or point-cloud assets are available
+- Added regression coverage for QA status, project permissions, tokenized 3D page rendering, and client-share model asset access
+
 ### Feature Validation Ledger
 
 - Added a feature validation ledger for tracking whether features are untested, testing, tested, failing, or blocked
@@ -163,6 +172,7 @@ This file tracks the current state of this fork so future work can start from th
 - Project field photos from the 2D map via the camera control and field-photo marker layer
 - AI-assisted issue detection via server-side OpenAI configuration and the project issue review workflow
 - Client sharing portal links with viewer/reviewer roles and tokenized client comments
+- Textured model QA and tokenized client 3D review links
 - Feature validation ledger via `/feature-validations/`, `/api/feature-validations/`, and Django admin for tested/untested/failing/blocked tracking
 - Stakeholder progress reports from the dashboard via each project's `Report` link
 - OneDrive-synced folder task intake via `python manage.py onedriveintake --project <id> --folder <path>`
@@ -192,6 +202,7 @@ docker exec webapp python manage.py test app.tests.test_monitoring --keepdb
 docker exec webapp python manage.py test app.tests.test_api_project_issues --keepdb
 docker exec webapp python manage.py test app.tests.test_api_project_reports --keepdb
 docker exec webapp python manage.py test app.tests.test_api_client_portal --keepdb
+docker exec webapp python manage.py test app.tests.test_api_textured_model_qa --keepdb
 docker exec webapp python manage.py test app.tests.test_api_feature_validation --keepdb
 docker exec webapp python manage.py test app.tests.test_onedrive_intake --keepdb
 docker exec webapp python manage.py test app.tests.test_app.TestApp.test_syncdefaultnodes_repairs_legacy_default_node --keepdb

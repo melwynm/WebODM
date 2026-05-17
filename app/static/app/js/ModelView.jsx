@@ -135,14 +135,16 @@ class ModelView extends React.Component {
     task: null,
     public: false,
     shareButtons: true,
-    modelType: "cloud"
+    modelType: "cloud",
+    clientToken: null
   };
 
   static propTypes = {
       task: PropTypes.object.isRequired, // The object should contain two keys: {id: <taskId>, project: <projectId>}
       public: PropTypes.bool, // Is the view being displayed via a shared link?
       shareButtons: PropTypes.bool,
-      modelType: PropTypes.oneOf(['cloud', 'mesh'])
+      modelType: PropTypes.oneOf(['cloud', 'mesh']),
+      clientToken: PropTypes.string
   };
 
   constructor(props){
@@ -164,6 +166,9 @@ class ModelView extends React.Component {
   }
 
   basePath = () => {
+    if (this.props.clientToken) {
+        return `/api/client-shares/${this.props.clientToken}/tasks/${this.props.task.id}`;
+    }
     return `/api/projects/${this.props.task.project}/tasks/${this.props.task.id}`;
   }
 
@@ -243,7 +248,8 @@ class ModelView extends React.Component {
   }
 
   hasTexturedModel = () => {
-    return this.props.task.available_assets.indexOf('textured_model.zip') !== -1;
+    return this.props.task.available_assets.indexOf('textured_model.zip') !== -1 ||
+           this.props.task.available_assets.indexOf('textured_model.glb') !== -1;
   }
 
   getTexturedModelType = () => {
@@ -395,7 +401,7 @@ class ModelView extends React.Component {
           // Load saved scene (if any)
           $.ajax({
               type: "GET",
-              url: `/api/projects/${this.props.task.project}/tasks/${this.props.task.id}/3d/scene`
+              url: `${this.basePath()}/3d/scene`
           }).done(sceneData => {
             let localSceneData = Potree.saveProject(viewer);
 
@@ -433,13 +439,15 @@ class ModelView extends React.Component {
             let prevSceneData = JSON.stringify(this.getSceneData());
             
             const postSceneData = (sceneData) => {
+                if (this.props.public) return;
+
                 if (saveSceneReq){
                     saveSceneReq.abort();
                     saveSceneReq = null;
                 }
     
                 saveSceneReq = $.ajax({
-                    url: `/api/projects/${this.props.task.project}/tasks/${this.props.task.id}/3d/scene`,
+                    url: `${this.basePath()}/3d/scene`,
                     contentType: 'application/json',
                     data: sceneData,
                     dataType: 'json',

@@ -1,6 +1,9 @@
+import json
+
 from django.contrib import messages
-from django.http import HttpResponseForbidden
+from django.http import Http404, HttpResponseForbidden
 from django.shortcuts import redirect, render
+from django.views.decorators.csrf import ensure_csrf_cookie
 from django.utils.translation import gettext as _
 
 from app import models
@@ -48,4 +51,25 @@ def project_portal(request, token):
         'issues': issues,
         'comments': comments,
         'api_url': '/api/client-shares/{}/'.format(share.token),
+    })
+
+
+@ensure_csrf_cookie
+def model_display(request, token, task_pk):
+    share = get_active_share(token)
+    try:
+        task = models.Task.objects.get(pk=task_pk, project=share.project)
+    except models.Task.DoesNotExist:
+        raise Http404
+
+    return render(request, 'app/public/3d_model_display.html', {
+        'title': task.name,
+        'params': {
+            'task': json.dumps(task.get_model_display_params()),
+            'public': 'true',
+            'public-edit': 'false',
+            'share-buttons': 'false',
+            'model-type': request.GET.get('t', 'mesh'),
+            'client-token': str(share.token),
+        }.items()
     })

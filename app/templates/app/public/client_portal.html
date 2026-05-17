@@ -148,6 +148,11 @@
                                 <li>
                                     <strong>{{ task.name }}</strong>
                                     <div class="muted">{{ task.created_at|date:"Y-m-d H:i" }}</div>
+                                    {% if "textured_model.zip" in task.available_assets or "textured_model.glb" in task.available_assets or "georeferenced_model.laz" in task.available_assets %}
+                                        <div>
+                                            <a href="{% url 'client_portal_3d' share.token task.id %}">{% trans "Open 3D Review" %}</a>
+                                        </div>
+                                    {% endif %}
                                 </li>
                             {% endfor %}
                         </ul>

@@ -1,12 +1,19 @@
+import os
+
+from django.core.exceptions import SuspiciousFileOperation, ValidationError
 from django.http import Http404
 from rest_framework import permissions, serializers, status, viewsets
+from rest_framework import exceptions
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from app import models
 from app.api.issues import ProjectIssueSerializer
 from app.api.permissions import ProjectPermissionPolicy
+from app.api.tasks import download_file_response
 from app.models.project_issue import validate_geojson_geometry
+from app.security import path_traversal_check
+from app.services.textured_model_qa import build_textured_model_qa
 
 
 def get_active_share(token):
@@ -19,6 +26,13 @@ def get_active_share(token):
         raise Http404
 
     return share
+
+
+def get_share_task(share, task_pk):
+    try:
+        return models.Task.objects.get(pk=task_pk, project=share.project)
+    except (models.Task.DoesNotExist, ValidationError):
+        raise Http404
 
 
 class ProjectClientShareSerializer(serializers.ModelSerializer):
@@ -177,3 +191,60 @@ class ClientPortalCommentsAPIView(ClientPortalMixin, APIView):
         serializer.is_valid(raise_exception=True)
         comment = serializer.save(project=share.project, share=share)
         return Response(ProjectClientCommentSerializer(comment).data, status=status.HTTP_201_CREATED)
+
+
+class ClientPortalTaskQAAPIView(ClientPortalMixin, APIView):
+    def get(self, request, token, task_pk):
+        share = self.get_share()
+        task = get_share_task(share, task_pk)
+        data = build_textured_model_qa(task)
+        data['viewer_url'] = '/client/projects/{}/tasks/{}/3d/'.format(share.token, task.id)
+        data['safe_glb_url'] = '/api/client-shares/{}/tasks/{}/textured_model/'.format(share.token, task.id)
+        return Response(data)
+
+
+class ClientPortalTaskSceneAPIView(ClientPortalMixin, APIView):
+    def get(self, request, token, task_pk):
+        share = self.get_share()
+        task = get_share_task(share, task_pk)
+        return Response(task.potree_scene)
+
+    def head(self, request, token, task_pk):
+        self.get(request, token, task_pk)
+        return Response(status=status.HTTP_200_OK)
+
+    def post(self, request, token, task_pk):
+        return Response({'detail': 'Client shares are read-only.'}, status=status.HTTP_403_FORBIDDEN)
+
+
+class ClientPortalTaskTexturedModelAPIView(ClientPortalMixin, APIView):
+    def get(self, request, token, task_pk):
+        share = self.get_share()
+        task = get_share_task(share, task_pk)
+        try:
+            model_file = task.get_safe_textured_model()
+            return download_file_response(request, model_file, 'attachment')
+        except FileNotFoundError:
+            raise exceptions.NotFound("Asset does not exist")
+
+    def head(self, request, token, task_pk):
+        return self.get(request, token, task_pk)
+
+
+class ClientPortalTaskAssetsAPIView(ClientPortalMixin, APIView):
+    def get(self, request, token, task_pk, unsafe_asset_path):
+        share = self.get_share()
+        task = get_share_task(share, task_pk)
+
+        try:
+            asset_path = path_traversal_check(task.assets_path(unsafe_asset_path), task.assets_path(""))
+        except SuspiciousFileOperation:
+            raise exceptions.NotFound("Asset does not exist")
+
+        if (not asset_path) or (not os.path.exists(asset_path)) or os.path.isdir(asset_path):
+            raise exceptions.NotFound("Asset does not exist")
+
+        return download_file_response(request, asset_path, 'inline')
+
+    def head(self, request, token, task_pk, unsafe_asset_path):
+        return self.get(request, token, task_pk, unsafe_asset_path)
