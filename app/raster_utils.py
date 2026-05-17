@@ -29,6 +29,36 @@ def extension_for_export_format(export_format):
     }
     return extensions.get(export_format, export_format)
 
+def _to_dict(value):
+    if isinstance(value, dict):
+        return value
+    if hasattr(value, "model_dump"):
+        return value.model_dump()
+    if hasattr(value, "dict"):
+        return value.dict()
+    return value
+
+def _band_statistics(ds_src, pmin=2.0, pmax=98.0, bins=255, nodata=None):
+    if hasattr(ds_src, "metadata"):
+        return ds_src.metadata(pmin=pmin, pmax=pmax, hist_options={"bins": bins}, nodata=nodata)["statistics"]
+
+    kwargs = {
+        "percentiles": [pmin, pmax],
+        "hist_options": {"bins": bins},
+    }
+    if nodata is not None:
+        kwargs["nodata"] = nodata
+
+    try:
+        stats = ds_src.statistics(**kwargs)
+    except TypeError:
+        # Newer rio-tiler versions pass unknown kwargs to read(), so nodata is
+        # best-effort here. Alpha masks still exclude transparent pixels.
+        kwargs.pop("nodata", None)
+        stats = ds_src.statistics(**kwargs)
+
+    return {str(k).lstrip("b"): _to_dict(v) for k, v in stats.items()}
+
 # Based on https://github.com/uav4geo/GeoDeep/blob/main/geodeep/slidingwindow.py
 def compute_subwindows(window, max_window_size, overlap_pixels=0):
     col_off = int(window.col_off)
@@ -216,8 +246,8 @@ def export_raster(input, output, progress_callback=None, **opts):
             nodata = None
             if asset_type == 'orthophoto':
                 nodata = 0
-            md = ds_src.metadata(pmin=2.0, pmax=98.0, hist_options={"bins": 255}, nodata=nodata)
-            rescale = [md['statistics']['1']['min'], md['statistics']['1']['max']]
+            stats = _band_statistics(ds_src, pmin=2.0, pmax=98.0, bins=255, nodata=nodata)
+            rescale = [stats['1']['min'], stats['1']['max']]
 
         ci = src.colorinterp
         alpha_index = None
