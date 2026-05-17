@@ -3,26 +3,62 @@
         .layer-control-title{
             display: flex;
             flex-wrap: nowrap;
+            align-items: center;
+            gap: 4px;
+            min-height: 30px;
+            margin-bottom: 4px;
+
+            > a{
+                background: transparent;
+                border: 0;
+                box-shadow: none;
+                text-decoration: none;
+            }
         }
 
         .layer-label{
-            width: 100%;
+            display: flex;
+            align-items: center;
+            flex: 1 1 auto;
+            min-width: 0;
+            width: auto;
             white-space: nowrap;
             text-overflow: ellipsis;
             overflow: hidden;
             text-align: left;
             height: 28px;
-            margin-left: 1px;
+            line-height: 28px;
+            margin-left: 0;
+            padding: 0 6px;
+            border-radius: 6px;
+
+            &:hover,
+            &:focus{
+                background: rgba(148, 163, 184, 0.12);
+                text-decoration: none;
+            }
         }
 
         .layer-action{
-            flex-basis: min-content;
-            padding-left: 6px;
-            padding-right: 6px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            flex: 0 0 28px;
+            width: 28px;
+            height: 28px;
+            line-height: 28px;
+            padding: 0;
+            border-radius: 6px;
+
+            &:hover,
+            &:focus{
+                background: rgba(148, 163, 184, 0.12);
+                text-decoration: none;
+            }
         }
 
         .expand-layer{
-            margin-right: 3px;
+            margin-right: 0;
         }
 
         hr.layer-separator{
@@ -54,7 +90,15 @@
         }
       
         .toggle{
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          flex: 0 0 22px;
           width: 22px;
+          height: 28px;
+          line-height: 28px;
+          background: transparent;
+          border: 0;
           i{
               font-size: 18px;
           }
@@ -65,19 +109,25 @@
         }
 
         .paddingSpace{
+            flex: 0 0 22px;
             width: 22px;
-            height: 22px;
+            height: 28px;
         }
 
         i.layer-icon{
+            flex: 0 0 auto;
             font-size: 16px;
-            margin-left: 4px;
+            margin-left: 0;
+            margin-right: 6px;
         }
 
         .layer-title{
-            display: inline;
-            position: relative;
-            top: -1px;
+            display: block;
+            min-width: 0;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            position: static;
         }
     }
 }
