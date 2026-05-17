@@ -19,6 +19,14 @@ This file tracks the current state of this fork so future work can start from th
 
 ## Recently Completed
 
+### Feature Validation Ledger
+
+- Added a feature validation ledger for tracking whether features are untested, testing, tested, failing, or blocked
+- Added admin and staff-only API access for feature validation records with area, evidence URL, test notes, and maintenance notes
+- Added automatic tester/time stamping when a feature is marked tested
+- Added structured `app.logger` entries when feature validation records are created or their status changes
+- Added regression coverage for admin-only access, tested stamping, area/status filters, and status-change logging
+
 ### Client Sharing Portal
 
 - Added project-scoped client share links with viewer and reviewer roles
@@ -154,6 +162,7 @@ This file tracks the current state of this fork so future work can start from th
 - Project field photos from the 2D map via the camera control and field-photo marker layer
 - AI-assisted issue detection via server-side OpenAI configuration and the project issue review workflow
 - Client sharing portal links with viewer/reviewer roles and tokenized client comments
+- Feature validation ledger via `/api/feature-validations/` and Django admin for tested/untested/failing/blocked tracking
 - Stakeholder progress reports from the dashboard via each project's `Report` link
 - OneDrive-synced folder task intake via `python manage.py onedriveintake --project <id> --folder <path>`
 - NodeODM stale-hostname repair via `python manage.py syncdefaultnodes --count 1`
@@ -182,6 +191,7 @@ docker exec webapp python manage.py test app.tests.test_monitoring --keepdb
 docker exec webapp python manage.py test app.tests.test_api_project_issues --keepdb
 docker exec webapp python manage.py test app.tests.test_api_project_reports --keepdb
 docker exec webapp python manage.py test app.tests.test_api_client_portal --keepdb
+docker exec webapp python manage.py test app.tests.test_api_feature_validation --keepdb
 docker exec webapp python manage.py test app.tests.test_onedrive_intake --keepdb
 docker exec webapp python manage.py test app.tests.test_app.TestApp.test_syncdefaultnodes_repairs_legacy_default_node --keepdb
 docker exec webapp python manage.py syncdefaultnodes --count 1

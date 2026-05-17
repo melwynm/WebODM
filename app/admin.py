@@ -23,7 +23,7 @@ from app.models import Profile
 from app.plugins import get_plugin_by_name, enable_plugin, disable_plugin, delete_plugin, valid_plugin, \
     get_plugins_persistent_path, clear_plugins_cache, init_plugins
 from .models import Project, Task, Setting, Theme, ProjectIssue, ProjectDesignOverlay, ProjectFieldPhoto, \
-    ProjectClientShare, ProjectClientComment
+    ProjectClientShare, ProjectClientComment, FeatureValidation
 from django import forms
 from codemirror2.widgets import CodeMirrorEditor
 from webodm import settings
@@ -101,6 +101,21 @@ class ProjectClientCommentAdmin(admin.ModelAdmin):
 
 
 admin.site.register(ProjectClientComment, ProjectClientCommentAdmin)
+
+
+class FeatureValidationAdmin(admin.ModelAdmin):
+    list_display = ('key', 'name', 'area', 'status', 'last_tested_by', 'last_tested_at', 'updated_at')
+    list_filter = ('status', 'area', 'last_tested_at', 'updated_at')
+    search_fields = ('key', 'name', 'area', 'test_notes', 'maintenance_notes')
+    readonly_fields = ('last_tested_at', 'created_at', 'updated_at')
+
+    def save_model(self, request, obj, form, change):
+        if obj.status == FeatureValidation.STATUS_TESTED and obj.last_tested_by_id is None:
+            obj.last_tested_by = request.user
+        super().save_model(request, obj, form, change)
+
+
+admin.site.register(FeatureValidation, FeatureValidationAdmin)
 
 
 class SettingAdminForm(forms.ModelForm):

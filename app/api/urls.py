@@ -16,6 +16,7 @@ from .issues import ProjectIssueViewSet
 from .design_overlays import ProjectDesignOverlayViewSet
 from .field_photos import ProjectFieldPhotoViewSet
 from .client_portal import ClientPortalAPIView, ClientPortalCommentsAPIView, ProjectClientShareViewSet
+from .feature_validation import FeatureValidationViewSet
 from .reports import ProjectProgressReport
 from .ai_issues import AIIssueDetection
 from .workers import CheckTask, GetTaskResult
@@ -28,6 +29,7 @@ router = routers.DefaultRouter()
 router.register(r'projects', ProjectViewSet)
 router.register(r'processingnodes', ProcessingNodeViewSet)
 router.register(r'presets', PresetViewSet, basename='presets')
+router.register(r'feature-validations', FeatureValidationViewSet, basename='feature-validations')
 
 tasks_router = routers.NestedSimpleRouter(router, r'projects', lookup='project')
 tasks_router.register(r'tasks', TaskViewSet, basename='projects-tasks')
