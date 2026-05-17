@@ -49,6 +49,26 @@ class TestApiTask(BootTransactionTestCase):
     def tearDown(self):
         clear_test_media_root()
 
+    def test_gaussian_splat_asset_is_downloadable_when_present(self):
+        client = APIClient()
+        client.login(username="testuser", password="test1234")
+
+        user = User.objects.get(username="testuser")
+        project = Project.objects.create(owner=user, name="Splat project")
+        task = Task.objects.create(project=project, name="Splat task")
+
+        splat_path = task.assets_path(Task.ASSETS_MAP["gaussian_splat.ply"])
+        os.makedirs(os.path.dirname(splat_path), exist_ok=True)
+        with open(splat_path, "wb") as f:
+            f.write(b"ply\nformat binary_little_endian 1.0\nend_header\n")
+
+        task.update_available_assets_field(commit=True)
+        self.assertIn("gaussian_splat.ply", task.available_assets)
+        self.assertTrue(task.is_asset_available_slow("gaussian_splat.ply"))
+
+        res = client.get("/api/projects/{}/tasks/{}/download/gaussian_splat.ply".format(project.id, task.id))
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+
     def test_task(self):
         client = APIClient()
 

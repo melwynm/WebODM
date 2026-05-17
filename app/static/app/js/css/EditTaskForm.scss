@@ -1,6 +1,7 @@
 .edit-task-form{
 	.presets-dropdown{
 		margin-left: 8px;
+        vertical-align: top;
 
         @media screen and (max-width: 768px){
             margin-left: 0px;
@@ -20,10 +21,41 @@
 	.system-preset{
 		background-color: #eee;
     }
+
+    .preset-choice{
+        display: inline-block;
+        min-width: min(100%, 360px);
+        max-width: min(100%, 560px);
+        vertical-align: top;
+    }
+
+    .preset-choice__select{
+        min-width: min(100%, 360px);
+    }
+
+    .preset-choice__description,
+    .review-options__description,
+    .review-options__summary{
+        color: var(--odm-text-secondary, var(--dash-shell-muted, #586069));
+        font-size: 12px;
+        line-height: 1.45;
+        margin-top: 6px;
+        white-space: normal;
+    }
+
+    .preset-choice__description i{
+        color: var(--odm-accent, var(--dash-shell-accent, #0f9f84));
+        margin-right: 4px;
+    }
     
     .review-options{
         margin-top: 10px;
         margin-bottom: 14px;
+    }
+
+    .review-options__preset{
+        color: var(--odm-text-primary, var(--dash-shell-text, #24292e));
+        font-weight: 600;
     }
 
     .name-loading{

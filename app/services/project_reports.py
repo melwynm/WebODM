@@ -72,7 +72,7 @@ def _asset_labels(assets):
     if not assets:
         return "No exported assets yet"
     labels = []
-    for asset in ("orthophoto.tif", "dsm.tif", "dtm.tif", "georeferenced_model.laz", "textured_model.zip"):
+    for asset in ("orthophoto.tif", "dsm.tif", "dtm.tif", "georeferenced_model.laz", "textured_model.zip", "gaussian_splat.ply"):
         if asset in assets:
             labels.append(asset)
     return ", ".join(labels or assets[:4])

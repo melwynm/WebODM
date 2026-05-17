@@ -1,0 +1,13 @@
+{
+  "name": "Gaussian Splat",
+  "webodmMinVersion": "2.5.0",
+  "description": "Train Gaussian Splat PLY assets from completed WebODM/OpenSfM task outputs using OpenSplat or another configured trainer.",
+  "version": "0.1.0",
+  "author": "OpenAI Codex",
+  "email": "support@openai.com",
+  "repository": "https://github.com/OpenDroneMap/WebODM",
+  "tags": ["gaussian", "splat", "3d", "opensplat", "pointcloud"],
+  "homepage": "https://github.com/OpenDroneMap/WebODM",
+  "experimental": true,
+  "deprecated": false
+}

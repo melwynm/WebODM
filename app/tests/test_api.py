@@ -25,6 +25,16 @@ class TestApi(BootTestCase):
     def tearDown(self):
         pass
 
+    def test_api_status_is_public_and_explains_auth(self):
+        client = APIClient()
+
+        res = client.get('/api/status/')
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertTrue(res.data['ok'])
+        self.assertFalse(res.data['authenticated'])
+        self.assertTrue(res.data['protected_resources_require_authentication'])
+        self.assertEqual(res.data['authentication']['api_token'], 'Authorization: Token <api_key>')
+
     def test_projects_and_tasks(self):
         client = APIClient()
 

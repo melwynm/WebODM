@@ -7,6 +7,7 @@ from django.utils.translation import gettext_lazy as _
 class Preset(models.Model):
     owner = models.ForeignKey(settings.AUTH_USER_MODEL, blank=True, null=True, on_delete=models.CASCADE, help_text=_("The person who owns this preset"), verbose_name=_("Owner"))
     name = models.CharField(max_length=255, blank=False, null=False, help_text=_("A label used to describe the preset"), verbose_name=_("Name"))
+    description = models.TextField(blank=True, default="", help_text=_("A short explanation of when to use this preset."), verbose_name=_("Description"))
     options = models.JSONField(default=list, blank=True, help_text=_("Options that define this preset (same format as in a Task's options)."), verbose_name=_("Options"),
                                validators=[validate_task_options])
     created_at = models.DateTimeField(default=timezone.now, help_text=_("Creation date"), verbose_name=_("Created at"))

@@ -302,6 +302,7 @@
         padding: 0 20px 20px;
         border-top: 1px solid var(--odm-border, rgba(226, 232, 240, 0.9));
         background: var(--odm-bg-card, #ffffff);
+        overflow: visible;
 
         .row{
             margin: 0;
@@ -414,6 +415,10 @@
             flex-wrap: wrap;
             gap: 10px;
             margin-top: 18px;
+            align-items: flex-start;
+            overflow: visible;
+            position: relative;
+            z-index: 20;
         }
 
         .action-buttons button,
@@ -456,8 +461,15 @@
         }
 
         .action-buttons .btn-group{
+            flex: 0 0 auto;
+            position: relative;
+
             button:first-child{
                 margin-right: 0;
+            }
+
+            &.open{
+                z-index: 1200;
             }
         }
 
@@ -467,9 +479,26 @@
 
         .asset-download-buttons{
             margin-right: 0;
-            display: flex;
-            flex-wrap: wrap;
-            gap: 10px;
+            display: inline-flex;
+            flex: 0 0 auto;
+            flex-wrap: nowrap;
+            align-items: stretch;
+            position: relative;
+
+            > .btn{
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                min-height: 40px;
+                height: 40px;
+                line-height: 1.2;
+            }
+
+            .dropdown-menu{
+                position: absolute;
+                z-index: 1210;
+                min-width: 220px;
+            }
         }
     }
 

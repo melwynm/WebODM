@@ -73,6 +73,8 @@ class EditTaskForm extends React.Component {
     this.handleDuplicateSavePreset = this.handleDuplicateSavePreset.bind(this);
     this.handleDeletePreset = this.handleDeletePreset.bind(this);
     this.findFirstPresetMatching = this.findFirstPresetMatching.bind(this);
+    this.getPresetDescription = this.getPresetDescription.bind(this);
+    this.getPresetDisplayName = this.getPresetDisplayName.bind(this);
     this.getAvailableOptionsOnly = this.getAvailableOptionsOnly.bind(this);
     this.getAvailableOptionsOnlyText = this.getAvailableOptionsOnlyText.bind(this);
     this.saveLastPresetToStorage = this.saveLastPresetToStorage.bind(this);
@@ -229,6 +231,7 @@ class EditTaskForm extends React.Component {
           const customPreset = {
             id: -1,
             name: "(" + _("Custom") + ")",
+            description: _("Custom processing settings for this task."),
             options: [],
             system: true
           };
@@ -381,6 +384,15 @@ class EditTaskForm extends React.Component {
     return res;
   }
 
+  getPresetDescription(preset){
+    return preset && preset.description ? preset.description : "";
+  }
+
+  getPresetDisplayName(preset){
+    if (!preset) return "";
+    return preset.name === "Default" ? _(preset.name) : preset.name;
+  }
+
   saveLastPresetToStorage(){
     if (this.state.selectedPreset){
       Storage.setItem('last_preset_id', this.state.selectedPreset.id);
@@ -410,6 +422,7 @@ class EditTaskForm extends React.Component {
         customPreset = {
           id: -1,
           name: "(" + _("Custom") + ")",
+          description: _("Custom processing settings for this task."),
           options: [],
           system: true
         };
@@ -545,15 +558,23 @@ class EditTaskForm extends React.Component {
     if (this.formReady()){
 
       const optionsSelector = (<div>
-        <select 
-            title={this.getAvailableOptionsOnlyText(this.state.selectedPreset.options, this.state.selectedNode.options)}
-            className="form-control" 
-            value={this.state.selectedPreset.id} 
-            onChange={this.handleSelectPreset}>
-        {this.state.presets.map(preset => 
-            <option value={preset.id} key={preset.id} className={preset.system ? "system-preset" : ""}>{preset.name === "Default" ? _(preset.name) : preset.name}</option>
-        )}
-        </select>
+        <div className="preset-choice">
+          <select
+              title={this.getPresetDescription(this.state.selectedPreset) || this.getAvailableOptionsOnlyText(this.state.selectedPreset.options, this.state.selectedNode.options)}
+              aria-label={_("Processing Preset")}
+              className="form-control preset-choice__select"
+              value={this.state.selectedPreset.id}
+              onChange={this.handleSelectPreset}>
+          {this.state.presets.map(preset =>
+              <option value={preset.id} key={preset.id} title={this.getPresetDescription(preset)} className={preset.system ? "system-preset" : ""}>{this.getPresetDisplayName(preset)}</option>
+          )}
+          </select>
+          {this.getPresetDescription(this.state.selectedPreset) ?
+            <div className="preset-choice__description">
+              <i className="fa fa-info-circle"></i> {this.getPresetDescription(this.state.selectedPreset)}
+            </div>
+          : ""}
+        </div>
 
         {!this.state.presetActionPerforming ?
         <div className="btn-group presets-dropdown">
@@ -611,11 +632,15 @@ class EditTaskForm extends React.Component {
               </div>
           </div>
           <div className="form-group form-inline">
-            <label className="col-sm-2 control-label">{_("Options")}</label>
+            <label className="col-sm-2 control-label">{_("Processing Preset")}</label>
             <div className="col-sm-10">
               {!this.props.inReview ? optionsSelector : 
                <div className="review-options">
-                {this.getAvailableOptionsOnlyText(this.state.selectedPreset.options, this.state.selectedNode.options)}
+                <div className="review-options__preset">{this.getPresetDisplayName(this.state.selectedPreset)}</div>
+                {this.getPresetDescription(this.state.selectedPreset) ?
+                  <div className="review-options__description">{this.getPresetDescription(this.state.selectedPreset)}</div>
+                : ""}
+                <div className="review-options__summary">{this.getAvailableOptionsOnlyText(this.state.selectedPreset.options, this.state.selectedNode.options)}</div>
                </div>}
             </div>
           </div>

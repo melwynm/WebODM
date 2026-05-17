@@ -16,6 +16,7 @@ from .issues import ProjectIssueViewSet
 from .design_overlays import ProjectDesignOverlayViewSet
 from .reports import ProjectProgressReport
 from .workers import CheckTask, GetTaskResult
+from .status import APIStatus
 from .users import UsersList
 from .externalauth import ExternalTokenAuth
 from webodm import settings
@@ -36,6 +37,7 @@ admin_router.register(r'admin/groups', AdminGroupViewSet, basename='admin-groups
 admin_router.register(r'admin/profiles', AdminProfileViewSet, basename='admin-profiles')
 
 urlpatterns = [
+    re_path(r'^status/$', APIStatus.as_view(), name='api_status'),
     re_path(r'processingnodes/options/$', ProcessingNodeOptionsView.as_view()),
 
     re_path(r'^', include(router.urls)),

@@ -60,6 +60,7 @@ const api = {
       new AssetDownload(_("Textured Model (3D Tiles)"),"3d_tiles_model.zip","fab fa-connectdevelop"),
       new AssetDownload(_("Textured Model (GLB)"),"textured_model.glb","fab fa-connectdevelop"),
       new AssetDownload(_("Textured Model (FBX)"),"textured_model.fbx.zip","fab fa-connectdevelop"),
+      new AssetDownload(_("Gaussian Splat"),"gaussian_splat.ply","fa fa-dot-circle"),
       new AssetDownload(_("Camera Parameters"),"cameras.json","fa fa-camera"),
       new AssetDownload(_("Camera Shots"),"shots.geojson","fa fa-camera", vectorExportFormats),
       new AssetDownload(_("Ground Control Points"),"ground_control_points.geojson","far fa-dot-circle", vectorExportFormats),

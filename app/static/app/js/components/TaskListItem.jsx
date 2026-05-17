@@ -794,7 +794,7 @@ class TaskListItem extends React.Component {
 
       actionButtons = (<div className="action-buttons">
             {showAssetButtons ?
-              <AssetDownloadButtons task={this.state.task} disabled={disabled} />
+              <AssetDownloadButtons task={this.state.task} disabled={disabled} direction="up" />
             : ""}
             {actionButtons.map(button => {
               const subItems = button.options.subItems || [];

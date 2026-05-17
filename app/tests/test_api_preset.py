@@ -27,6 +27,7 @@ class TestApiPreset(BootTestCase):
         self.assertTrue(Preset.objects.filter(name="Forest", system=True).exists())
         self.assertTrue(Preset.objects.filter(name="Buildings", system=True).exists())
         self.assertTrue(Preset.objects.filter(name="3D Model", system=True).exists())
+        self.assertTrue(Preset.objects.filter(name="Commercial 3D Model", system=True).exists())
         self.assertTrue(Preset.objects.filter(name="Multispectral", system=True).exists())
         self.assertTrue(Preset.objects.filter(name="Thermal", system=True).exists())
         self.assertTrue(Preset.objects.filter(name="DJI Drone", system=True).exists())
@@ -37,6 +38,11 @@ class TestApiPreset(BootTestCase):
         dji = Preset.objects.get(name="DJI Drone", system=True)
         self.assertTrue(any(option.get('name') == 'sfm-algorithm' and option.get('value') == 'triangulation' for option in dji.options))
         self.assertTrue(any(option.get('name') == 'feature-quality' and option.get('value') == 'ultra' for option in dji.options))
+
+        commercial_3d = Preset.objects.get(name="Commercial 3D Model", system=True)
+        self.assertTrue(commercial_3d.description)
+        self.assertTrue(any(option.get('name') == 'pc-quality' and option.get('value') == 'ultra' for option in commercial_3d.options))
+        self.assertTrue(any(option.get('name') == 'mesh-size' and option.get('value') == '2000000' for option in commercial_3d.options))
 
     def test_preset(self):
         client = APIClient()
@@ -70,6 +76,7 @@ class TestApiPreset(BootTestCase):
         self.assertTrue('My Local Preset' in [preset['name'] for preset in res.data])
         self.assertTrue('High Resolution' in [preset['name'] for preset in res.data])
         self.assertTrue('DJI Drone' in [preset['name'] for preset in res.data])
+        self.assertTrue('Commercial 3D Model' in [preset['name'] for preset in res.data])
         self.assertTrue('Global Preset #1' in [preset['name'] for preset in res.data])
         self.assertTrue('Global Preset #2' in [preset['name'] for preset in res.data])
         self.assertFalse('Local Preset #1' in [preset['name'] for preset in res.data])

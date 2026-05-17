@@ -1,5 +1,8 @@
 .asset-download-buttons{
     display: inline-block;
+    position: relative;
+    vertical-align: middle;
+
     button{
         margin-right: 0 !important;
         i{
@@ -8,10 +11,40 @@
     }
 
     &.btn-group{
+        display: inline-flex;
+        align-items: stretch;
+        flex-wrap: nowrap;
+
         button{
+            flex: 0 0 auto;
+            white-space: nowrap;
+
             i{
                 left: auto;
             }
         }
+
+        > .btn:first-child:not(:last-child){
+            border-top-right-radius: 0;
+            border-bottom-right-radius: 0;
+        }
+
+        > .dropdown-toggle{
+            width: 42px;
+            padding-left: 12px;
+            padding-right: 12px;
+            border-top-left-radius: 0;
+            border-bottom-left-radius: 0;
+        }
+    }
+
+    &.open{
+        z-index: 1200;
+    }
+
+    .dropdown-menu{
+        z-index: 1210;
+        max-height: min(320px, 60vh);
+        overflow-y: auto;
     }
 }

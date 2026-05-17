@@ -200,6 +200,7 @@ class Task(models.Model):
             },
             'textured_model.glb': os.path.join('odm_texturing', 'odm_textured_model_geo.glb'),
             'textured_model.fbx.zip': os.path.join('odm_texturing', 'odm_textured_model_geo.obj'),
+            'gaussian_splat.ply': os.path.join('odm_gaussian_splat', 'gaussian_splat.ply'),
             '3d_tiles_model.zip': {
                 'deferred_path': '3d_tiles_model.zip',
                 'deferred_compress_dir': os.path.join('3d_tiles', 'model')
