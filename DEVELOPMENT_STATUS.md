@@ -1,6 +1,6 @@
 # Development Status
 
-Last updated: 2026-05-17
+Last updated: 2026-05-18
 
 ## Purpose
 
@@ -18,6 +18,13 @@ This file tracks the current state of this fork so future work can start from th
 - Reduce operational issues in local Docker and NodeODM setups
 
 ## Recently Completed
+
+### Core Platform Hardening - Platform Audit
+
+- Added a platform audit service that verifies custom fork docs, templates, API modules, service modules, routes, models, and settings still exist after upgrades or refactors
+- Added a `platformaudit` management command that reports missing or broken custom surfaces and exits non-zero when required pieces are absent
+- Added regression coverage for the audit service, JSON command output, command summary output, and missing-file reporting
+- Updated the canonical pipeline so P6 is working and P7 is the next priority
 
 ### Textured Model QA And Sharing
 
@@ -174,6 +181,7 @@ This file tracks the current state of this fork so future work can start from th
 - Client sharing portal links with viewer/reviewer roles and tokenized client comments
 - Textured model QA and tokenized client 3D review links
 - Feature validation ledger via `/feature-validations/`, `/api/feature-validations/`, and Django admin for tested/untested/failing/blocked tracking
+- Platform upgrade audit via `python manage.py platformaudit`
 - Stakeholder progress reports from the dashboard via each project's `Report` link
 - OneDrive-synced folder task intake via `python manage.py onedriveintake --project <id> --folder <path>`
 - NodeODM stale-hostname repair via `python manage.py syncdefaultnodes --count 1`
@@ -204,8 +212,10 @@ docker exec webapp python manage.py test app.tests.test_api_project_reports --ke
 docker exec webapp python manage.py test app.tests.test_api_client_portal --keepdb
 docker exec webapp python manage.py test app.tests.test_api_textured_model_qa --keepdb
 docker exec webapp python manage.py test app.tests.test_api_feature_validation --keepdb
+docker exec webapp python manage.py test app.tests.test_platform_audit --keepdb
 docker exec webapp python manage.py test app.tests.test_onedrive_intake --keepdb
 docker exec webapp python manage.py test app.tests.test_app.TestApp.test_syncdefaultnodes_repairs_legacy_default_node --keepdb
+docker exec webapp python manage.py platformaudit
 docker exec webapp python manage.py syncdefaultnodes --count 1
 docker exec webapp python manage.py onedriveintake --project <project-id> --folder /webodm/app/media/imports/onedrive --dry-run
 ```
