@@ -79,6 +79,19 @@ class MonitoringCompareButton extends React.Component {
     return this.state.timelineTasks.find(task => task.id === taskId) || null;
   }
 
+  getPairReadiness = () => {
+    const compareTask = this.getTaskById(this.state.compareTaskId);
+    if (compareTask && compareTask.pair_readiness) return compareTask.pair_readiness;
+    return null;
+  }
+
+  getReadinessValue = (ready, readyLabel, missingLabel) => {
+    return {
+      ready,
+      label: ready ? readyLabel : missingLabel
+    };
+  }
+
   isKnownTaskId = (tasks, taskId) => {
     if (!taskId) return false;
     return tasks.some(task => task.id === taskId);
@@ -221,6 +234,41 @@ class MonitoringCompareButton extends React.Component {
     );
   }
 
+  renderReadiness(){
+    const referenceTask = this.getTaskById(this.state.referenceTaskId);
+    const compareTask = this.getTaskById(this.state.compareTaskId);
+    const pairReadiness = this.getPairReadiness();
+    const referenceReady = referenceTask && referenceTask.readiness ? referenceTask.readiness.can_compare : false;
+    const compareReady = compareTask && compareTask.readiness ? compareTask.readiness.can_compare : false;
+    const terrain = pairReadiness && pairReadiness.terrain_products ? pairReadiness.terrain_products : {};
+    const cache = pairReadiness && pairReadiness.cache ? pairReadiness.cache : {};
+    const issues = pairReadiness && Array.isArray(pairReadiness.issues) ? pairReadiness.issues : [];
+
+    const items = [
+      this.getReadinessValue(referenceReady, _('Reference ready'), _('Reference missing')),
+      this.getReadinessValue(compareReady, _('Compare ready'), _('Compare missing')),
+      this.getReadinessValue(!!terrain.dsm_delta, _('DSM delta'), _('No DSM delta')),
+      this.getReadinessValue(!!terrain.dtm_delta, _('DTM delta'), _('No DTM delta')),
+      this.getReadinessValue(!!cache.ready, _('Cached'), _('Not cached'))
+    ];
+
+    return (
+      <div className="panel-section readiness-section">
+        <label>{_('Readiness')}</label>
+        <div className="readiness-grid">
+          {items.map(item => (
+            <div key={item.label} className={'readiness-chip ' + (item.ready ? 'is-ready' : 'is-muted')}>
+              <i className={'fa ' + (item.ready ? 'fa-check-circle' : 'fa-circle')}></i>
+              <span>{item.label}</span>
+            </div>
+          ))}
+        </div>
+        {cache.ready && cache.generated_at ? <div className="panel-muted readiness-cache">{_('Cached result')}: {new Date(cache.generated_at).toLocaleString()}</div> : ''}
+        {issues.length > 0 ? <div className="readiness-warning"><i className="fa fa-exclamation-triangle"></i> {issues[0]}</div> : ''}
+      </div>
+    );
+  }
+
   renderTimeline(){
     const { loadingTimeline, timelineTasks, referenceTaskId, compareTaskId } = this.state;
 
@@ -254,7 +302,13 @@ class MonitoringCompareButton extends React.Component {
                   {task.is_context ? <span className="timeline-badge muted">{_('Current')}</span> : ''}
                   {isReference ? <span className="timeline-badge primary">{_('Reference')}</span> : ''}
                   {isCompare ? <span className="timeline-badge accent">{_('Compare')}</span> : ''}
+                  {task.readiness && task.readiness.can_compare ? <span className="timeline-badge ready">{_('Ready')}</span> : ''}
                 </div>
+                {task.readiness ? <div className="timeline-readiness">
+                  <span><i className="fa fa-image"></i> {_('Ortho')}</span>
+                  {task.readiness.assets && task.readiness.assets.dsm ? <span><i className="fa fa-mountain"></i> {_('DSM')}</span> : ''}
+                  {task.readiness.assets && task.readiness.assets.dtm ? <span><i className="fa fa-mountain"></i> {_('DTM')}</span> : ''}
+                </div> : ''}
                 <div className="timeline-actions">
                   <button type="button" className="btn btn-default btn-sm" onClick={e => { e.stopPropagation(); this.handleReferenceTask(task.id); }}>{_('Set Reference')}</button>
                   <button type="button" className="btn btn-default btn-sm" onClick={e => { e.stopPropagation(); this.handleCompareTask(task.id); }} disabled={timelineTasks.length < 2}>{_('Set Compare')}</button>
@@ -317,6 +371,7 @@ class MonitoringCompareButton extends React.Component {
           </div>
 
           {this.renderSelectionSummary()}
+          {this.renderReadiness()}
 
           <div className="panel-section timeline-section">
             <label>{_('Timeline')}</label>

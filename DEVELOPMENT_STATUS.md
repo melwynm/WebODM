@@ -19,6 +19,12 @@ This file tracks the current state of this fork so future work can start from th
 
 ## Recently Completed
 
+### Monitoring Readiness UX
+
+- Added readiness indicators to the monitoring timeline panel so users can see reference readiness, comparison readiness, DSM/DTM delta availability, and cache state before loading a comparison
+- Added asset badges to timeline tasks for orthophoto, DSM, and DTM availability
+- Added React regression coverage for the monitoring readiness panel
+
 ### Feature Validation Dashboard UX
 
 - Reworked the staff feature validation page into a system-health dashboard grouped by P1-P14 pipeline item
