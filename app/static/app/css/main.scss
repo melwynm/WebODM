@@ -700,11 +700,11 @@ body.app-shell {
         color: var(--dash-shell-text);
 
         .navbar-header {
-            flex: 0 0 250px;
-            width: 250px;
+            flex: 0 0 268px;
+            width: 268px;
             height: 64px;
             padding: 0 18px;
-            background: rgba(255, 255, 255, 0.018);
+            background: #0f1216;
             border-right: 1px solid var(--dash-shell-border-soft);
         }
 
@@ -728,7 +728,7 @@ body.app-shell {
             margin: 0 0 0 12px;
             color: var(--dash-shell-text);
             font-size: 14px;
-            font-weight: 600;
+            font-weight: 700;
             line-height: 1.2;
             white-space: nowrap;
             overflow: hidden;
@@ -736,8 +736,7 @@ body.app-shell {
         }
 
         .navbar-top-links {
-            height: 64px;
-            margin-right: 14px;
+            display: none;
         }
 
         .shell-theme-toggle-item {
@@ -833,17 +832,50 @@ body.app-shell {
     }
 
     .navbar-default.sidebar {
-        width: 250px;
+        width: 268px;
+        position: fixed;
+        top: 64px;
+        bottom: 0;
+        left: 0;
         margin-top: 0;
         background: #0f1216;
         border-right: 1px solid var(--dash-shell-border-soft);
         border-top: 0;
         box-shadow: none;
+        overflow: visible;
 
         .sidebar-nav.navbar-collapse {
+            height: 100%;
             background: transparent;
             border: 0;
-            padding: 12px 10px;
+            padding: 0;
+        }
+
+        .sidebar-shell {
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            min-height: 0;
+            padding: 14px 12px;
+        }
+
+        .sidebar-nav-scroll {
+            flex: 1 1 auto;
+            min-height: 0;
+            overflow-y: auto;
+            overflow-x: hidden;
+            padding-right: 2px;
+            scrollbar-width: thin;
+            scrollbar-color: rgba(148, 163, 184, 0.34) transparent;
+
+            &::-webkit-scrollbar {
+                width: 6px;
+            }
+
+            &::-webkit-scrollbar-thumb {
+                background: rgba(148, 163, 184, 0.32);
+                border-radius: 999px;
+            }
         }
 
         ul#side-menu.nav {
@@ -857,13 +889,13 @@ body.app-shell {
             a {
                 display: flex;
                 align-items: center;
-                gap: 9px;
-                min-height: 40px;
+                gap: 10px;
+                min-height: 42px;
                 padding: 10px 12px;
-                border-radius: 10px;
+                border-radius: 12px;
                 color: var(--dash-shell-muted);
                 font-size: 13px;
-                font-weight: 500;
+                font-weight: 600;
                 line-height: 1.25;
                 word-break: normal;
                 border: 1px solid transparent;
@@ -892,8 +924,8 @@ body.app-shell {
             a:focus,
             a.active,
             li.active > a {
-                background: rgba(0, 212, 170, 0.09);
-                border-color: rgba(0, 212, 170, 0.14);
+                background: rgba(0, 212, 170, 0.1);
+                border-color: rgba(0, 212, 170, 0.18);
                 color: var(--dash-shell-accent);
                 text-decoration: none;
             }
@@ -910,6 +942,126 @@ body.app-shell {
                 }
             }
         }
+
+        .sidebar-footer {
+            flex: 0 0 auto;
+            display: grid;
+            gap: 10px;
+            padding-top: 12px;
+            margin-top: 12px;
+            border-top: 1px solid var(--dash-shell-border-soft);
+        }
+
+        .shell-theme-toggle {
+            width: 100%;
+            min-height: 40px;
+            border-radius: 12px;
+        }
+
+        .sidebar-user-menu {
+            position: relative;
+        }
+
+        .sidebar-user-card {
+            display: grid;
+            grid-template-columns: 38px minmax(0, 1fr) 18px;
+            align-items: center;
+            gap: 10px;
+            min-height: 58px;
+            padding: 10px;
+            border: 1px solid var(--dash-shell-border-soft);
+            border-radius: 14px;
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.025));
+            color: var(--dash-shell-text);
+            box-shadow: 0 18px 44px -34px rgba(0, 0, 0, 0.8);
+            text-decoration: none;
+            transition: background-color 0.16s ease, border-color 0.16s ease, transform 0.16s ease;
+
+            &:hover,
+            &:focus {
+                background: rgba(0, 212, 170, 0.1);
+                border-color: rgba(0, 212, 170, 0.2);
+                color: var(--dash-shell-text);
+                text-decoration: none;
+                transform: translateY(-1px);
+                outline: none;
+            }
+        }
+
+        .sidebar-user-avatar {
+            width: 38px;
+            height: 38px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 12px;
+            background: rgba(0, 212, 170, 0.13);
+            color: var(--dash-shell-accent);
+            font-size: 14px;
+        }
+
+        .sidebar-user-meta {
+            min-width: 0;
+            display: grid;
+            gap: 2px;
+        }
+
+        .sidebar-user-name,
+        .sidebar-user-email {
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .sidebar-user-name {
+            color: var(--dash-shell-text);
+            font-size: 13px;
+            font-weight: 700;
+        }
+
+        .sidebar-user-email {
+            color: var(--dash-shell-muted);
+            font-size: 11px;
+            line-height: 1.2;
+        }
+
+        .sidebar-user-more {
+            color: var(--dash-shell-muted);
+            text-align: center;
+        }
+
+        .sidebar-user-menu > .dropdown-menu {
+            left: 0;
+            right: auto;
+            bottom: calc(100% + 10px);
+            top: auto;
+            width: 244px;
+            padding: 8px;
+            background: #15181e;
+            border: 1px solid var(--dash-shell-border);
+            border-radius: 14px;
+            box-shadow: 0 18px 48px rgba(0, 0, 0, 0.48);
+
+            > li > a {
+                border-radius: 10px;
+                color: var(--dash-shell-text) !important;
+            }
+
+            > li > a:hover,
+            > li > a:focus {
+                background: rgba(0, 212, 170, 0.1);
+                color: var(--dash-shell-accent) !important;
+            }
+
+            .divider {
+                margin: 7px 0;
+                background-color: var(--dash-shell-border-soft);
+            }
+
+            .info-item {
+                color: var(--dash-shell-muted);
+            }
+        }
     }
 
     footer {
@@ -918,7 +1070,7 @@ body.app-shell {
 
     @media (min-width: 768px) {
         #page-wrapper {
-            margin-left: 250px;
+            margin-left: 268px;
         }
     }
 
@@ -961,11 +1113,33 @@ body.app-shell {
 
         .navbar-default.sidebar {
             width: 100%;
+            position: static;
+            min-height: 0;
             border-right: 0;
             border-bottom: 1px solid var(--dash-shell-border-soft);
 
             .sidebar-nav.navbar-collapse {
                 padding: 10px;
+            }
+
+            .sidebar-shell {
+                height: auto;
+                padding: 0;
+            }
+
+            .sidebar-nav-scroll {
+                overflow: visible;
+            }
+
+            .sidebar-footer {
+                margin-top: 10px;
+                padding-top: 10px;
+            }
+
+            .sidebar-user-menu > .dropdown-menu {
+                position: static;
+                width: 100%;
+                margin-top: 8px;
             }
         }
     }
@@ -989,7 +1163,7 @@ body.app-shell[data-shell-theme="light"] {
         background: rgba(255, 255, 255, 0.96);
 
         .navbar-header {
-            background: rgba(15, 23, 42, 0.025);
+            background: #ffffff;
         }
 
         .user-menu-dropdown > .dropdown-menu {
@@ -1000,6 +1174,16 @@ body.app-shell[data-shell-theme="light"] {
 
     .navbar-default.sidebar {
         background: #ffffff;
+
+        .sidebar-user-card {
+            background: linear-gradient(135deg, rgba(15, 23, 42, 0.035), rgba(15, 23, 42, 0.015));
+            box-shadow: 0 18px 44px -36px rgba(15, 23, 42, 0.5);
+        }
+
+        .sidebar-user-menu > .dropdown-menu {
+            background: #ffffff;
+            box-shadow: 0 18px 44px rgba(15, 23, 42, 0.18);
+        }
     }
 
     .breadcrumb,
