@@ -131,8 +131,10 @@ class TestFeatureValidationApi(BootTestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, 'Client Sharing Portal')
         self.assertContains(response, 'Add Feature')
-        self.assertContains(response, 'Coverage')
+        self.assertContains(response, 'System Health')
+        self.assertContains(response, 'Test Coverage')
         self.assertContains(response, 'Need Attention')
+        self.assertContains(response, 'P3')
 
         response = self.client.post(
             '/feature-validations/',

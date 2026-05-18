@@ -146,6 +146,67 @@ class FeatureValidationForm(forms.ModelForm):
         )
 
 
+PIPELINE_AREAS = (
+    ('P1', _('Mobile/Field Photo Capture')),
+    ('P2', _('AI-Assisted Issue Detection')),
+    ('P3', _('Client Sharing Portal')),
+    ('P4', _('Textured Model QA + Sharing')),
+    ('P5', _('Feature Validation Ledger')),
+    ('P6', _('Core Platform Hardening')),
+    ('P7', _('Monitoring Compare MVP')),
+    ('P8', _('Project Timeline Monitoring')),
+    ('P9', _('DSM/DTM Delta and Cut/Fill')),
+    ('P10', _('Change Issues and Annotations')),
+    ('P11', _('Advanced Alignment')),
+    ('P12', _('Stakeholder Reports')),
+    ('P13', _('Design/BIM/Plan Overlays')),
+    ('P14', _('OneDrive Folder Task Intake')),
+)
+
+
+def _feature_validation_status_counts(features):
+    return {
+        status: sum(1 for feature in features if feature.status == status)
+        for status, _label in FeatureValidation.STATUS_CHOICES
+    }
+
+
+def _feature_validation_area_summary(area, label, features):
+    features = list(features)
+    total = len(features)
+    tested = sum(1 for feature in features if feature.status == FeatureValidation.STATUS_TESTED)
+    attention = sum(1 for feature in features if feature.needs_attention)
+    return {
+        'area': area,
+        'label': label,
+        'features': features,
+        'total': total,
+        'tested': tested,
+        'attention': attention,
+        'coverage_percent': int(round((tested / total) * 100)) if total else 0,
+        'status_counts': _feature_validation_status_counts(features),
+    }
+
+
+def _feature_validation_groups(all_features, include_empty_pipeline=True):
+    features_by_area = {}
+    for feature in all_features:
+        features_by_area.setdefault(feature.area or _('Unassigned'), []).append(feature)
+
+    groups = []
+    used_areas = set()
+    for area, label in PIPELINE_AREAS:
+        used_areas.add(area)
+        features = features_by_area.get(area, [])
+        if include_empty_pipeline or features:
+            groups.append(_feature_validation_area_summary(area, label, features))
+
+    for area in sorted(area for area in features_by_area.keys() if area not in used_areas):
+        groups.append(_feature_validation_area_summary(area, area, features_by_area.get(area, [])))
+
+    return groups
+
+
 @login_required
 @user_passes_test(lambda user: user.is_staff)
 def feature_validations(request):
@@ -169,7 +230,11 @@ def feature_validations(request):
 
         messages.error(request, _("Could not save feature validation. Please check the fields."))
 
-    features = FeatureValidation.objects.select_related('last_tested_by').order_by('area', 'name')
+    features = FeatureValidation.objects.select_related('last_tested_by').order_by(
+        'area',
+        'status',
+        'name',
+    )
     selected_status = request.GET.get('status', '')
     selected_area = request.GET.get('area', '')
     attention_only = request.GET.get('attention') in ('1', 'true', 'yes')
@@ -185,28 +250,32 @@ def feature_validations(request):
             FeatureValidation.STATUS_BLOCKED,
         ))
 
-    all_features = FeatureValidation.objects.select_related('last_tested_by')
-    total_features = all_features.count()
-    tested_count = all_features.filter(status=FeatureValidation.STATUS_TESTED).count()
-    attention_count = all_features.filter(status__in=(
-        FeatureValidation.STATUS_UNTESTED,
-        FeatureValidation.STATUS_FAILING,
-        FeatureValidation.STATUS_BLOCKED,
-    )).count()
+    all_features = list(FeatureValidation.objects.select_related('last_tested_by').order_by('area', 'name'))
+    filtered_features = list(features)
+    total_features = len(all_features)
+    tested_count = sum(1 for feature in all_features if feature.status == FeatureValidation.STATUS_TESTED)
+    attention_count = sum(1 for feature in all_features if feature.needs_attention)
     coverage_percent = int(round((tested_count / total_features) * 100)) if total_features else 0
-    areas = all_features.exclude(area='').order_by('area').values_list('area', flat=True).distinct()
+    areas = sorted({feature.area for feature in all_features if feature.area})
     status_summaries = [
         {
             'status': status,
             'label': label,
-            'count': all_features.filter(status=status).count(),
+            'count': sum(1 for feature in all_features if feature.status == status),
         }
         for status, label in FeatureValidation.STATUS_CHOICES
     ]
+    groups = _feature_validation_groups(
+        filtered_features,
+        include_empty_pipeline=not (selected_status or selected_area or attention_only),
+    )
+    attention_features = [feature for feature in all_features if feature.needs_attention][:8]
 
     return render(request, 'app/feature_validations.html', {
         'title': _('Feature Validation'),
-        'features': features,
+        'features': filtered_features,
+        'feature_groups': groups,
+        'attention_features': attention_features,
         'status_summaries': status_summaries,
         'total_features': total_features,
         'tested_count': tested_count,

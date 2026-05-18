@@ -3,103 +3,221 @@
 
 {% block content %}
 <style>
-    .validation-header {
+    .validation-shell {
+        color: #1f2937;
+        padding-bottom: 24px;
+    }
+    .validation-hero {
         align-items: flex-start;
         display: flex;
-        gap: 18px;
+        gap: 24px;
         justify-content: space-between;
-        margin-bottom: 20px;
+        margin-bottom: 18px;
     }
-    .validation-header h2 {
-        font-size: 24px;
-        font-weight: 600;
+    .validation-hero h2 {
+        font-size: 26px;
+        font-weight: 700;
         margin: 0 0 6px;
     }
-    .validation-counts {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 8px;
-        justify-content: flex-end;
+    .validation-hero p {
+        color: #667085;
+        margin: 0;
+        max-width: 760px;
     }
-    .validation-count {
-        background: #eef2f6;
+    .validation-metrics {
+        display: grid;
+        gap: 10px;
+        grid-template-columns: repeat(4, minmax(118px, 1fr));
+        margin-bottom: 18px;
+    }
+    .validation-metric {
+        background: #fff;
+        border: 1px solid #d9e2ec;
         border-radius: 6px;
-        color: #344054;
-        min-width: 92px;
-        padding: 8px 10px;
-        text-align: center;
+        color: #1f2937;
+        min-height: 78px;
+        padding: 12px;
     }
-    .validation-count--attention {
-        background: #fef3c7;
-        color: #92400e;
-    }
-    .validation-count--coverage {
-        background: #dcfce7;
-        color: #166534;
-    }
-    .validation-count strong {
+    .validation-metric strong {
         display: block;
-        font-size: 20px;
+        font-size: 24px;
         line-height: 1.1;
     }
-    .validation-grid {
+    .validation-metric span {
+        color: #667085;
+        display: block;
+        font-size: 12px;
+        font-weight: 700;
+        margin-top: 5px;
+        text-transform: uppercase;
+    }
+    .validation-metric--attention strong { color: #b45309; }
+    .validation-metric--coverage strong { color: #047857; }
+    .validation-layout {
         display: grid;
         gap: 18px;
-        grid-template-columns: minmax(0, 1fr) 360px;
+        grid-template-columns: minmax(0, 1fr) 340px;
     }
     .validation-panel {
         background: #fff;
         border: 1px solid #d9e2ec;
         border-radius: 6px;
+        color: #1f2937;
         padding: 16px;
+    }
+    .validation-panel h3 {
+        color: #1f2937;
+        font-size: 16px;
+        font-weight: 700;
+        margin: 0 0 12px;
+    }
+    .validation-shell .validation-panel label {
+        color: #344054;
+    }
+    .validation-shell .validation-panel .checkbox label {
+        color: #475467;
+    }
+    .validation-shell .validation-toolbar label,
+    .validation-shell .validation-panel h3 {
+        color: #344054 !important;
+    }
+    .validation-shell .btn-default {
+        color: #344054;
     }
     .validation-toolbar {
         align-items: flex-end;
         display: flex;
         flex-wrap: wrap;
         gap: 10px;
-        margin-bottom: 14px;
+        margin-bottom: 16px;
     }
     .validation-toolbar .form-group {
         margin-bottom: 0;
-        min-width: 160px;
+        min-width: 150px;
     }
-    .validation-table {
-        margin-bottom: 0;
+    .validation-area-grid {
+        display: grid;
+        gap: 12px;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
     }
-    .validation-table td {
-        vertical-align: top;
+    .validation-area {
+        border: 1px solid #d9e2ec;
+        border-radius: 6px;
+        overflow: hidden;
+    }
+    .validation-area__header {
+        align-items: center;
+        background: #f8fafc;
+        border-bottom: 1px solid #d9e2ec;
+        display: flex;
+        justify-content: space-between;
+        padding: 12px;
+    }
+    .validation-area__title {
+        min-width: 0;
+    }
+    .validation-area__title strong {
+        display: block;
+        font-size: 14px;
+    }
+    .validation-area__title span {
+        color: #667085;
+        display: block;
+        font-size: 12px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+    .validation-area__coverage {
+        color: #047857;
+        font-size: 18px;
+        font-weight: 700;
+        min-width: 48px;
+        text-align: right;
+    }
+    .validation-area__counts {
+        display: grid;
+        gap: 1px;
+        grid-template-columns: repeat(5, 1fr);
+    }
+    .validation-status-count {
+        background: #fff;
+        padding: 8px 6px;
+        text-align: center;
+    }
+    .validation-status-count strong {
+        display: block;
+        font-size: 15px;
+    }
+    .validation-status-count span {
+        color: #667085;
+        display: block;
+        font-size: 10px;
+        text-transform: uppercase;
+    }
+    .validation-feature {
+        border-top: 1px solid #edf2f7;
+        padding: 12px;
+    }
+    .validation-feature--attention {
+        border-left: 3px solid #f59e0b;
+        padding-left: 9px;
+    }
+    .validation-feature__top {
+        align-items: flex-start;
+        display: flex;
+        gap: 10px;
+        justify-content: space-between;
+    }
+    .validation-feature__name {
+        font-weight: 700;
+    }
+    .validation-feature__meta,
+    .validation-feature__notes {
+        color: #667085;
+        font-size: 12px;
+        margin-top: 4px;
+    }
+    .validation-feature__notes {
+        color: #344054;
     }
     .validation-badge {
         border-radius: 999px;
         display: inline-block;
-        font-size: 12px;
-        font-weight: 600;
-        padding: 3px 8px;
+        font-size: 11px;
+        font-weight: 700;
+        padding: 4px 8px;
         text-transform: uppercase;
+        white-space: nowrap;
     }
-    .validation-badge--tested { background: #e6f4ea; color: #276749; }
-    .validation-badge--untested { background: #f1f5f9; color: #475569; }
-    .validation-badge--testing { background: #e0f2fe; color: #075985; }
+    .validation-badge--tested { background: #dcfce7; color: #166534; }
+    .validation-badge--untested { background: #eef2f6; color: #475569; }
+    .validation-badge--testing { background: #dbeafe; color: #1d4ed8; }
     .validation-badge--failing { background: #fee2e2; color: #991b1b; }
     .validation-badge--blocked { background: #fef3c7; color: #92400e; }
-    .validation-attention {
-        border-left: 3px solid #f59e0b;
+    .validation-attention-list {
+        display: grid;
+        gap: 8px;
+        margin-bottom: 16px;
     }
-    .validation-attention-note {
+    .validation-attention-item {
+        background: #fffbeb;
+        border: 1px solid #fde68a;
+        border-radius: 6px;
+        padding: 10px;
+    }
+    .validation-attention-item strong {
+        display: block;
+    }
+    .validation-attention-item span {
         color: #92400e;
         display: block;
         font-size: 12px;
-        font-weight: 600;
-        margin-top: 6px;
-    }
-    .validation-evidence {
-        display: inline-block;
-        margin-top: 6px;
+        margin-top: 3px;
     }
     .validation-empty {
-        color: #697586;
-        padding: 24px 0;
+        color: #667085;
+        padding: 24px 12px;
         text-align: center;
     }
     .validation-edit-form {
@@ -109,18 +227,35 @@
     .validation-edit-form.is-open {
         display: block;
     }
-    .validation-panel textarea {
+    .validation-panel textarea,
+    .validation-edit-form textarea {
         min-height: 88px;
         resize: vertical;
     }
-    @media (max-width: 980px) {
-        .validation-header,
-        .validation-grid {
+    .validation-actions {
+        align-items: center;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-top: 8px;
+    }
+    .validation-actions .btn-default {
+        background: #f8fafc;
+        border-color: #cbd5e1;
+        color: #344054 !important;
+    }
+    @media (max-width: 1080px) {
+        .validation-layout,
+        .validation-hero {
             display: block;
         }
-        .validation-counts {
-            justify-content: flex-start;
-            margin-top: 14px;
+        .validation-panel + .validation-panel {
+            margin-top: 18px;
+        }
+    }
+    @media (max-width: 760px) {
+        .validation-metrics {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
         }
         .validation-toolbar .form-group,
         .validation-toolbar .btn {
@@ -129,188 +264,229 @@
     }
 </style>
 
-<div class="validation-header">
-    <div>
-        <h2>{% trans "Feature Validation" %}</h2>
-        <p class="text-muted">{% trans "Track tested, untested, failing, and blocked workflows with evidence for future maintenance." %}</p>
-    </div>
-    <div class="validation-counts">
-        <div class="validation-count validation-count--coverage">
-            <strong>{{ coverage_percent }}%</strong>
-            <span>{% trans "Coverage" %}</span>
+<div class="validation-shell">
+    <div class="validation-hero">
+        <div>
+            <h2>{% trans "System Health" %}</h2>
+            <p>{% trans "Track every pipeline feature by tested state, evidence, and maintenance notes so future work starts from a reliable baseline." %}</p>
         </div>
-        <div class="validation-count validation-count--attention">
+    </div>
+
+    <div class="validation-metrics">
+        <div class="validation-metric validation-metric--coverage">
+            <strong>{{ coverage_percent }}%</strong>
+            <span>{% trans "Test Coverage" %}</span>
+        </div>
+        <div class="validation-metric validation-metric--attention">
             <strong>{{ attention_count }}</strong>
             <span>{% trans "Need Attention" %}</span>
         </div>
-        {% for summary in status_summaries %}
-            <div class="validation-count">
-                <strong>{{ summary.count }}</strong>
-                <span>{{ summary.label }}</span>
-            </div>
-        {% endfor %}
+        <div class="validation-metric">
+            <strong>{{ tested_count }}</strong>
+            <span>{% trans "Tested" %}</span>
+        </div>
+        <div class="validation-metric">
+            <strong>{{ total_features }}</strong>
+            <span>{% trans "Tracked Features" %}</span>
+        </div>
     </div>
-</div>
 
-<div class="validation-grid">
-    <section class="validation-panel">
-        <form class="validation-toolbar" method="get">
-            <div class="form-group">
-                <label>{% trans "Status" %}</label>
-                <select class="form-control" name="status">
-                    <option value="">{% trans "All statuses" %}</option>
-                    {% for status, label in status_choices %}
-                        <option value="{{ status }}" {% if selected_status == status %}selected{% endif %}>{{ label }}</option>
-                    {% endfor %}
-                </select>
-            </div>
-            <div class="form-group">
-                <label>{% trans "Area" %}</label>
-                <select class="form-control" name="area">
-                    <option value="">{% trans "All areas" %}</option>
-                    {% for area in areas %}
-                        <option value="{{ area }}" {% if selected_area == area %}selected{% endif %}>{{ area }}</option>
-                    {% endfor %}
-                </select>
-            </div>
-            <div class="checkbox">
-                <label>
-                    <input type="checkbox" name="attention" value="1" {% if attention_only %}checked{% endif %}>
-                    {% trans "Needs attention only" %}
-                </label>
-            </div>
-            <button class="btn btn-primary" type="submit">{% trans "Filter" %}</button>
-            <a class="btn btn-default" href="{% url 'feature_validations' %}">{% trans "Reset" %}</a>
-        </form>
+    <div class="validation-layout">
+        <section class="validation-panel">
+            <form class="validation-toolbar" method="get">
+                <div class="form-group">
+                    <label>{% trans "Status" %}</label>
+                    <select class="form-control" name="status">
+                        <option value="">{% trans "All statuses" %}</option>
+                        {% for status, label in status_choices %}
+                            <option value="{{ status }}" {% if selected_status == status %}selected{% endif %}>{{ label }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>{% trans "Pipeline" %}</label>
+                    <select class="form-control" name="area">
+                        <option value="">{% trans "All pipeline items" %}</option>
+                        {% for area in areas %}
+                            <option value="{{ area }}" {% if selected_area == area %}selected{% endif %}>{{ area }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="checkbox">
+                    <label>
+                        <input type="checkbox" name="attention" value="1" {% if attention_only %}checked{% endif %}>
+                        {% trans "Needs attention only" %}
+                    </label>
+                </div>
+                <button class="btn btn-primary" type="submit"><i class="fa fa-filter"></i> {% trans "Filter" %}</button>
+                <a class="btn btn-default" href="{% url 'feature_validations' %}">{% trans "Reset" %}</a>
+            </form>
 
-        <table class="table validation-table">
-            <thead>
-                <tr>
-                    <th>{% trans "Feature" %}</th>
-                    <th>{% trans "Status" %}</th>
-                    <th>{% trans "Last Tested" %}</th>
-                    <th></th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for feature in features %}
-                    <tr {% if feature.needs_attention %}class="validation-attention"{% endif %}>
-                        <td>
-                            <strong>{{ feature.name }}</strong>
-                            <div class="text-muted">{{ feature.area }} &middot; {{ feature.key }}</div>
-                            {% if feature.needs_attention %}
-                                <span class="validation-attention-note"><i class="fa fa-exclamation-triangle"></i> {{ feature.attention_reason }}</span>
-                            {% endif %}
-                            {% if feature.test_notes %}
-                                <p>{{ feature.test_notes }}</p>
-                            {% endif %}
-                            {% if feature.maintenance_notes %}
-                                <small class="text-muted">{{ feature.maintenance_notes }}</small>
-                            {% endif %}
-                            {% if feature.evidence_url %}
-                                <br>
-                                <a class="validation-evidence" href="{{ feature.evidence_url }}" target="_blank" rel="noopener">
-                                    <i class="fa fa-external-link-alt"></i> {% trans "Evidence" %}
-                                </a>
-                            {% endif %}
-                            <form class="validation-edit-form" id="feature-form-{{ feature.id }}" method="post">
-                                {% csrf_token %}
-                                <input type="hidden" name="feature_id" value="{{ feature.id }}">
-                                <input type="hidden" name="key" value="{{ feature.key }}">
-                                <div class="form-group">
-                                    <label>{% trans "Name" %}</label>
-                                    <input class="form-control" name="name" value="{{ feature.name }}" required>
+            <div class="validation-area-grid">
+                {% for group in feature_groups %}
+                    <article class="validation-area">
+                        <div class="validation-area__header">
+                            <div class="validation-area__title">
+                                <strong>{{ group.area }}</strong>
+                                <span>{{ group.label }}</span>
+                            </div>
+                            <div class="validation-area__coverage">{{ group.coverage_percent }}%</div>
+                        </div>
+                        <div class="validation-area__counts">
+                            {% for status, label in status_choices %}
+                                <div class="validation-status-count">
+                                    {% if status == 'untested' %}
+                                        <strong>{{ group.status_counts.untested }}</strong>
+                                    {% elif status == 'testing' %}
+                                        <strong>{{ group.status_counts.testing }}</strong>
+                                    {% elif status == 'tested' %}
+                                        <strong>{{ group.status_counts.tested }}</strong>
+                                    {% elif status == 'failing' %}
+                                        <strong>{{ group.status_counts.failing }}</strong>
+                                    {% elif status == 'blocked' %}
+                                        <strong>{{ group.status_counts.blocked }}</strong>
+                                    {% endif %}
+                                    <span>{{ label }}</span>
                                 </div>
-                                <div class="form-group">
-                                    <label>{% trans "Area" %}</label>
-                                    <input class="form-control" name="area" value="{{ feature.area }}">
+                            {% endfor %}
+                        </div>
+                        {% for feature in group.features %}
+                            <div class="validation-feature {% if feature.needs_attention %}validation-feature--attention{% endif %}">
+                                <div class="validation-feature__top">
+                                    <div>
+                                        <div class="validation-feature__name">{{ feature.name }}</div>
+                                        <div class="validation-feature__meta">{{ feature.key }}</div>
+                                    </div>
+                                    <span class="validation-badge validation-badge--{{ feature.status }}">{{ feature.get_status_display }}</span>
                                 </div>
-                                <div class="form-group">
-                                    <label>{% trans "Status" %}</label>
-                                    <select class="form-control" name="status">
-                                        {% for status, label in status_choices %}
-                                            <option value="{{ status }}" {% if feature.status == status %}selected{% endif %}>{{ label }}</option>
-                                        {% endfor %}
-                                    </select>
+                                <div class="validation-feature__meta">
+                                    {% if feature.last_tested_at %}
+                                        {% trans "Last tested" %}: {{ feature.last_tested_at|date:"Y-m-d H:i" }}
+                                        {% if feature.last_tested_by %}({{ feature.last_tested_by.username }}){% endif %}
+                                    {% else %}
+                                        {% trans "Not tested yet" %}
+                                    {% endif %}
                                 </div>
-                                <div class="form-group">
-                                    <label>{% trans "Test Notes" %}</label>
-                                    <textarea class="form-control" name="test_notes">{{ feature.test_notes }}</textarea>
+                                {% if feature.needs_attention %}
+                                    <div class="validation-feature__notes"><i class="fa fa-exclamation-triangle"></i> {{ feature.attention_reason }}</div>
+                                {% endif %}
+                                {% if feature.test_notes %}
+                                    <div class="validation-feature__notes">{{ feature.test_notes }}</div>
+                                {% endif %}
+                                {% if feature.maintenance_notes %}
+                                    <div class="validation-feature__meta">{{ feature.maintenance_notes }}</div>
+                                {% endif %}
+                                <div class="validation-actions">
+                                    {% if feature.evidence_url %}
+                                        <a class="btn btn-default btn-xs" href="{{ feature.evidence_url }}" target="_blank" rel="noopener">
+                                            <i class="fa fa-external-link-alt"></i> {% trans "Evidence" %}
+                                        </a>
+                                    {% endif %}
+                                    <button class="btn btn-default btn-xs" type="button" data-feature-form="{{ feature.id }}">
+                                        <i class="fa fa-edit"></i> {% trans "Edit" %}
+                                    </button>
                                 </div>
-                                <div class="form-group">
-                                    <label>{% trans "Maintenance Notes" %}</label>
-                                    <textarea class="form-control" name="maintenance_notes">{{ feature.maintenance_notes }}</textarea>
-                                </div>
-                                <div class="form-group">
-                                    <label>{% trans "Evidence URL" %}</label>
-                                    <input class="form-control" name="evidence_url" value="{{ feature.evidence_url }}">
-                                </div>
-                                <button class="btn btn-primary" type="submit">{% trans "Save" %}</button>
-                            </form>
-                        </td>
-                        <td><span class="validation-badge validation-badge--{{ feature.status }}">{{ feature.get_status_display }}</span></td>
-                        <td>
-                            {% if feature.last_tested_at %}
-                                {{ feature.last_tested_at|date:"Y-m-d H:i" }}
-                                {% if feature.last_tested_by %}<div class="text-muted">{{ feature.last_tested_by.username }}</div>{% endif %}
-                            {% else %}
-                                <span class="text-muted">{% trans "Not tested" %}</span>
-                            {% endif %}
-                        </td>
-                        <td>
-                            <button class="btn btn-default btn-sm" type="button" data-feature-form="{{ feature.id }}">
-                                <i class="fa fa-edit"></i>
-                            </button>
-                        </td>
-                    </tr>
+                                <form class="validation-edit-form" id="feature-form-{{ feature.id }}" method="post">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="feature_id" value="{{ feature.id }}">
+                                    <input type="hidden" name="key" value="{{ feature.key }}">
+                                    <div class="form-group">
+                                        <label>{% trans "Name" %}</label>
+                                        <input class="form-control" name="name" value="{{ feature.name }}" required>
+                                    </div>
+                                    <div class="form-group">
+                                        <label>{% trans "Pipeline" %}</label>
+                                        <input class="form-control" name="area" value="{{ feature.area }}">
+                                    </div>
+                                    <div class="form-group">
+                                        <label>{% trans "Status" %}</label>
+                                        <select class="form-control" name="status">
+                                            {% for status, label in status_choices %}
+                                                <option value="{{ status }}" {% if feature.status == status %}selected{% endif %}>{{ label }}</option>
+                                            {% endfor %}
+                                        </select>
+                                    </div>
+                                    <div class="form-group">
+                                        <label>{% trans "Test Notes" %}</label>
+                                        <textarea class="form-control" name="test_notes">{{ feature.test_notes }}</textarea>
+                                    </div>
+                                    <div class="form-group">
+                                        <label>{% trans "Maintenance Notes" %}</label>
+                                        <textarea class="form-control" name="maintenance_notes">{{ feature.maintenance_notes }}</textarea>
+                                    </div>
+                                    <div class="form-group">
+                                        <label>{% trans "Evidence URL" %}</label>
+                                        <input class="form-control" name="evidence_url" value="{{ feature.evidence_url }}">
+                                    </div>
+                                    <button class="btn btn-primary" type="submit">{% trans "Save" %}</button>
+                                </form>
+                            </div>
+                        {% empty %}
+                            <div class="validation-empty">{% trans "No records yet." %}</div>
+                        {% endfor %}
+                    </article>
                 {% empty %}
-                    <tr>
-                        <td class="validation-empty" colspan="4">{% trans "No feature validation records match this view." %}</td>
-                    </tr>
+                    <div class="validation-empty">{% trans "No feature validation records match this view." %}</div>
                 {% endfor %}
-            </tbody>
-        </table>
-    </section>
+            </div>
+        </section>
 
-    <aside class="validation-panel">
-        <h3>{% trans "Add Feature" %}</h3>
-        <form method="post">
-            {% csrf_token %}
-            <div class="form-group">
-                <label>{% trans "Key" %}</label>
-                <input class="form-control" name="key" required>
-            </div>
-            <div class="form-group">
-                <label>{% trans "Name" %}</label>
-                <input class="form-control" name="name" required>
-            </div>
-            <div class="form-group">
-                <label>{% trans "Area" %}</label>
-                <input class="form-control" name="area">
-            </div>
-            <div class="form-group">
-                <label>{% trans "Status" %}</label>
-                <select class="form-control" name="status">
-                    {% for status, label in status_choices %}
-                        <option value="{{ status }}">{{ label }}</option>
+        <aside>
+            <section class="validation-panel">
+                <h3>{% trans "Needs Attention" %}</h3>
+                <div class="validation-attention-list">
+                    {% for feature in attention_features %}
+                        <div class="validation-attention-item">
+                            <strong>{{ feature.area }} · {{ feature.name }}</strong>
+                            <span>{{ feature.attention_reason }}</span>
+                        </div>
+                    {% empty %}
+                        <div class="validation-empty">{% trans "No attention items." %}</div>
                     {% endfor %}
-                </select>
-            </div>
-            <div class="form-group">
-                <label>{% trans "Test Notes" %}</label>
-                <textarea class="form-control" name="test_notes"></textarea>
-            </div>
-            <div class="form-group">
-                <label>{% trans "Maintenance Notes" %}</label>
-                <textarea class="form-control" name="maintenance_notes"></textarea>
-            </div>
-            <div class="form-group">
-                <label>{% trans "Evidence URL" %}</label>
-                <input class="form-control" name="evidence_url">
-            </div>
-            <button class="btn btn-primary" type="submit">{% trans "Add" %}</button>
-        </form>
-    </aside>
+                </div>
+            </section>
+
+            <section class="validation-panel">
+                <h3>{% trans "Add Feature" %}</h3>
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="form-group">
+                        <label>{% trans "Key" %}</label>
+                        <input class="form-control" name="key" required>
+                    </div>
+                    <div class="form-group">
+                        <label>{% trans "Name" %}</label>
+                        <input class="form-control" name="name" required>
+                    </div>
+                    <div class="form-group">
+                        <label>{% trans "Pipeline" %}</label>
+                        <input class="form-control" name="area">
+                    </div>
+                    <div class="form-group">
+                        <label>{% trans "Status" %}</label>
+                        <select class="form-control" name="status">
+                            {% for status, label in status_choices %}
+                                <option value="{{ status }}">{{ label }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>{% trans "Test Notes" %}</label>
+                        <textarea class="form-control" name="test_notes"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label>{% trans "Maintenance Notes" %}</label>
+                        <textarea class="form-control" name="maintenance_notes"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label>{% trans "Evidence URL" %}</label>
+                        <input class="form-control" name="evidence_url">
+                    </div>
+                    <button class="btn btn-primary" type="submit">{% trans "Add" %}</button>
+                </form>
+            </section>
+        </aside>
+    </div>
 </div>
 
 <script>

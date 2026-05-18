@@ -19,6 +19,13 @@ This file tracks the current state of this fork so future work can start from th
 
 ## Recently Completed
 
+### Feature Validation Dashboard UX
+
+- Reworked the staff feature validation page into a system-health dashboard grouped by P1-P14 pipeline item
+- Added top-level health metrics for test coverage, attention items, tested records, and tracked features
+- Added per-pipeline coverage cards with status counts, evidence links, maintenance notes, and inline editing
+- Added an attention panel so untested, failing, and blocked features are visible without scanning the full list
+
 ### Pipeline Reconciliation
 
 - Rechecked P1 through P14 against implementation evidence in APIs, services, models, management commands, UI hooks, and regression tests
