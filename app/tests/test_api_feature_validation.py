@@ -35,6 +35,8 @@ class TestFeatureValidationApi(BootTestCase):
         data = response.json()
         self.assertEqual(data['status'], FeatureValidation.STATUS_TESTED)
         self.assertEqual(data['last_tested_by_username'], self.admin_user.username)
+        self.assertFalse(data['needs_attention'])
+        self.assertEqual(data['attention_reason'], '')
         self.assertIsNotNone(data['last_tested_at'])
 
         feature = FeatureValidation.objects.get(key='client-sharing-portal')
@@ -68,6 +70,32 @@ class TestFeatureValidationApi(BootTestCase):
         data = response.json()
         self.assertEqual(len(data), 1)
         self.assertEqual(data[0]['key'], 'future-workflow')
+
+    def test_attention_filter_returns_unstable_validation_records(self):
+        FeatureValidation.objects.create(
+            key='tested-workflow',
+            name='Tested Workflow',
+            area='P1',
+            status=FeatureValidation.STATUS_TESTED,
+        )
+        FeatureValidation.objects.create(
+            key='blocked-workflow',
+            name='Blocked Workflow',
+            area='P2',
+            status=FeatureValidation.STATUS_BLOCKED,
+        )
+        FeatureValidation.objects.create(
+            key='failing-workflow',
+            name='Failing Workflow',
+            area='P3',
+            status=FeatureValidation.STATUS_FAILING,
+        )
+
+        response = self.client.get('/api/feature-validations/?attention=1')
+
+        self.assertEqual(response.status_code, 200)
+        keys = {item['key'] for item in response.json()}
+        self.assertEqual(keys, {'blocked-workflow', 'failing-workflow'})
 
     def test_status_update_is_logged(self):
         feature = FeatureValidation.objects.create(
@@ -103,6 +131,8 @@ class TestFeatureValidationApi(BootTestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, 'Client Sharing Portal')
         self.assertContains(response, 'Add Feature')
+        self.assertContains(response, 'Coverage')
+        self.assertContains(response, 'Need Attention')
 
         response = self.client.post(
             '/feature-validations/',
@@ -132,3 +162,23 @@ class TestFeatureValidationApi(BootTestCase):
         response = self.client.get('/feature-validations/')
 
         self.assertEqual(response.status_code, 302)
+
+    def test_staff_validation_page_filters_attention_records(self):
+        FeatureValidation.objects.create(
+            key='tested-workflow',
+            name='Tested Workflow',
+            area='P1',
+            status=FeatureValidation.STATUS_TESTED,
+        )
+        FeatureValidation.objects.create(
+            key='untested-workflow',
+            name='Untested Workflow',
+            area='P2',
+            status=FeatureValidation.STATUS_UNTESTED,
+        )
+
+        response = self.client.get('/feature-validations/?attention=1')
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'Untested Workflow')
+        self.assertNotContains(response, 'Tested Workflow')

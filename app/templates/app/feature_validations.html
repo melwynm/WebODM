@@ -29,6 +29,14 @@
         padding: 8px 10px;
         text-align: center;
     }
+    .validation-count--attention {
+        background: #fef3c7;
+        color: #92400e;
+    }
+    .validation-count--coverage {
+        background: #dcfce7;
+        color: #166534;
+    }
     .validation-count strong {
         display: block;
         font-size: 20px;
@@ -44,6 +52,17 @@
         border: 1px solid #d9e2ec;
         border-radius: 6px;
         padding: 16px;
+    }
+    .validation-toolbar {
+        align-items: flex-end;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-bottom: 14px;
+    }
+    .validation-toolbar .form-group {
+        margin-bottom: 0;
+        min-width: 160px;
     }
     .validation-table {
         margin-bottom: 0;
@@ -64,6 +83,20 @@
     .validation-badge--testing { background: #e0f2fe; color: #075985; }
     .validation-badge--failing { background: #fee2e2; color: #991b1b; }
     .validation-badge--blocked { background: #fef3c7; color: #92400e; }
+    .validation-attention {
+        border-left: 3px solid #f59e0b;
+    }
+    .validation-attention-note {
+        color: #92400e;
+        display: block;
+        font-size: 12px;
+        font-weight: 600;
+        margin-top: 6px;
+    }
+    .validation-evidence {
+        display: inline-block;
+        margin-top: 6px;
+    }
     .validation-empty {
         color: #697586;
         padding: 24px 0;
@@ -89,15 +122,27 @@
             justify-content: flex-start;
             margin-top: 14px;
         }
+        .validation-toolbar .form-group,
+        .validation-toolbar .btn {
+            width: 100%;
+        }
     }
 </style>
 
 <div class="validation-header">
     <div>
         <h2>{% trans "Feature Validation" %}</h2>
-        <p class="text-muted">{% trans "Track what has been tested, what is failing, and what needs future review." %}</p>
+        <p class="text-muted">{% trans "Track tested, untested, failing, and blocked workflows with evidence for future maintenance." %}</p>
     </div>
     <div class="validation-counts">
+        <div class="validation-count validation-count--coverage">
+            <strong>{{ coverage_percent }}%</strong>
+            <span>{% trans "Coverage" %}</span>
+        </div>
+        <div class="validation-count validation-count--attention">
+            <strong>{{ attention_count }}</strong>
+            <span>{% trans "Need Attention" %}</span>
+        </div>
         {% for summary in status_summaries %}
             <div class="validation-count">
                 <strong>{{ summary.count }}</strong>
@@ -109,6 +154,35 @@
 
 <div class="validation-grid">
     <section class="validation-panel">
+        <form class="validation-toolbar" method="get">
+            <div class="form-group">
+                <label>{% trans "Status" %}</label>
+                <select class="form-control" name="status">
+                    <option value="">{% trans "All statuses" %}</option>
+                    {% for status, label in status_choices %}
+                        <option value="{{ status }}" {% if selected_status == status %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="form-group">
+                <label>{% trans "Area" %}</label>
+                <select class="form-control" name="area">
+                    <option value="">{% trans "All areas" %}</option>
+                    {% for area in areas %}
+                        <option value="{{ area }}" {% if selected_area == area %}selected{% endif %}>{{ area }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="checkbox">
+                <label>
+                    <input type="checkbox" name="attention" value="1" {% if attention_only %}checked{% endif %}>
+                    {% trans "Needs attention only" %}
+                </label>
+            </div>
+            <button class="btn btn-primary" type="submit">{% trans "Filter" %}</button>
+            <a class="btn btn-default" href="{% url 'feature_validations' %}">{% trans "Reset" %}</a>
+        </form>
+
         <table class="table validation-table">
             <thead>
                 <tr>
@@ -120,15 +194,24 @@
             </thead>
             <tbody>
                 {% for feature in features %}
-                    <tr>
+                    <tr {% if feature.needs_attention %}class="validation-attention"{% endif %}>
                         <td>
                             <strong>{{ feature.name }}</strong>
-                            <div class="text-muted">{{ feature.area }} · {{ feature.key }}</div>
+                            <div class="text-muted">{{ feature.area }} &middot; {{ feature.key }}</div>
+                            {% if feature.needs_attention %}
+                                <span class="validation-attention-note"><i class="fa fa-exclamation-triangle"></i> {{ feature.attention_reason }}</span>
+                            {% endif %}
                             {% if feature.test_notes %}
                                 <p>{{ feature.test_notes }}</p>
                             {% endif %}
                             {% if feature.maintenance_notes %}
                                 <small class="text-muted">{{ feature.maintenance_notes }}</small>
+                            {% endif %}
+                            {% if feature.evidence_url %}
+                                <br>
+                                <a class="validation-evidence" href="{{ feature.evidence_url }}" target="_blank" rel="noopener">
+                                    <i class="fa fa-external-link-alt"></i> {% trans "Evidence" %}
+                                </a>
                             {% endif %}
                             <form class="validation-edit-form" id="feature-form-{{ feature.id }}" method="post">
                                 {% csrf_token %}
@@ -182,7 +265,7 @@
                     </tr>
                 {% empty %}
                     <tr>
-                        <td class="validation-empty" colspan="4">{% trans "No feature validation records yet." %}</td>
+                        <td class="validation-empty" colspan="4">{% trans "No feature validation records match this view." %}</td>
                     </tr>
                 {% endfor %}
             </tbody>

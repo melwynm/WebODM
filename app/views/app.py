@@ -170,11 +170,36 @@ def feature_validations(request):
         messages.error(request, _("Could not save feature validation. Please check the fields."))
 
     features = FeatureValidation.objects.select_related('last_tested_by').order_by('area', 'name')
+    selected_status = request.GET.get('status', '')
+    selected_area = request.GET.get('area', '')
+    attention_only = request.GET.get('attention') in ('1', 'true', 'yes')
+
+    if selected_status:
+        features = features.filter(status=selected_status)
+    if selected_area:
+        features = features.filter(area=selected_area)
+    if attention_only:
+        features = features.filter(status__in=(
+            FeatureValidation.STATUS_UNTESTED,
+            FeatureValidation.STATUS_FAILING,
+            FeatureValidation.STATUS_BLOCKED,
+        ))
+
+    all_features = FeatureValidation.objects.select_related('last_tested_by')
+    total_features = all_features.count()
+    tested_count = all_features.filter(status=FeatureValidation.STATUS_TESTED).count()
+    attention_count = all_features.filter(status__in=(
+        FeatureValidation.STATUS_UNTESTED,
+        FeatureValidation.STATUS_FAILING,
+        FeatureValidation.STATUS_BLOCKED,
+    )).count()
+    coverage_percent = int(round((tested_count / total_features) * 100)) if total_features else 0
+    areas = all_features.exclude(area='').order_by('area').values_list('area', flat=True).distinct()
     status_summaries = [
         {
             'status': status,
             'label': label,
-            'count': features.filter(status=status).count(),
+            'count': all_features.filter(status=status).count(),
         }
         for status, label in FeatureValidation.STATUS_CHOICES
     ]
@@ -183,6 +208,14 @@ def feature_validations(request):
         'title': _('Feature Validation'),
         'features': features,
         'status_summaries': status_summaries,
+        'total_features': total_features,
+        'tested_count': tested_count,
+        'attention_count': attention_count,
+        'coverage_percent': coverage_percent,
+        'areas': areas,
+        'selected_status': selected_status,
+        'selected_area': selected_area,
+        'attention_only': attention_only,
         'status_choices': FeatureValidation.STATUS_CHOICES,
         'form': FeatureValidationForm(),
     })

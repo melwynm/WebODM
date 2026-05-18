@@ -45,6 +45,26 @@ class FeatureValidation(models.Model):
     def __str__(self):
         return "{} ({})".format(self.name, self.status)
 
+    @property
+    def needs_attention(self):
+        return self.status in (
+            self.STATUS_UNTESTED,
+            self.STATUS_FAILING,
+            self.STATUS_BLOCKED,
+        )
+
+    @property
+    def attention_reason(self):
+        if self.status == self.STATUS_UNTESTED:
+            return _("Needs first validation pass")
+        if self.status == self.STATUS_FAILING:
+            return _("Failing validation")
+        if self.status == self.STATUS_BLOCKED:
+            return _("Blocked validation")
+        if self.status == self.STATUS_TESTING:
+            return _("Validation in progress")
+        return ""
+
     class Meta:
         ordering = ('area', 'name')
         verbose_name = _("Feature Validation")

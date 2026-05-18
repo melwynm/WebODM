@@ -7,6 +7,8 @@ from app.services.feature_validation import log_feature_validation_change
 
 class FeatureValidationSerializer(serializers.ModelSerializer):
     last_tested_by_username = serializers.ReadOnlyField(source='last_tested_by.username')
+    needs_attention = serializers.ReadOnlyField()
+    attention_reason = serializers.ReadOnlyField()
 
     class Meta:
         model = models.FeatureValidation
@@ -22,10 +24,20 @@ class FeatureValidationSerializer(serializers.ModelSerializer):
             'last_tested_by',
             'last_tested_by_username',
             'last_tested_at',
+            'needs_attention',
+            'attention_reason',
             'created_at',
             'updated_at',
         )
-        read_only_fields = ('last_tested_by', 'last_tested_by_username', 'last_tested_at', 'created_at', 'updated_at')
+        read_only_fields = (
+            'last_tested_by',
+            'last_tested_by_username',
+            'last_tested_at',
+            'needs_attention',
+            'attention_reason',
+            'created_at',
+            'updated_at',
+        )
 
 
 class FeatureValidationViewSet(viewsets.ModelViewSet):
@@ -49,6 +61,13 @@ class FeatureValidationViewSet(viewsets.ModelViewSet):
         area = self.request.query_params.get('area')
         if area:
             queryset = queryset.filter(area=area)
+
+        if self.request.query_params.get('attention') in ('1', 'true', 'yes'):
+            queryset = queryset.filter(status__in=(
+                models.FeatureValidation.STATUS_UNTESTED,
+                models.FeatureValidation.STATUS_FAILING,
+                models.FeatureValidation.STATUS_BLOCKED,
+            ))
 
         return queryset
 
