@@ -4,6 +4,8 @@
   "description": "User-friendly, extendable application and API for processing aerial imagery.",
   "main": "index.js",
   "scripts": {
+    "build": "webpack --config webpack.config.js",
+    "build:production": "webpack --config webpack.config.js production",
     "test": "python manage.py test app.tests.test_generate_ui_mocks && jest",
     "qtest": "jest"
   },
