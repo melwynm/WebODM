@@ -10,7 +10,14 @@ from rio_tiler.utils import has_alpha_band, non_alpha_indexes
 
 from app.api.permissions import ProjectPermissionPolicy
 from app.api.tasks import TaskNestedView
-from app.services.monitoring import MonitoringError, ensure_monitoring_products, monitoring_layer_path
+from app.services.monitoring import (
+    MonitoringError,
+    ensure_monitoring_products,
+    monitoring_layer_path,
+    monitoring_pair_readiness,
+    monitoring_task_summary,
+    task_monitoring_readiness,
+)
 from nodeodm import status_codes
 from worker import tasks as worker_tasks
 
@@ -71,6 +78,7 @@ class MonitoringTimeline(APIView):
                     "previous_task_id": str(timeline_tasks[index - 1].id) if index > 0 else None,
                     "next_task_id": str(timeline_tasks[index + 1].id) if index + 1 < len(timeline_tasks) else None,
                     "is_context": str(timeline_task.id) == str(context_task_id),
+                    "readiness": task_monitoring_readiness(timeline_task),
                 }
             )
 
@@ -90,15 +98,8 @@ class MonitoringCandidates(TaskNestedView):
     def get(self, request, pk=None, project_pk=None):
         task = self.get_and_check_task(request, pk)
         candidates = list(reversed(completed_orthophoto_tasks(task.project, exclude_task_id=task.id)))
-        data = [
-            {
-                "id": str(candidate.id),
-                "name": candidate.name,
-                "created_at": candidate.created_at.isoformat(),
-            }
-            for candidate in candidates
-        ]
-        return Response({"results": data})
+        data = [monitoring_task_summary(candidate, reference_task=task) for candidate in candidates]
+        return Response({"results": data, "reference_readiness": task_monitoring_readiness(task)})
 
 
 class MonitoringCompare(TaskNestedView):
@@ -125,8 +126,12 @@ class MonitoringCompare(TaskNestedView):
         if "orthophoto.tif" not in (compare_task.available_assets or []):
             raise exceptions.ValidationError("The comparison task does not have an orthophoto")
 
+        readiness = monitoring_pair_readiness(task, compare_task)
+        if not readiness["can_compare"]:
+            raise exceptions.ValidationError(readiness["issues"][0])
+
         celery_task_id = worker_tasks.generate_monitoring_compare.delay(str(task.id), str(compare_task.id)).task_id
-        return Response({"celery_task_id": celery_task_id}, status=status.HTTP_200_OK)
+        return Response({"celery_task_id": celery_task_id, "readiness": readiness}, status=status.HTTP_200_OK)
 
 
 class MonitoringTiles(TaskNestedView):

@@ -11,7 +11,13 @@ from rasterio.enums import ColorInterp
 from rasterio.transform import Affine, from_origin
 
 from app.models import Project, Task
-from app.services.monitoring import aligned_dataset_transform, ensure_monitoring_products, estimate_alignment, monitoring_cache_dir
+from app.services.monitoring import (
+    aligned_dataset_transform,
+    ensure_monitoring_products,
+    estimate_alignment,
+    monitoring_cache_dir,
+    monitoring_pair_readiness,
+)
 from nodeodm import status_codes
 
 from .classes import BootTestCase
@@ -135,6 +141,8 @@ class TestMonitoring(BootTestCase):
         self.assertEqual(payload['default_compare_task_id'], str(middle.id))
         self.assertEqual(payload['results'][1]['previous_task_id'], str(oldest.id))
         self.assertEqual(payload['results'][1]['next_task_id'], str(newest.id))
+        self.assertTrue(payload['results'][2]['readiness']['can_compare'])
+        self.assertTrue(payload['results'][2]['readiness']['assets']['orthophoto'])
 
     def test_monitoring_compare_api_generates_layers(self):
         reference = self.create_task_with_orthophoto('Current', from_origin(500000, 1000, 1, 1), with_dem=True, dem_offset=2)
@@ -143,12 +151,17 @@ class TestMonitoring(BootTestCase):
         candidates = self.client.get(f'/api/projects/{self.project.id}/tasks/{reference.id}/monitoring/candidates')
         self.assertEqual(candidates.status_code, 200)
         self.assertEqual(candidates.json()['results'][0]['id'], str(compare.id))
+        self.assertTrue(candidates.json()['reference_readiness']['can_compare'])
+        self.assertTrue(candidates.json()['results'][0]['pair_readiness']['terrain_products']['dsm_delta'])
+        self.assertTrue(candidates.json()['results'][0]['pair_readiness']['terrain_products']['dtm_delta'])
 
         response = self.client.post(
             f'/api/projects/{self.project.id}/tasks/{reference.id}/monitoring/compare',
             {'compare_task': str(compare.id)}
         )
         self.assertEqual(response.status_code, 200)
+        self.assertTrue(response.json()['readiness']['can_compare'])
+        self.assertFalse(response.json()['readiness']['cache']['ready'])
         celery_task_id = response.json()['celery_task_id']
 
         result = self.client.get(f'/api/workers/get/{celery_task_id}')
@@ -163,6 +176,10 @@ class TestMonitoring(BootTestCase):
         self.assertIn('/monitoring/', output['layers']['dtm_delta']['url'])
         self.assertGreater(output['layers']['dsm_delta']['stats']['positive_volume'], 0)
         self.assertAlmostEqual(output['layers']['dsm_delta']['stats']['negative_volume'], 0, delta=0.001)
+
+        cached_readiness = monitoring_pair_readiness(reference, compare)
+        self.assertTrue(cached_readiness['cache']['ready'])
+        self.assertIsNotNone(cached_readiness['cache']['generated_at'])
 
         aligned_tile_url = output['layers']['aligned_overlay']['url'].replace('{z}', '0').replace('{x}', '0').replace('{y}', '0')
         tile_response = self.client.get(aligned_tile_url + '?size=256')
@@ -183,6 +200,11 @@ class TestMonitoring(BootTestCase):
         self.assertIn('aligned_overlay', metadata)
         self.assertIn('change_overlay', metadata)
         self.assertEqual(metadata['terrain_deltas'], {})
+
+        readiness = monitoring_pair_readiness(reference, compare)
+        self.assertTrue(readiness['can_compare'])
+        self.assertFalse(readiness['terrain_products']['dsm_delta'])
+        self.assertFalse(readiness['terrain_products']['dtm_delta'])
 
     def test_monitoring_cache_invalidates_when_input_timestamp_changes(self):
         reference = self.create_task_with_orthophoto('Current', from_origin(500000, 1000, 1, 1))

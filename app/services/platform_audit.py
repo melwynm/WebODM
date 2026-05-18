@@ -93,6 +93,7 @@ REQUIRED_FILES = (
     ("services", "Monitoring overlay service", "app/services/monitoring/overlays.py", "Restore monitoring overlay builders."),
     ("services", "Monitoring payload service", "app/services/monitoring/payloads.py", "Restore monitoring API payload helpers."),
     ("services", "Monitoring product service", "app/services/monitoring/products.py", "Restore monitoring product orchestration."),
+    ("services", "Monitoring readiness service", "app/services/monitoring/readiness.py", "Restore monitoring readiness checks."),
     ("management", "Default NodeODM repair command", "app/management/commands/syncdefaultnodes.py", "Restore the default-node repair command."),
     ("management", "OneDrive intake command", "app/management/commands/onedriveintake.py", "Restore OneDrive task intake command."),
     ("tests", "Module boundary tests", "app/tests/test_module_boundaries.py", "Restore boundary regression tests."),

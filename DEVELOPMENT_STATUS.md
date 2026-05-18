@@ -19,6 +19,20 @@ This file tracks the current state of this fork so future work can start from th
 
 ## Recently Completed
 
+### Pipeline Reconciliation
+
+- Rechecked P1 through P14 against implementation evidence in APIs, services, models, management commands, UI hooks, and regression tests
+- Confirmed P10 through P14 already have working implementation slices and updated the canonical pipeline to match the codebase
+- Reframed the next priority as QA and hardening through the feature validation ledger instead of another unimplemented roadmap item
+
+### Monitoring Compare, Timeline, And Terrain Readiness
+
+- Added a monitoring readiness service that reports whether tasks can be compared, which source assets are present, which DSM/DTM terrain delta products are possible, and whether a comparison cache is ready
+- Added readiness metadata to monitoring timeline, candidates, and compare API responses
+- Extended monitoring regression coverage for readiness metadata, terrain-delta availability, and cache readiness after product generation
+- Updated the platform audit to protect the monitoring readiness service
+- Updated the canonical pipeline so P7, P8, and P9 are working and P10 is the next priority
+
 ### Core Platform Hardening - Platform Audit
 
 - Added a platform audit service that verifies custom fork docs, templates, API modules, service modules, routes, models, and settings still exist after upgrades or refactors
@@ -172,6 +186,7 @@ This file tracks the current state of this fork so future work can start from th
 - Default local WebODM UI on port `8000`
 - Object detection, including the previously failing dog model path
 - Monitoring compare for orthophotos with automatic translational alignment correction
+- Monitoring readiness metadata for compare eligibility, cache state, and DSM/DTM terrain-delta availability
 - Monitoring alignment can now carry rotation and scale corrections when translation-only confidence is weak
 - Monitoring compare from a project timeline view with timeline-based task selection
 - DSM/DTM terrain delta overlays and cut/fill-style volume stats when compared tasks include DEM assets
