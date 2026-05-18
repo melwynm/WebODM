@@ -5,7 +5,7 @@
   color: #e2e8f0;
   width: 320px;
   min-height: 74px;
-  max-height: 420px;
+  max-height: min(680px, calc(100vh - 220px));
   overflow-y: auto;
   border-radius: 20px;
   border: 1px solid rgba(148, 163, 184, 0.22);
@@ -74,6 +74,10 @@
     overflow: hidden;
     background: rgba(96, 165, 250, 0.12);
     color: #dbeafe;
+  }
+
+  @media (max-height: 760px){
+    max-height: calc(100vh - 190px);
   }
 
   a,

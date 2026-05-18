@@ -1,6 +1,6 @@
 # Priority Pipeline
 
-Last updated: 2026-05-17
+Last updated: 2026-05-18
 
 This file is the single source of truth for the project pipeline in this fork.
 It combines:
@@ -77,3 +77,4 @@ These are the standard WebODM processing stages. They remain the working runtime
 
 - `app/static/app/js/classes/PipelineSteps.js` remains the UI-facing runtime subset only.
 - `DEVELOPMENT_STATUS.md` remains the change log and implementation-status companion document.
+- 2026-05-18 map review feedback pass improved project map control readability, map-type icon visibility, title contrast, and layer panel height behavior.

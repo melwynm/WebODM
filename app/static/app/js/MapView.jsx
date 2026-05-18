@@ -129,7 +129,7 @@ class MapView extends React.Component {
       {
         label: _("Orthophoto"),
         type: "orthophoto",
-        icon: "fa fa-picture-o"
+        icon: "far fa-image"
       },
       {
         label: isThermal ? _("Thermal") : _("Plant Health"),
@@ -139,7 +139,7 @@ class MapView extends React.Component {
       {
         label: _("Surface Model"),
         type: "dsm",
-        icon: "fa fa-area-chart"
+        icon: "fa fa-chart-area"
       },
       {
         label: _("Terrain Model"),
