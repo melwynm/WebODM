@@ -36,6 +36,7 @@ urlpatterns = [
     re_path(r'^dashboard/$', app_views.dashboard, name='dashboard'),
     re_path(r'^account/token/$', app_views.account_token, name='account_token'),
     re_path(r'^feature-validations/$', app_views.feature_validations, name='feature_validations'),
+    re_path(r'^operations/$', app_views.operations, name='operations'),
     re_path(r'^map/project/(?P<project_pk>[^/.]+)/task/(?P<task_pk>[^/.]+)/$', app_views.map, name='map'),
     re_path(r'^map/project/(?P<project_pk>[^/.]+)/$', app_views.map, name='map'),
     re_path(r'^3d/project/(?P<project_pk>[^/.]+)/task/(?P<task_pk>[^/.]+)/$', app_views.model_display, name='model_display'),

@@ -2,6 +2,8 @@ import json
 from unittest.mock import patch
 
 from django.contrib.auth.models import User
+from django.core.management import call_command
+from django.core.management.base import CommandError
 from django.test import Client
 
 from app.models import FeatureValidation
@@ -184,3 +186,74 @@ class TestFeatureValidationApi(BootTestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, 'Untested Workflow')
         self.assertNotContains(response, 'Tested Workflow')
+
+    def test_reconcile_command_creates_pipeline_validation_records(self):
+        call_command('reconcilefeaturevalidations', '--tested', '--user', self.admin_user.username)
+
+        features = FeatureValidation.objects.order_by('area')
+        self.assertEqual(features.count(), 14)
+        self.assertEqual(
+            set(features.values_list('area', flat=True)),
+            {'P{}'.format(index) for index in range(1, 15)},
+        )
+        self.assertEqual(
+            FeatureValidation.objects.filter(status=FeatureValidation.STATUS_TESTED).count(),
+            14,
+        )
+        self.assertTrue(
+            FeatureValidation.objects.filter(
+                key='textured-model-qa-sharing',
+                test_notes__icontains='Browser smoke confirmed',
+            ).exists()
+        )
+        self.assertTrue(
+            FeatureValidation.objects.filter(
+                key='core-platform-hardening',
+                maintenance_notes__icontains='Run platformaudit',
+                last_tested_by=self.admin_user,
+            ).exists()
+        )
+
+    def test_reconcile_command_preserves_existing_notes_by_default(self):
+        FeatureValidation.objects.create(
+            key='monitoring-compare-mvp',
+            name='Monitoring Compare MVP',
+            area='P7',
+            status=FeatureValidation.STATUS_UNTESTED,
+            test_notes='Manual note',
+        )
+
+        call_command('reconcilefeaturevalidations', '--tested')
+
+        feature = FeatureValidation.objects.get(key='monitoring-compare-mvp')
+        self.assertEqual(feature.status, FeatureValidation.STATUS_TESTED)
+        self.assertEqual(feature.test_notes, 'Manual note')
+
+    def test_reconcile_command_backfills_tested_timestamp(self):
+        feature = FeatureValidation.objects.create(
+            key='monitoring-compare-mvp',
+            name='Monitoring Compare MVP',
+            area='P7',
+            status=FeatureValidation.STATUS_UNTESTED,
+        )
+        FeatureValidation.objects.filter(pk=feature.pk).update(
+            status=FeatureValidation.STATUS_TESTED,
+            last_tested_at=None,
+            last_tested_by_id=self.admin_user.id,
+        )
+
+        call_command('reconcilefeaturevalidations', '--tested', '--user', self.admin_user.username)
+
+        feature.refresh_from_db()
+        self.assertEqual(feature.status, FeatureValidation.STATUS_TESTED)
+        self.assertEqual(feature.last_tested_by, self.admin_user)
+        self.assertIsNotNone(feature.last_tested_at)
+
+    def test_reconcile_command_rejects_conflicting_status_options(self):
+        with self.assertRaises(CommandError):
+            call_command(
+                'reconcilefeaturevalidations',
+                '--tested',
+                '--status',
+                FeatureValidation.STATUS_FAILING,
+            )

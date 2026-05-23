@@ -1,6 +1,6 @@
-import os
-import json
 import ast
+import json
+import os
 from rest_framework import status
 from rest_framework.response import Response
 from app.plugins.views import TaskView, GetTaskResult, TaskResultOutputError
@@ -8,6 +8,7 @@ from app.plugins.worker import run_function_async
 from django.utils.translation import gettext_lazy as _
 
 DOG_MODEL_URL = "https://github.com/ultralytics/assets/releases/download/v8.3.0/yolo11n.onnx"
+DOG_SIZE_FILTER_METERS = (0.5, 1.2)
 MAX_ONNX_OPSET = 21
 
 
@@ -72,7 +73,26 @@ def _ensure_supported_onnx_opset(model_file, progress_callback=None):
     return converted_file
 
 
-def _detect_with_custom_model(orthophoto, model, classes=None, max_threads=None, progress_callback=None):
+def _filter_outputs_by_long_side_meters(outputs, input_res_cm, size_filter_meters):
+    if size_filter_meters is None or len(outputs) == 0:
+        return outputs
+
+    min_meters, max_meters = size_filter_meters
+    gsd_meters = input_res_cm / 100.0
+    if gsd_meters <= 0:
+        return outputs
+
+    min_pixels = min_meters / gsd_meters
+    max_pixels = max_meters / gsd_meters
+    widths = abs(outputs[:, 2] - outputs[:, 0])
+    heights = abs(outputs[:, 3] - outputs[:, 1])
+    long_sides = widths
+    long_sides = long_sides.copy()
+    long_sides[heights > widths] = heights[heights > widths]
+    return outputs[(long_sides >= min_pixels) & (long_sides <= max_pixels)]
+
+
+def _detect_with_custom_model(orthophoto, model, classes=None, max_threads=None, progress_callback=None, size_filter_meters=None):
     import logging
     import numpy as np
     import rasterio
@@ -183,6 +203,10 @@ def _detect_with_custom_model(orthophoto, model, classes=None, max_threads=None,
             outputs = non_max_suppression_fast(outputs, config)
             outputs = sort_by_area(outputs, reverse=True)
             outputs = non_max_kdtree(outputs, config['det_iou_thresh'])
+            before_size_filter = len(outputs)
+            outputs = _filter_outputs_by_long_side_meters(outputs, input_res, size_filter_meters)
+            if before_size_filter != len(outputs):
+                p(f"Filtered {before_size_filter - len(outputs)} detections outside expected object size", 0)
         else:
             outputs = np.array([])
 
@@ -196,7 +220,7 @@ def detect(orthophoto, model, classes=None, crop=None, progress_callback=None):
     import subprocess
     import shutil
     import tempfile
-    from coreplugins.objdetect.api import _detect_with_custom_model
+    from coreplugins.objdetect.api import DOG_SIZE_FILTER_METERS, _detect_with_custom_model
     from webodm import settings
     from django.contrib.gis.geos import GEOSGeometry
 
@@ -232,12 +256,14 @@ def detect(orthophoto, model, classes=None, crop=None, progress_callback=None):
             orthophoto = ortho_vrt
 
         if model.startswith("http://") or model.startswith("https://"):
+            size_filter_meters = DOG_SIZE_FILTER_METERS if classes == ['dog'] else None
             output = _detect_with_custom_model(
                 orthophoto,
                 model,
                 classes=classes,
                 max_threads=settings.WORKERS_MAX_THREADS,
                 progress_callback=progress_callback,
+                size_filter_meters=size_filter_meters,
             )
         else:
             output = gdetect(

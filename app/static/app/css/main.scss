@@ -489,6 +489,7 @@ body.app-shell {
     --dash-shell-border: rgba(255, 255, 255, 0.08);
     --dash-shell-border-soft: rgba(255, 255, 255, 0.055);
     --dash-shell-accent: #00d4aa;
+    --dash-shell-accent-contrast: #02110e;
     --dash-shell-text: rgba(225, 228, 240, 0.96);
     --dash-shell-muted: rgba(140, 148, 168, 0.8);
     --dash-shell-input: #161b22;
@@ -1152,6 +1153,7 @@ body.app-shell[data-shell-theme="light"] {
     --dash-shell-border: rgba(15, 23, 42, 0.12);
     --dash-shell-border-soft: rgba(15, 23, 42, 0.08);
     --dash-shell-accent: #0f9f84;
+    --dash-shell-accent-contrast: #ffffff;
     --dash-shell-text: #111827;
     --dash-shell-muted: rgba(71, 85, 105, 0.86);
     --dash-shell-input: #ffffff;
@@ -1678,6 +1680,115 @@ body.app-shell {
     #changelist table tbody tr:hover a,
     #changelist table tbody tr:focus-within a {
         color: var(--dash-shell-accent) !important;
+    }
+
+    #changelist .actions {
+        background: var(--dash-shell-panel) !important;
+        border: 1px solid var(--dash-shell-border) !important;
+        border-radius: 6px;
+        color: var(--dash-shell-text) !important;
+        margin-bottom: 12px;
+        padding: 10px 12px;
+    }
+
+    #changelist .actions label,
+    #changelist .actions span,
+    #changelist .actions .action-counter,
+    #changelist .actions .all,
+    #changelist .actions .question,
+    #changelist .actions .clear {
+        color: var(--dash-shell-text) !important;
+    }
+
+    #changelist .actions .question,
+    #changelist .actions .clear,
+    #changelist .actions .all {
+        text-decoration-color: color-mix(in srgb, var(--dash-shell-accent) 60%, transparent) !important;
+    }
+
+    #changelist .actions.selected {
+        background: color-mix(in srgb, var(--dash-shell-accent) 10%, var(--dash-shell-panel)) !important;
+        border-color: color-mix(in srgb, var(--dash-shell-accent) 32%, var(--dash-shell-border)) !important;
+    }
+
+    #changelist .actions select {
+        background: var(--dash-shell-input) !important;
+        border-color: var(--dash-shell-border) !important;
+        color: var(--dash-shell-input-text) !important;
+        min-height: 30px;
+    }
+
+    #changelist .actions select option {
+        background: var(--dash-shell-input) !important;
+        color: var(--dash-shell-input-text) !important;
+    }
+
+    #changelist .actions .button,
+    #changelist .actions button,
+    #changelist .actions input[type="submit"] {
+        background: var(--dash-shell-accent) !important;
+        border-color: var(--dash-shell-accent) !important;
+        box-shadow: none !important;
+        color: var(--dash-shell-accent-contrast) !important;
+        min-height: 30px;
+    }
+
+    #changelist .actions .button:hover,
+    #changelist .actions .button:focus,
+    #changelist .actions button:hover,
+    #changelist .actions button:focus,
+    #changelist .actions input[type="submit"]:hover,
+    #changelist .actions input[type="submit"]:focus {
+        background: color-mix(in srgb, var(--dash-shell-accent) 86%, #ffffff) !important;
+        border-color: color-mix(in srgb, var(--dash-shell-accent) 86%, #ffffff) !important;
+        color: var(--dash-shell-accent-contrast) !important;
+    }
+
+    #changelist .paginator,
+    #changelist-form .paginator {
+        background: var(--dash-shell-panel) !important;
+        border: 1px solid var(--dash-shell-border) !important;
+        border-radius: 6px;
+        color: var(--dash-shell-text) !important;
+        margin: 12px 0 0;
+        padding: 10px 12px !important;
+    }
+
+    #changelist .paginator a,
+    #changelist-form .paginator a,
+    #changelist .paginator .this-page,
+    #changelist-form .paginator .this-page {
+        border-radius: 5px;
+        color: var(--dash-shell-text) !important;
+        display: inline-flex;
+        min-height: 28px;
+        align-items: center;
+        justify-content: center;
+        padding: 4px 8px;
+    }
+
+    #changelist .paginator a,
+    #changelist-form .paginator a {
+        background: var(--dash-shell-panel-soft) !important;
+        border: 1px solid var(--dash-shell-border) !important;
+        text-decoration: none !important;
+    }
+
+    #changelist .paginator a:hover,
+    #changelist .paginator a:focus,
+    #changelist-form .paginator a:hover,
+    #changelist-form .paginator a:focus,
+    #changelist .paginator .this-page,
+    #changelist-form .paginator .this-page {
+        background: var(--dash-shell-accent) !important;
+        border-color: var(--dash-shell-accent) !important;
+        color: var(--dash-shell-accent-contrast) !important;
+    }
+
+    #changelist .paginator .showall,
+    #changelist-form .paginator .showall {
+        color: var(--dash-shell-accent) !important;
+        font-weight: 700;
     }
 
     .messagelist li.success,

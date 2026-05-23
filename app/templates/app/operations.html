@@ -1,0 +1,245 @@
+{% extends "app/logged_in_base.html" %}
+{% load i18n %}
+
+{% block content %}
+<style>
+    .operations-shell {
+        color: #1f2937;
+        padding-bottom: 24px;
+    }
+    .operations-hero {
+        margin-bottom: 18px;
+    }
+    .operations-hero h2 {
+        font-size: 26px;
+        font-weight: 700;
+        margin: 0 0 6px;
+    }
+    .operations-hero p {
+        color: #667085;
+        margin: 0;
+        max-width: 780px;
+    }
+    .operations-grid {
+        display: grid;
+        gap: 18px;
+        grid-template-columns: minmax(0, 1fr) minmax(360px, 0.8fr);
+    }
+    .operations-panel {
+        background: #fff;
+        border: 1px solid #d9e2ec;
+        border-radius: 6px;
+        color: #1f2937;
+        padding: 16px;
+    }
+    .operations-panel h3 {
+        color: #1f2937;
+        font-size: 16px;
+        font-weight: 700;
+        margin: 0 0 12px;
+    }
+    .operations-metrics {
+        display: grid;
+        gap: 10px;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        margin-bottom: 14px;
+    }
+    .operations-metric {
+        background: #f8fafc;
+        border: 1px solid #d9e2ec;
+        border-radius: 6px;
+        padding: 10px;
+    }
+    .operations-metric strong {
+        display: block;
+        font-size: 22px;
+    }
+    .operations-metric span {
+        color: #667085;
+        display: block;
+        font-size: 11px;
+        font-weight: 700;
+        text-transform: uppercase;
+    }
+    .operations-status {
+        border-radius: 999px;
+        display: inline-block;
+        font-size: 11px;
+        font-weight: 700;
+        padding: 4px 8px;
+        text-transform: uppercase;
+    }
+    .operations-status--ok { background: #dcfce7; color: #166534; }
+    .operations-status--missing,
+    .operations-status--error { background: #fee2e2; color: #991b1b; }
+    .operations-audit-list {
+        border: 1px solid #edf2f7;
+        border-radius: 6px;
+        max-height: 520px;
+        overflow: auto;
+    }
+    .operations-audit-item {
+        align-items: flex-start;
+        border-bottom: 1px solid #edf2f7;
+        display: flex;
+        gap: 10px;
+        justify-content: space-between;
+        padding: 10px 12px;
+    }
+    .operations-audit-item:last-child {
+        border-bottom: 0;
+    }
+    .operations-audit-item strong {
+        display: block;
+    }
+    .operations-audit-item span {
+        color: #667085;
+        display: block;
+        font-size: 12px;
+        margin-top: 3px;
+    }
+    .operations-panel label {
+        color: #344054 !important;
+    }
+    .operations-help {
+        color: #667085;
+        font-size: 12px;
+        margin-top: 4px;
+    }
+    .operations-results {
+        border-top: 1px solid #edf2f7;
+        margin-top: 16px;
+        padding-top: 14px;
+    }
+    .operations-results table {
+        margin-bottom: 0;
+    }
+    @media (max-width: 1080px) {
+        .operations-grid {
+            display: block;
+        }
+        .operations-panel + .operations-panel {
+            margin-top: 18px;
+        }
+    }
+    @media (max-width: 760px) {
+        .operations-metrics {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+    }
+</style>
+
+<div class="operations-shell">
+    <div class="operations-hero">
+        <h2>{% trans "Operations" %}</h2>
+        <p>{% trans "Run the operational tools that protect this WebODM fork without leaving the browser: platform hardening checks and OneDrive task intake." %}</p>
+    </div>
+
+    <div class="operations-grid">
+        <section class="operations-panel">
+            <h3>{% trans "Platform Audit" %}</h3>
+            <div class="operations-metrics">
+                <div class="operations-metric">
+                    <strong>{{ audit_counts.ok }}</strong>
+                    <span>{% trans "OK" %}</span>
+                </div>
+                <div class="operations-metric">
+                    <strong>{{ audit_counts.missing }}</strong>
+                    <span>{% trans "Missing" %}</span>
+                </div>
+                <div class="operations-metric">
+                    <strong>{{ audit_counts.error }}</strong>
+                    <span>{% trans "Errors" %}</span>
+                </div>
+                <div class="operations-metric">
+                    <strong>{{ audit_counts.total }}</strong>
+                    <span>{% trans "Checked" %}</span>
+                </div>
+            </div>
+            <div class="operations-audit-list">
+                {% for result in audit_summary.results %}
+                    <div class="operations-audit-item">
+                        <div>
+                            <strong>{{ result.area }} - {{ result.name }}</strong>
+                            <span>{{ result.detail }}</span>
+                            {% if result.remediation and not result.ok %}
+                                <span>{{ result.remediation }}</span>
+                            {% endif %}
+                        </div>
+                        <span class="operations-status operations-status--{{ result.status }}">{{ result.status }}</span>
+                    </div>
+                {% endfor %}
+            </div>
+        </section>
+
+        <section class="operations-panel">
+            <h3>{% trans "OneDrive Folder Intake" %}</h3>
+            <form method="post">
+                {% csrf_token %}
+                <div class="form-group">
+                    <label for="{{ intake_form.project.id_for_label }}">{% trans "Project" %}</label>
+                    {{ intake_form.project }}
+                </div>
+                <div class="form-group">
+                    <label for="{{ intake_form.folder.id_for_label }}">{% trans "Folder Path" %}</label>
+                    {{ intake_form.folder }}
+                    <div class="operations-help">{% trans "Use a path inside the WebODM container or a mounted/synced folder visible to the webapp container." %}</div>
+                </div>
+                <div class="form-group">
+                    <label for="{{ intake_form.min_age.id_for_label }}">{% trans "Minimum Age Seconds" %}</label>
+                    {{ intake_form.min_age }}
+                </div>
+                <div class="checkbox">
+                    <label>{{ intake_form.dry_run }} {% trans "Dry run only" %}</label>
+                </div>
+                <div class="checkbox">
+                    <label>{{ intake_form.no_process }} {% trans "Create tasks without starting processing" %}</label>
+                </div>
+                <button class="btn btn-primary" type="submit">
+                    <i class="fa fa-folder-open"></i> {% trans "Run Intake" %}
+                </button>
+            </form>
+
+            {% if intake_results is not None %}
+                <div class="operations-results">
+                    <h3>{% trans "Intake Results" %}</h3>
+                    <table class="table table-condensed">
+                        <thead>
+                            <tr>
+                                <th>{% trans "Dataset" %}</th>
+                                <th>{% trans "Status" %}</th>
+                                <th>{% trans "Task" %}</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for result in intake_results %}
+                                <tr>
+                                    <td>{{ result.dataset.name }}</td>
+                                    <td>{{ result.status }}</td>
+                                    <td>
+                                        {% if result.task %}
+                                            {{ result.task.id }}
+                                        {% else %}
+                                            -
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                            {% empty %}
+                                <tr>
+                                    <td colspan="3">{% trans "No datasets found." %}</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% endif %}
+        </section>
+    </div>
+</div>
+
+<script>
+    (function(){
+        $('#id_project, #id_folder, #id_min_age').addClass('form-control');
+    })();
+</script>
+{% endblock %}

@@ -73,6 +73,7 @@ REQUIRED_FILES = (
     ("templates", "Client portal", "app/templates/app/public/client_portal.html", "Restore the tokenized client portal template."),
     ("templates", "Map workspace", "app/templates/app/map.html", "Restore the project map template."),
     ("templates", "3D model viewer", "app/templates/app/3d_model_display.html", "Restore the 3D viewer template."),
+    ("templates", "Operations dashboard", "app/templates/app/operations.html", "Restore the staff operations dashboard."),
     ("templates", "API token settings page", "app/templates/app/account_token.html", "Restore the account token/settings page."),
     ("api", "AI issue detection API", "app/api/ai_issues.py", "Restore the AI issue detection API module."),
     ("api", "Client portal API", "app/api/client_portal.py", "Restore tokenized client portal API routes."),
@@ -103,6 +104,7 @@ REQUIRED_FILES = (
 REQUIRED_ROUTES = (
     ("routes", "Dashboard", "/dashboard/", "Restore the dashboard URL."),
     ("routes", "Feature validation dashboard", "/feature-validations/", "Restore the feature validation browser page."),
+    ("routes", "Operations dashboard", "/operations/", "Restore the staff operations dashboard."),
     ("routes", "API token settings page", "/account/token/", "Restore the account token/settings route."),
     ("routes", "Project task map", "/map/project/1/task/2/", "Restore project task map route."),
     ("routes", "Project task 3D viewer", "/3d/project/1/task/2/", "Restore project task 3D route."),

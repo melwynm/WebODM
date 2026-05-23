@@ -1,12 +1,16 @@
 import React from 'react';
 import PropTypes from 'prop-types';
+import $ from 'jquery';
 import Storage from 'webodm/classes/Storage';
 import L from 'leaflet';
 import './ObjDetectPanel.scss';
 import ErrorMessage from 'webodm/components/ErrorMessage';
 import Workers from 'webodm/classes/Workers';
 import Utils from 'webodm/classes/Utils';
+import csrf from 'webodm/django/csrf';
 import { _ } from 'webodm/classes/gettext';
+
+const MAX_ISSUE_CREATION_COUNT = 250;
 
 export default class ObjDetectPanel extends React.Component {
   static defaultProps = {
@@ -31,6 +35,8 @@ export default class ObjDetectPanel extends React.Component {
         progress: null,
         objLayer: null,
         classSummary: [],
+        creatingIssues: false,
+        createdIssuesCount: null,
     };
   }
 
@@ -66,6 +72,12 @@ export default class ObjDetectPanel extends React.Component {
     if (this.detectReq){
       this.detectReq.abort();
       this.detectReq = null;
+    }
+    if (this.issueRequests){
+      this.issueRequests.forEach(req => {
+        if (req && req.abort) req.abort();
+      });
+      this.issueRequests = null;
     }
   }
 
@@ -200,8 +212,73 @@ export default class ObjDetectPanel extends React.Component {
     Utils.saveAs(JSON.stringify(this.state.objLayer.toGeoJSON(14), null, 4), `${this.state.objLayer.label || "objects"}.geojson`);
   }
 
+  buildIssuePayload = (feature, index) => {
+    const { task, model } = this.state;
+    const props = feature && feature.properties ? feature.properties : {};
+    const label = props['class'] || model || _('Object');
+    const score = typeof props.score === 'number' ? props.score : null;
+    const scoreText = score !== null ? ` (${(score * 100).toFixed(1)}%)` : '';
+
+    return {
+      task: task.id,
+      title: `${label} detection candidate #${index + 1}${scoreText}`,
+      description: _('Created from object detection results. Review and confirm before using for reporting or population counts.'),
+      issue_type: 'annotation',
+      status: 'in_review',
+      priority: 'medium',
+      geometry: feature.geometry,
+      properties: {
+        ...props,
+        source: 'object_detection',
+        detection_model: model
+      }
+    };
+  }
+
+  handleCreateIssues = () => {
+    const { objLayer, task, creatingIssues } = this.state;
+    if (!objLayer || !task || creatingIssues) return;
+
+    const geojson = objLayer.toGeoJSON(14);
+    const features = geojson && Array.isArray(geojson.features) ? geojson.features : [];
+    if (!features.length){
+      this.setState({error: _('No detections to create issues from')});
+      return;
+    }
+    if (features.length > MAX_ISSUE_CREATION_COUNT){
+      this.setState({error: _('Too many detections to create issues at once. Download the GeoJSON or refine the detection area first.')});
+      return;
+    }
+    if (!window.confirm(_('Create review issues for the current detection results?'))){
+      return;
+    }
+
+    this.setState({creatingIssues: true, error: '', createdIssuesCount: null});
+    this.issueRequests = features.map((feature, index) => $.ajax({
+      url: `/api/projects/${task.project}/issues/`,
+      type: 'POST',
+      contentType: 'application/json',
+      headers: {
+        [csrf.header]: csrf.token
+      },
+      data: JSON.stringify(this.buildIssuePayload(feature, index))
+    }));
+
+    Promise.all(this.issueRequests.map(req => new Promise((resolve, reject) => {
+      req.done(resolve);
+      req.fail(jqXHR => reject(jqXHR.responseText || _('Cannot create detection issues')));
+    }))).then(createdIssues => {
+      this.setState({createdIssuesCount: createdIssues.length});
+    }).catch(error => {
+      this.setState({error});
+    }).then(() => {
+      this.setState({creatingIssues: false});
+      this.issueRequests = null;
+    });
+  }
+
   render(){
-    const { loading, permanentError, objLayer, detecting, model, progress, classSummary } = this.state;
+    const { loading, permanentError, objLayer, detecting, model, progress, classSummary, creatingIssues, createdIssuesCount } = this.state;
     const models = [
       {label: _('Cars'), value: 'cars'},
       {label: _('Trees'), value: 'trees'},
@@ -237,11 +314,20 @@ export default class ObjDetectPanel extends React.Component {
                     type="button" className="btn btn-sm btn-primary btn-download">
                 <i className="fa fa-download fa-fw"/> {_("Download")}
               </button> : ""}
+              {featCount > 0 ? <button onClick={this.handleCreateIssues}
+                    disabled={creatingIssues}
+                    type="button" className="btn btn-sm btn-primary btn-create-issues">
+                {creatingIssues ? <i className="fa fa-spin fa-circle-notch"/> : <i className="fa fa-flag fa-fw"/>} {_("Create Issues")}
+              </button> : ""}
               <button onClick={this.handleRemoveObjLayer}
                       type="button" className="btn btn-sm btn-default">
                 <i className="fa fa-trash fa-fw"/>
               </button>
             </div>
+        </div> : ""}
+
+        {createdIssuesCount !== null ? <div className="alert alert-success">
+          {createdIssuesCount} {_("review issues created")}
         </div> : ""}
 
         {classSummary.length > 0 ? <div className="class-summary">

@@ -1,6 +1,6 @@
 # Development Status
 
-Last updated: 2026-05-18
+Last updated: 2026-05-20
 
 ## Purpose
 
@@ -18,6 +18,21 @@ This file tracks the current state of this fork so future work can start from th
 - Reduce operational issues in local Docker and NodeODM setups
 
 ## Recently Completed
+
+### Feature Validation QA Reconciliation
+
+- Added `reconcilefeaturevalidations` to create or update P1-P14 feature validation records from the canonical pipeline
+- Reconciled the local feature validation ledger so all P1-P14 records exist, are marked tested, and have maintenance notes tied to regression evidence
+- Added regression coverage for the reconciliation command, including preservation of manual notes by default
+- Verified feature validation, platform audit, textured-model QA, project issue/report, and monitoring regression suites
+
+### UI Coverage Hardening
+
+- Added a staff Operations page at `/operations/` under Administration so operational features are available from the browser
+- Exposed platform audit results with OK/missing/error counts and detailed protected surfaces
+- Exposed OneDrive folder intake with project selection, folder path, minimum age, dry-run, and no-process controls
+- Added regression coverage for staff access, regular-user blocking, and dry-run intake from the UI
+- Updated the platform audit to protect the Operations route and template
 
 ### Monitoring Readiness UX
 
@@ -109,6 +124,8 @@ This file tracks the current state of this fork so future work can start from th
 - Fixed object detection worker failures caused by serialized worker execution not having access to module-level imports
 - Added regression coverage for object detection code paths
 - Added ONNX compatibility handling for newer custom models, including the dog model case that required opset down-conversion for the runtime in this stack
+- Added GSD-aware dog-size filtering for custom dog detections so implausibly small or large generic-model detections are removed before GeoJSON output
+- Added an object detection map action to promote current detections into reviewable project issues, preserving human confirmation before reporting or population counts
 
 ### Monitoring And Progress MVP
 

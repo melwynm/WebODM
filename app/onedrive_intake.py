@@ -5,13 +5,13 @@ import shutil
 import time
 import zipfile
 
+from django.conf import settings
 from django.db import transaction
 from django.utils.text import slugify
 
 from app import pending_actions
 from app.models import Task
 from nodeodm import status_codes
-from webodm import settings
 from worker import tasks as worker_tasks
 
 

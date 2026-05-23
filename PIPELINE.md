@@ -1,6 +1,9 @@
 # Priority Pipeline
 
-Last updated: 2026-05-18
+Last updated: 2026-05-20
+
+Maintenance note 2026-05-21: admin setting changelist controls, action bars, and paginators now use the shared shell theme tokens so they remain readable in both dark and light mode.
+Maintenance note 2026-05-21: dog detection now stays on the existing GeoDeep/WebODM object-detection path, adds GSD-aware dog-size filtering, and can promote detections into reviewable project issues from the map UI.
 
 This file is the single source of truth for the project pipeline in this fork.
 It combines:
@@ -104,3 +107,5 @@ These are the standard WebODM processing stages. They remain the working runtime
 - 2026-05-18 P6 delivered a platform audit service and `platformaudit` management command for upgrade-safety checks across custom docs, templates, API modules, service modules, routes, models, and settings.
 - 2026-05-18 P7-P9 delivered monitoring readiness metadata for compare candidates, timeline tasks, cache state, and DSM/DTM terrain-delta availability.
 - 2026-05-18 pipeline reconciliation confirmed P10-P14 already have working implementation slices and updated the roadmap table to match the codebase.
+- 2026-05-20 QA hardening added `reconcilefeaturevalidations`, reconciled P1-P14 into the feature validation ledger as tested, and verified feature validation, platform audit, textured-model QA, project issue/report, and monitoring regression coverage.
+- 2026-05-20 UI coverage hardening added a staff Operations page so platform audit and OneDrive folder intake can be used from the browser, and the platform audit now protects that route and template.

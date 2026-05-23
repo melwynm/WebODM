@@ -17,6 +17,8 @@ from django import forms
 from app.views.utils import get_permissions
 from app.models import FeatureValidation
 from app.services.feature_validation import log_feature_validation_change
+from app.services.platform_audit import run_platform_audit
+from app.onedrive_intake import OneDriveIntakeError, intake_onedrive_folder
 from webodm import settings
 
 def index(request):
@@ -144,6 +146,24 @@ class FeatureValidationForm(forms.ModelForm):
             'maintenance_notes',
             'evidence_url',
         )
+
+
+class OperationsOneDriveIntakeForm(forms.Form):
+    project = forms.ModelChoiceField(queryset=Project.objects.none())
+    folder = forms.CharField(max_length=2048)
+    min_age = forms.IntegerField(min_value=0, initial=60)
+    dry_run = forms.BooleanField(required=False, initial=True)
+    no_process = forms.BooleanField(required=False)
+
+    def __init__(self, *args, **kwargs):
+        user = kwargs.pop('user', None)
+        super().__init__(*args, **kwargs)
+        if user is not None:
+            self.fields['project'].queryset = get_objects_for_user(
+                user,
+                'app.change_project',
+                klass=Project.objects.filter(deleting=False),
+            ).order_by('name', 'id')
 
 
 PIPELINE_AREAS = (
@@ -287,6 +307,51 @@ def feature_validations(request):
         'attention_only': attention_only,
         'status_choices': FeatureValidation.STATUS_CHOICES,
         'form': FeatureValidationForm(),
+    })
+
+
+@login_required
+@user_passes_test(lambda user: user.is_staff)
+def operations(request):
+    audit_summary = run_platform_audit()
+    intake_results = None
+    intake_form = OperationsOneDriveIntakeForm(
+        request.POST or None,
+        user=request.user,
+    )
+
+    if request.method == 'POST':
+        if intake_form.is_valid():
+            try:
+                intake_results = intake_onedrive_folder(
+                    intake_form.cleaned_data['project'],
+                    intake_form.cleaned_data['folder'],
+                    min_age_seconds=intake_form.cleaned_data['min_age'],
+                    dry_run=intake_form.cleaned_data['dry_run'],
+                    auto_process=not intake_form.cleaned_data['no_process'],
+                )
+                created = sum(1 for result in intake_results if result['status'] == 'created')
+                ready = sum(1 for result in intake_results if result['status'] == 'ready')
+                skipped = sum(1 for result in intake_results if result['status'] == 'skipped')
+                messages.success(
+                    request,
+                    _("OneDrive intake complete: %(created)s created, %(ready)s ready, %(skipped)s skipped.") % {
+                        'created': created,
+                        'ready': ready,
+                        'skipped': skipped,
+                    },
+                )
+            except OneDriveIntakeError as e:
+                messages.error(request, str(e))
+        else:
+            messages.error(request, _("Could not run OneDrive intake. Please check the fields."))
+
+    return render(request, 'app/operations.html', {
+        'title': _('Operations'),
+        'audit_summary': audit_summary,
+        'audit_counts': audit_summary.counts,
+        'intake_form': intake_form,
+        'intake_results': intake_results,
     })
 
 
