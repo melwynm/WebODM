@@ -9,6 +9,22 @@ from django.utils.translation import gettext_lazy as _
 
 DOG_MODEL_URL = "https://github.com/ultralytics/assets/releases/download/v8.3.0/yolo11n.onnx"
 DOG_SIZE_FILTER_METERS = (0.5, 1.2)
+DEER_MODEL_URL = DOG_MODEL_URL
+DEER_SIZE_FILTER_METERS = (0.8, 2.4)
+SIZE_FILTERS_BY_CLASSES = {
+    ('dog',): DOG_SIZE_FILTER_METERS,
+    ('deer',): DEER_SIZE_FILTER_METERS,
+}
+OBJECT_DETECTION_MODEL_MAP = {
+    'cars': ('cars', None),
+    'trees': ('trees', None),
+    'athletic': ('aerovision', ['tennis-court', 'track-field', 'soccer-field', 'baseball-field', 'swimming-pool', 'basketball-court']),
+    'boats': ('aerovision', ['boat']),
+    'planes': ('aerovision', ['plane']),
+    'cattle': ('aerovision', ['cow']),
+    'dogs': (DOG_MODEL_URL, ['dog']),
+    'deer': (DEER_MODEL_URL, ['deer']),
+}
 MAX_ONNX_OPSET = 21
 
 
@@ -90,6 +106,13 @@ def _filter_outputs_by_long_side_meters(outputs, input_res_cm, size_filter_meter
     long_sides = long_sides.copy()
     long_sides[heights > widths] = heights[heights > widths]
     return outputs[(long_sides >= min_pixels) & (long_sides <= max_pixels)]
+
+
+def size_filter_for_classes(classes):
+    if classes is None:
+        return None
+
+    return SIZE_FILTERS_BY_CLASSES.get(tuple(classes))
 
 
 def _detect_with_custom_model(orthophoto, model, classes=None, max_threads=None, progress_callback=None, size_filter_meters=None):
@@ -220,7 +243,7 @@ def detect(orthophoto, model, classes=None, crop=None, progress_callback=None):
     import subprocess
     import shutil
     import tempfile
-    from coreplugins.objdetect.api import DOG_SIZE_FILTER_METERS, _detect_with_custom_model
+    from coreplugins.objdetect.api import _detect_with_custom_model, size_filter_for_classes
     from webodm import settings
     from django.contrib.gis.geos import GEOSGeometry
 
@@ -256,14 +279,13 @@ def detect(orthophoto, model, classes=None, crop=None, progress_callback=None):
             orthophoto = ortho_vrt
 
         if model.startswith("http://") or model.startswith("https://"):
-            size_filter_meters = DOG_SIZE_FILTER_METERS if classes == ['dog'] else None
             output = _detect_with_custom_model(
                 orthophoto,
                 model,
                 classes=classes,
                 max_threads=settings.WORKERS_MAX_THREADS,
                 progress_callback=progress_callback,
-                size_filter_meters=size_filter_meters,
+                size_filter_meters=size_filter_for_classes(classes),
             )
         else:
             output = gdetect(
@@ -290,21 +312,10 @@ class TaskObjDetect(TaskView):
         orthophoto = os.path.abspath(task.get_asset_download_path("orthophoto.tif"))
         model = request.data.get('model', 'cars')
 
-        # model --> (modelID, classes)
-        model_map = {
-            'cars': ('cars', None),
-            'trees': ('trees', None),
-            'athletic': ('aerovision', ['tennis-court', 'track-field', 'soccer-field', 'baseball-field', 'swimming-pool', 'basketball-court']),
-            'boats': ('aerovision', ['boat']),
-            'planes': ('aerovision', ['plane']),
-            'cattle': ('aerovision', ['cow']),
-            'dogs': (DOG_MODEL_URL, ['dog']),
-        }
-
-        if model not in model_map:
+        if model not in OBJECT_DETECTION_MODEL_MAP:
             return Response({'error': 'Invalid model'}, status=status.HTTP_200_OK)
 
-        model_id, classes = model_map[model]
+        model_id, classes = OBJECT_DETECTION_MODEL_MAP[model]
         celery_task_id = run_function_async(detect, orthophoto, model_id, classes, task.crop.wkt if task.crop is not None else None, with_progress=True).task_id
 
         return Response({'celery_task_id': celery_task_id}, status=status.HTTP_200_OK)

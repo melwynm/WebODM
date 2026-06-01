@@ -28,6 +28,27 @@ class OneDriveIntakeError(Exception):
     pass
 
 
+def configured_intake_root():
+    return os.environ.get("WO_ONEDRIVE_INTAKE_DIR", "").strip()
+
+
+def validate_intake_folder(root_path):
+    root_path = os.path.abspath(root_path)
+    allowed_root = configured_intake_root()
+    if not allowed_root:
+        return root_path
+
+    allowed_root = os.path.abspath(allowed_root)
+    try:
+        common_path = os.path.commonpath([os.path.realpath(root_path), os.path.realpath(allowed_root)])
+    except ValueError:
+        raise OneDriveIntakeError("Intake folder is outside the configured OneDrive intake root.")
+
+    if common_path != os.path.realpath(allowed_root):
+        raise OneDriveIntakeError("Intake folder is outside the configured OneDrive intake root.")
+    return root_path
+
+
 def intake_state_path():
     return os.path.join(settings.MEDIA_CACHE, "onedrive_intake_state.json")
 
@@ -58,7 +79,7 @@ def save_intake_state(state, path=None):
 
 
 def discover_intake_datasets(root_path, min_age_seconds=60):
-    root_path = os.path.abspath(root_path)
+    root_path = validate_intake_folder(root_path)
     if not os.path.isdir(root_path):
         raise OneDriveIntakeError(f"Intake folder does not exist: {root_path}")
 

@@ -337,6 +337,14 @@ REST_FRAMEWORK = {
     'rest_framework_simplejwt.authentication.JWTAuthentication',
     'app.api.authentication.JSONWebTokenAuthenticationQS',
   ),
+  'DEFAULT_THROTTLE_CLASSES': (
+    'rest_framework.throttling.AnonRateThrottle',
+    'rest_framework.throttling.UserRateThrottle',
+  ),
+  'DEFAULT_THROTTLE_RATES': {
+    'anon': os.environ.get('WO_API_ANON_THROTTLE_RATE', '120/min'),
+    'user': os.environ.get('WO_API_USER_THROTTLE_RATE', '1200/min'),
+  },
   'PAGE_SIZE': 10,
   'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
 }

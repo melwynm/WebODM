@@ -286,7 +286,8 @@ export default class ObjDetectPanel extends React.Component {
       {label: _('Boats'), value: 'boats'},
       {label: _('Planes'), value: 'planes'},
       {label: _('Cattle'), value: 'cattle'},
-      {label: _('Dogs'), value: 'dogs'}
+      {label: _('Dogs'), value: 'dogs'},
+      {label: _('Deer'), value: 'deer'}
     ]
     
     let content = "";

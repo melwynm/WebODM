@@ -8,7 +8,7 @@ from django.contrib.auth.models import User
 from django.test import override_settings
 
 from app.models import Project, Task
-from app.onedrive_intake import discover_intake_datasets, intake_onedrive_folder
+from app.onedrive_intake import OneDriveIntakeError, discover_intake_datasets, intake_onedrive_folder
 from nodeodm import status_codes
 
 from .classes import BootTestCase
@@ -48,6 +48,16 @@ class TestOneDriveIntake(BootTestCase):
         datasets = discover_intake_datasets(self.temp_dir.name, min_age_seconds=0)
 
         self.assertEqual([dataset['name'] for dataset in datasets], ['capture-a', 'capture-b.zip'])
+
+    def test_discover_intake_datasets_rejects_paths_outside_configured_root(self):
+        self.make_dataset_dir('capture-a')
+        outside_dir = tempfile.TemporaryDirectory()
+        try:
+            with mock.patch.dict(os.environ, {'WO_ONEDRIVE_INTAKE_DIR': self.temp_dir.name}):
+                with self.assertRaises(OneDriveIntakeError):
+                    discover_intake_datasets(outside_dir.name, min_age_seconds=0)
+        finally:
+            outside_dir.cleanup()
 
     def test_intake_creates_import_task_and_skips_duplicate(self):
         self.make_dataset_dir('capture-a')

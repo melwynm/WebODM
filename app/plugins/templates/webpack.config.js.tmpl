@@ -1,11 +1,11 @@
 // Magic to include node_modules of root WebODM's directory
 const fs = require('fs');
-let webodmRoot = "../../../"; // Assuming plugins/<name>/public
-if (!fs.existsSync(webodmRoot + "webodm.sh")) webodmRoot = "../../../../../"; // Assuming app/media/plugins/<name>/public
-process.env.NODE_PATH = webodmRoot + "node_modules";
+let path = require("path");
+let webodmRoot = path.resolve(__dirname, "../../../"); // Assuming plugins/<name>/public
+if (!fs.existsSync(path.join(webodmRoot, "webodm.sh"))) webodmRoot = path.resolve(__dirname, "../../../../../"); // Assuming app/media/plugins/<name>/public
+process.env.NODE_PATH = path.join(webodmRoot, "node_modules");
 require("module").Module._initPaths();
 
-let path = require("path");
 const MiniCssExtractPlugin = require('mini-css-extract-plugin');
 
 module.exports = {
@@ -72,7 +72,7 @@ module.exports = {
     modules: ['node_modules', 'bower_components'],
     extensions: ['.js', '.jsx'],
     alias: {
-        webodm: path.resolve(__dirname, webodmRoot + 'app/static/app/js')
+        webodm: path.join(webodmRoot, 'app/static/app/js')
     }
   },
 

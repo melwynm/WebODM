@@ -2,6 +2,8 @@ import os
 import shutil
 
 import sys
+import tempfile
+import time
 
 from django.contrib.auth.models import User
 from django.test import Client
@@ -13,7 +15,7 @@ from app.models import Task
 from app.plugins import UserDataStore, enable_plugin
 from app.plugins import get_plugin_by_name
 from app.plugins import sync_plugin_db, get_plugins_persistent_path
-from app.plugins.functions import clear_plugins_cache, get_plugins
+from app.plugins.functions import clear_plugins_cache, get_plugins, plugin_build_is_stale
 from app.plugins.data_store import InvalidDataStoreValue
 from app.plugins.pyutils import parse_requirements, compute_file_md5, requirements_installed
 from .classes import BootTestCase
@@ -254,6 +256,73 @@ class TestPlugins(BootTestCase):
         p = get_plugin_by_name("test", only_active=False)
         self.assertEqual(p.get_manifest()['author'], "Piero Toffanin")
 
+    def test_plugin_build_is_stale_when_source_changes(self):
+        class FakePlugin:
+            def __init__(self, root):
+                self.root = root
+
+            def get_path(self, path):
+                return os.path.join(self.root, path)
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            public_dir = os.path.join(tmpdir, "public")
+            build_dir = os.path.join(public_dir, "build")
+            os.makedirs(build_dir)
+            source_path = os.path.join(public_dir, "Panel.jsx")
+            build_path = os.path.join(build_dir, "Panel.js")
+
+            with open(source_path, "w", encoding="utf-8") as f:
+                f.write("export default null;\n")
+            with open(build_path, "w", encoding="utf-8") as f:
+                f.write("bundle\n")
+
+            now = time.time()
+            os.utime(source_path, (now - 20, now - 20))
+            os.utime(build_path, (now - 10, now - 10))
+            self.assertFalse(plugin_build_is_stale(FakePlugin(tmpdir)))
+
+            os.utime(source_path, (now, now))
+            self.assertTrue(plugin_build_is_stale(FakePlugin(tmpdir)))
+
+    def test_plugin_build_is_stale_when_build_is_missing(self):
+        class FakePlugin:
+            def __init__(self, root):
+                self.root = root
+
+            def get_path(self, path):
+                return os.path.join(self.root, path)
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            os.makedirs(os.path.join(tmpdir, "public"))
+            self.assertTrue(plugin_build_is_stale(FakePlugin(tmpdir)))
+
+    def test_plugin_build_staleness_ignores_package_lock_updates(self):
+        class FakePlugin:
+            def __init__(self, root):
+                self.root = root
+
+            def get_path(self, path):
+                return os.path.join(self.root, path)
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            public_dir = os.path.join(tmpdir, "public")
+            build_dir = os.path.join(public_dir, "build")
+            os.makedirs(build_dir)
+            package_lock_path = os.path.join(public_dir, "package-lock.json")
+            source_path = os.path.join(public_dir, "Panel.jsx")
+            build_path = os.path.join(build_dir, "Panel.js")
+
+            for path in (package_lock_path, source_path, build_path):
+                with open(path, "w", encoding="utf-8") as f:
+                    f.write("{}\n")
+
+            now = time.time()
+            os.utime(source_path, (now - 20, now - 20))
+            os.utime(build_path, (now - 10, now - 10))
+            os.utime(package_lock_path, (now, now))
+
+            self.assertFalse(plugin_build_is_stale(FakePlugin(tmpdir)))
+
     def test_plugin_loading_skips_hyphen_alias_when_underscore_plugin_exists(self):
         canonical_dir = 'coreplugins/test_alias_plugin'
         legacy_alias_dir = 'coreplugins/test-alias-plugin'
@@ -385,4 +454,3 @@ class TestPlugins(BootTestCase):
         plugin_file.close()
         missing_manifest_plugin_file.close()
         bad_dir_plugin_file.close()
-

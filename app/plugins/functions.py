@@ -86,6 +86,40 @@ def clear_plugins_cache():
     }
 
 
+def _iter_plugin_public_source_files(public_path):
+    source_extensions = {'.css', '.js', '.jsx', '.json', '.scss', '.ts', '.tsx'}
+    ignored_dirs = {'build', 'node_modules'}
+
+    for root, dirs, files in os.walk(public_path):
+        dirs[:] = [d for d in dirs if d not in ignored_dirs]
+        for filename in files:
+            if filename.startswith('package-lock'):
+                continue
+            if os.path.splitext(filename)[1] in source_extensions:
+                yield os.path.join(root, filename)
+
+
+def plugin_build_is_stale(plugin):
+    public_path = plugin.get_path("public")
+    build_path = plugin.get_path("public/build")
+    if not os.path.isdir(build_path):
+        return True
+
+    build_files = [
+        os.path.join(root, filename)
+        for root, _, files in os.walk(build_path)
+        for filename in files
+    ]
+    if not build_files:
+        return True
+
+    source_files = list(_iter_plugin_public_source_files(public_path))
+    if not source_files:
+        return False
+
+    return max(os.path.getmtime(path) for path in source_files) > max(os.path.getmtime(path) for path in build_files)
+
+
 def build_plugins():
     for plugin in get_plugins():
         # Check for package.json in public directory
@@ -105,7 +139,7 @@ def build_plugins():
         # Check if we need to generate a webpack.config.js
         if len(plugin.build_jsx_components()) > 0 and plugin.path_exists('public'):
             build_paths = map(lambda p: os.path.join(plugin.get_path('public'), p), plugin.build_jsx_components())
-            paths_ok = not (False in map(lambda p: os.path.exists, build_paths))
+            paths_ok = not (False in map(lambda p: os.path.exists(p), build_paths))
 
             if paths_ok:
                 wpc_path = os.path.join(settings.BASE_DIR, 'app', 'plugins', 'templates', 'webpack.config.js.tmpl')
@@ -120,8 +154,15 @@ def build_plugins():
                         'entry_json': json.dumps(entry)
                     })
 
-                    with open(plugin.get_path('public/webpack.config.js'), 'w') as f:
-                        f.write(wpc_content)
+                    webpack_config_path = plugin.get_path('public/webpack.config.js')
+                    existing_content = None
+                    if os.path.exists(webpack_config_path):
+                        with open(webpack_config_path, encoding='utf-8') as f:
+                            existing_content = f.read()
+
+                    if existing_content != wpc_content:
+                        with open(webpack_config_path, 'w', encoding='utf-8') as f:
+                            f.write(wpc_content)
             else:
                 logger.warning(
                     "Cannot generate webpack.config.js for {}, a path is missing: {}".format(plugin, ' '.join(build_paths)))
@@ -131,7 +172,7 @@ def build_plugins():
             if settings.DEV and webpack_watch_process_count() <= 2 and settings.DEV_WATCH_PLUGINS:
                 logger.info("Running webpack with watcher for {}".format(plugin.get_name()))
                 subprocess.Popen(['webpack-cli', '--watch'], cwd=plugin.get_path("public"))
-            elif not plugin.path_exists("public/build"):
+            elif plugin_build_is_stale(plugin):
                 logger.info("Running webpack for {}".format(plugin.get_name()))
 
                 try:

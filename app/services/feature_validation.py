@@ -106,6 +106,53 @@ PIPELINE_FEATURE_VALIDATIONS = (
     },
 )
 
+COMMERCIAL_FEATURE_VALIDATIONS = (
+    {
+        'key': 'commercial-architecture-orthomosaic',
+        'name': 'Commercial Architecture CAD Orthomosaic',
+        'area': 'Commercial',
+        'test_notes': 'Preset, commercial readiness, report template, demo-project, and platform audit regressions cover the architecture/CAD orthomosaic package.',
+        'maintenance_notes': 'Validate with a representative construction/CAD overlay dataset before marking tested for a paid client.',
+    },
+    {
+        'key': 'commercial-agriculture-field-analysis',
+        'name': 'Commercial Agriculture Field Analysis',
+        'area': 'Commercial',
+        'test_notes': 'Preset, report template, readiness, and demo-project regressions cover the agriculture field analysis package and plant-health report caveats.',
+        'maintenance_notes': 'Validate with representative RGB and multispectral field datasets; record sensor bands, calibration, weather, and agronomy caveats.',
+    },
+    {
+        'key': 'commercial-solar-panel-inspection',
+        'name': 'Commercial Solar Panel Inspection',
+        'area': 'Commercial',
+        'test_notes': 'Preset, report template, readiness, thermal follow-up documentation, and demo-project regressions cover the solar inspection package.',
+        'maintenance_notes': 'Validate with representative solar RGB and thermal captures; keep human confirmation and electrical-inspection caveats visible.',
+    },
+    {
+        'key': 'commercial-readiness-checklist',
+        'name': 'Commercial Readiness Checklist',
+        'area': 'Commercial',
+        'test_notes': 'API regressions cover ready and blocked package states, sign-off persistence, package-specific requirements, and permissions.',
+        'maintenance_notes': 'Run before client delivery and keep package requirements aligned with the sales offer.',
+    },
+    {
+        'key': 'commercial-report-templates',
+        'name': 'Commercial Report Templates',
+        'area': 'Commercial',
+        'test_notes': 'Report regressions cover template query selection, project package fallback, JSON payloads, printable HTML, and permissions.',
+        'maintenance_notes': 'Keep report focus sections and caveats aligned with architecture, agriculture, and solar deliverables.',
+    },
+    {
+        'key': 'commercial-demo-project-mode',
+        'name': 'Commercial Demo Project Mode',
+        'area': 'Commercial',
+        'test_notes': 'Demo-project regressions cover synthetic project creation, idempotency, package readiness, assets, expiring shares, and reports.',
+        'maintenance_notes': 'Use demo projects for sales and onboarding only; keep them separate from client projects and representative of current workflows.',
+    },
+)
+
+FEATURE_VALIDATIONS = PIPELINE_FEATURE_VALIDATIONS + COMMERCIAL_FEATURE_VALIDATIONS
+
 
 def log_feature_validation_change(feature, user=None, previous_status=None):
     username = getattr(user, 'username', None) or 'system'
@@ -130,7 +177,7 @@ def reconcile_pipeline_feature_validations(status=None, overwrite=False, user=No
     from app.models import FeatureValidation
 
     results = []
-    for item in PIPELINE_FEATURE_VALIDATIONS:
+    for item in FEATURE_VALIDATIONS:
         defaults = {
             'name': item['name'],
             'area': item['area'],

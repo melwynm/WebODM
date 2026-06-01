@@ -19,6 +19,84 @@ This file tracks the current state of this fork so future work can start from th
 
 ## Recently Completed
 
+### Commercial Disclaimers
+
+- Added `COMMERCIAL_DISCLAIMERS.md` with standard caveats for drone outputs, data quality, measurements, construction, agriculture, solar, thermal, AI/object detection, monitoring, client sharing, and open-source licensing
+- Included the disclaimer document in client delivery ZIP bundles as `commercial_disclaimers.md`
+- Updated the user manual, package guide, orthomosaic feature matrix, pipeline notes, delivery export tests, and platform audit protection
+
+### Commercial Package Documentation
+
+- Added `COMMERCIAL_PACKAGES.md` as the internal package/pricing reference for Basic Orthomosaic, Construction Progress, Agriculture Field Analysis, and Solar Inspection
+- Documented inclusions, exclusions, required delivery gates, quote inputs, standard quote language, upgrade paths, and delivery checklist
+- Updated the user manual, orthomosaic feature matrix, pipeline notes, and platform audit to protect the commercial package reference
+
+### Client Delivery Export Bundle
+
+- Added `/api/projects/<project>/delivery/export` to produce ZIP handoff bundles for client delivery
+- Added manifest, progress report JSON, commercial readiness JSON, issues JSON, and available task assets such as orthophoto, DSM, DTM, thermal orthophoto, report PDF, design overlays, and field photos
+- Added regression coverage for bundle contents, selected report templates, project-scoped permissions, and platform audit protection
+- Updated the user manual, orthomosaic commercial feature matrix, and pipeline notes with the delivery export workflow
+
+### Commercial Feature Validation Records
+
+- Extended feature validation reconciliation to include commercial package records alongside the P1-P14 pipeline records
+- Added commercial ledger entries for architecture/CAD orthomosaic, agriculture field analysis, solar panel inspection, commercial readiness checklist, report templates, and demo project mode
+- Updated reconciliation output/help text and regression coverage for the expanded ledger
+- Updated the user manual and pipeline notes so commercial validation records are part of the operating process
+
+### Commercial Demo Project Mode
+
+- Added `createdemoprojects` to generate synthetic architecture/CAD, agriculture, and solar demo projects for sales, onboarding, and training
+- Added synthetic raster deliverables, package-specific commercial readiness sign-off, expiring reviewer shares, design/field evidence, and resolved sample issues
+- Added regression coverage to confirm demo projects are ready and command reruns do not duplicate project records
+- Updated the user manual, orthomosaic commercial feature matrix, pipeline notes, and platform audit to protect demo generation
+
+### Customer-Specific Report Templates
+
+- Added commercial project report templates for architecture/CAD construction review, agriculture field analysis, and solar panel inspection
+- Extended `/api/projects/<project>/reports/progress` with a `template` query parameter and automatic fallback to the project's selected commercial readiness package
+- Added report focus sections, evidence counters, and package-specific commercial caveats to printable HTML reports
+- Added regression coverage for template selection, package fallback, JSON output, HTML output, and project-scoped permissions
+
+### Project Commercial Readiness Checklist
+
+- Added project-level commercial readiness records for selected package, manual sign-off flags, reviewer notes, updater, and timestamps
+- Added `/api/projects/<project>/commercial/readiness` to combine package-specific system checks with manual sign-off for client delivery
+- Added readiness checks for orthomosaic deliverables, processing completion, failed tasks, required DSM/DTM assets, design overlays, expiring client shares, stakeholder reports, and open issues
+- Added regression coverage for architecture/CAD readiness, blocked solar readiness, and project-scoped permissions
+- Updated the user manual, orthomosaic commercial feature matrix, pipeline notes, and platform audit to protect the checklist
+
+### Commercial Orthomosaic Package
+
+- Added customer-specific system presets for `Architecture CAD Orthomosaic`, `Agriculture Field Analysis`, and `Solar Panel Inspection`
+- Added `ORTHOMOSAIC_COMMERCIAL_FEATURES.md` as the commercial coverage matrix for orthomosaic features across architecture/CAD construction review, agriculture field analysis, and solar panel inspection
+- Updated the user manual and platform audit so the orthomosaic package remains visible and protected during upgrades
+- Added preset regression coverage so the commercial presets remain available through the API and keep their key delivery options
+
+### User Manual
+
+- Added `USER_MANUAL.md` as an operator and pilot-customer manual covering projects, processing, map review, field photos, design overlays, issues, AI-assisted review, object detection, monitoring, client sharing, Operations, readiness checks, troubleshooting, and commercial-use safeguards
+- Updated the platform audit so the user manual remains protected during upgrades
+
+### Production Deployment Hardening
+
+- Added `PRODUCTION_HARDENING.md` as the commercial pilot deployment runbook for HTTPS, persistent storage, backups, restore drills, health checks, monitoring, and launch gates
+- Added `docker-compose.production.yml` with health checks and JSON log rotation defaults for webapp, worker, db, broker, and NodeODM
+- Added `.env.production.example` with required production environment variables and durable storage paths
+- Added `productionreadiness` to check risky deployment settings, stable secrets, HTTPS cookie posture, backups, persistence, runtime DB/media/migration state, platform audit, feature validation ledger, and processing nodes
+- Added regression coverage for production readiness checks and command JSON output
+- Updated the platform audit so production hardening files and commands remain protected during upgrades
+
+### Commercial Security Review
+
+- Added `SECURITY_REVIEW.md` as the commercial security gate for deployment configuration, API throttling, client-share links, OneDrive intake paths, OpenAI key handling, and token hygiene
+- Added default DRF anonymous and authenticated API throttles configurable through `WO_API_ANON_THROTTLE_RATE` and `WO_API_USER_THROTTLE_RATE`
+- Added `securityreview` to check risky settings, throttling, client-share token shape, API token entropy, frontend OpenAI key exposure, OneDrive intake root policy, share expiry, expired enabled shares, stored API token shape, and default test accounts
+- Added OneDrive intake root enforcement when `WO_ONEDRIVE_INTAKE_DIR` is configured
+- Added regression coverage for security review checks and OneDrive path restriction
+- Updated the platform audit so security review files and commands remain protected during upgrades
+
 ### Feature Validation QA Reconciliation
 
 - Added `reconcilefeaturevalidations` to create or update P1-P14 feature validation records from the canonical pipeline
@@ -125,7 +203,15 @@ This file tracks the current state of this fork so future work can start from th
 - Added regression coverage for object detection code paths
 - Added ONNX compatibility handling for newer custom models, including the dog model case that required opset down-conversion for the runtime in this stack
 - Added GSD-aware dog-size filtering for custom dog detections so implausibly small or large generic-model detections are removed before GeoJSON output
+- Added deer detection and counting through the object detection workflow, using the generic custom model path with deer-specific GSD-aware size filtering
+- Added `DEER_DETECTION_VALIDATION.md` to separate technical readiness from commercial wildlife-count validation on real imagery
 - Added an object detection map action to promote current detections into reviewable project issues, preserving human confirmation before reporting or population counts
+
+### Plugin Build Reproducibility
+
+- Updated plugin build checks so stale frontend source files trigger a rebuild even when `public/build` already exists
+- Fixed generated plugin webpack config path resolution so plugin builds do not depend on the current shell directory
+- Added regression coverage for plugin stale-build detection
 
 ### Monitoring And Progress MVP
 
@@ -227,6 +313,8 @@ This file tracks the current state of this fork so future work can start from th
 - Textured model QA and tokenized client 3D review links
 - Feature validation ledger via `/feature-validations/`, `/api/feature-validations/`, and Django admin for tested/untested/failing/blocked tracking
 - Platform upgrade audit via `python manage.py platformaudit`
+- Production readiness gate via `python manage.py productionreadiness`
+- Security review gate via `python manage.py securityreview`
 - Stakeholder progress reports from the dashboard via each project's `Report` link
 - OneDrive-synced folder task intake via `python manage.py onedriveintake --project <id> --folder <path>`
 - NodeODM stale-hostname repair via `python manage.py syncdefaultnodes --count 1`
@@ -258,9 +346,13 @@ docker exec webapp python manage.py test app.tests.test_api_client_portal --keep
 docker exec webapp python manage.py test app.tests.test_api_textured_model_qa --keepdb
 docker exec webapp python manage.py test app.tests.test_api_feature_validation --keepdb
 docker exec webapp python manage.py test app.tests.test_platform_audit --keepdb
+docker exec webapp python manage.py test app.tests.test_production_readiness --keepdb
+docker exec webapp python manage.py test app.tests.test_security_review --keepdb
 docker exec webapp python manage.py test app.tests.test_onedrive_intake --keepdb
 docker exec webapp python manage.py test app.tests.test_app.TestApp.test_syncdefaultnodes_repairs_legacy_default_node --keepdb
 docker exec webapp python manage.py platformaudit
+docker exec webapp python manage.py productionreadiness
+docker exec webapp python manage.py securityreview
 docker exec webapp python manage.py syncdefaultnodes --count 1
 docker exec webapp python manage.py onedriveintake --project <project-id> --folder /webodm/app/media/imports/onedrive --dry-run
 ```

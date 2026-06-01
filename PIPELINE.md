@@ -4,6 +4,18 @@ Last updated: 2026-05-20
 
 Maintenance note 2026-05-21: admin setting changelist controls, action bars, and paginators now use the shared shell theme tokens so they remain readable in both dark and light mode.
 Maintenance note 2026-05-21: dog detection now stays on the existing GeoDeep/WebODM object-detection path, adds GSD-aware dog-size filtering, and can promote detections into reviewable project issues from the map UI.
+Maintenance note 2026-05-29: deer detection and counting now use the same object-detection workflow, with class-specific GSD-aware size filtering and map counts/review issues.
+Maintenance note 2026-06-01: plugin frontend builds now detect stale source files, and deer detection has a validation gate for real-world wildlife-count pilots.
+Maintenance note 2026-05-25: production deployment hardening now has a runbook, production compose overlay, environment template, and `productionreadiness` management command for commercial pilot gates.
+Maintenance note 2026-05-25: commercial security review now has a runbook, DRF throttle defaults, OneDrive intake root enforcement, and `securityreview` checks for sensitive token, secret, CORS, and client-share surfaces.
+Maintenance note 2026-05-27: commercial orthomosaic packages now have explicit presets and a coverage matrix for architecture/CAD construction review, agriculture field analysis, and solar panel inspection.
+Maintenance note 2026-05-29: project commercial readiness now has an API checklist with package-specific system checks and manual sign-off for client delivery.
+Maintenance note 2026-05-29: stakeholder reports now support architecture/CAD, agriculture, and solar templates with package-specific focus sections and caveats.
+Maintenance note 2026-05-29: synthetic commercial demo projects can now be generated with `createdemoprojects` for sales, onboarding, and training.
+Maintenance note 2026-05-29: feature validation reconciliation now includes commercial package records in addition to P1-P14 pipeline records.
+Maintenance note 2026-05-29: client delivery bundles can now be exported as ZIP files with reports, readiness, issues, overlays/photos, and deliverable assets.
+Maintenance note 2026-05-29: `COMMERCIAL_PACKAGES.md` now defines package inclusions, exclusions, quote inputs, delivery gates, and upgrade paths.
+Maintenance note 2026-05-29: `COMMERCIAL_DISCLAIMERS.md` now defines standard caveats and is included in client delivery bundles.
 
 This file is the single source of truth for the project pipeline in this fork.
 It combines:
@@ -109,3 +121,13 @@ These are the standard WebODM processing stages. They remain the working runtime
 - 2026-05-18 pipeline reconciliation confirmed P10-P14 already have working implementation slices and updated the roadmap table to match the codebase.
 - 2026-05-20 QA hardening added `reconcilefeaturevalidations`, reconciled P1-P14 into the feature validation ledger as tested, and verified feature validation, platform audit, textured-model QA, project issue/report, and monitoring regression coverage.
 - 2026-05-20 UI coverage hardening added a staff Operations page so platform audit and OneDrive folder intake can be used from the browser, and the platform audit now protects that route and template.
+- 2026-05-25 production hardening added `PRODUCTION_HARDENING.md`, `docker-compose.production.yml`, `.env.production.example`, and `productionreadiness` to gate commercial pilot deployments on HTTPS, stable secrets, backups, persistence, runtime health, and platform audit.
+- 2026-05-25 security hardening added `SECURITY_REVIEW.md`, API throttle defaults, `securityreview`, and OneDrive intake root enforcement to gate commercial client access on sensitive-surface checks.
+- 2026-05-27 commercial orthomosaic packaging added `Architecture CAD Orthomosaic`, `Agriculture Field Analysis`, and `Solar Panel Inspection` system presets plus `ORTHOMOSAIC_COMMERCIAL_FEATURES.md`.
+- 2026-05-29 commercial readiness added `/api/projects/<project>/commercial/readiness` for package-specific delivery checks and project sign-off state.
+- 2026-05-29 commercial report templates added `architecture_cad`, `agriculture_field`, and `solar_inspection` variants to the project progress report API.
+- 2026-05-29 demo project mode added `createdemoprojects` to create architecture, agriculture, and solar sample projects with synthetic assets and ready client-delivery checks.
+- 2026-05-29 commercial feature validation added ledger records for the three orthomosaic packages, commercial readiness, report templates, and demo project mode.
+- 2026-05-29 delivery export added `/api/projects/<project>/delivery/export` to package project report data, readiness data, issues, and available client assets into a ZIP.
+- 2026-05-29 commercial package documentation added `COMMERCIAL_PACKAGES.md` for Basic Orthomosaic, Construction Progress, Agriculture Field Analysis, and Solar Inspection offers.
+- 2026-05-29 commercial disclaimers added `COMMERCIAL_DISCLAIMERS.md` and included it in delivery bundles as `commercial_disclaimers.md`.

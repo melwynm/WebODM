@@ -21,6 +21,8 @@ from .client_portal import ClientPortalAPIView, ClientPortalCommentsAPIView, Cli
 from .feature_validation import FeatureValidationViewSet
 from .textured_model_qa import TexturedModelQA
 from .reports import ProjectProgressReport
+from .commercial_readiness import ProjectCommercialReadiness
+from .delivery_exports import ProjectDeliveryExport
 from .ai_issues import AIIssueDetection
 from .workers import CheckTask, GetTaskResult
 from .status import APIStatus
@@ -75,6 +77,8 @@ urlpatterns = [
     re_path(r'projects/(?P<project_pk>[^/.]+)/tasks/(?P<pk>[^/.]+)/3d/cameraview$', CameraView.as_view()),
     re_path(r'projects/(?P<project_pk>[^/.]+)/monitoring/timeline$', MonitoringTimeline.as_view()),
     re_path(r'projects/(?P<project_pk>[^/.]+)/reports/progress$', ProjectProgressReport.as_view()),
+    re_path(r'projects/(?P<project_pk>[^/.]+)/commercial/readiness$', ProjectCommercialReadiness.as_view()),
+    re_path(r'projects/(?P<project_pk>[^/.]+)/delivery/export$', ProjectDeliveryExport.as_view()),
     re_path(r'projects/(?P<project_pk>[^/.]+)/ai/issue-detection$', AIIssueDetection.as_view()),
     re_path(r'client-shares/(?P<token>[^/.]+)/$', ClientPortalAPIView.as_view(), name='api_client_portal'),
     re_path(r'client-shares/(?P<token>[^/.]+)/comments/$', ClientPortalCommentsAPIView.as_view(), name='api_client_portal_comments'),

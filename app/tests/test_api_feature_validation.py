@@ -191,14 +191,15 @@ class TestFeatureValidationApi(BootTestCase):
         call_command('reconcilefeaturevalidations', '--tested', '--user', self.admin_user.username)
 
         features = FeatureValidation.objects.order_by('area')
-        self.assertEqual(features.count(), 14)
+        self.assertEqual(features.count(), 20)
         self.assertEqual(
-            set(features.values_list('area', flat=True)),
+            set(features.exclude(area='Commercial').values_list('area', flat=True)),
             {'P{}'.format(index) for index in range(1, 15)},
         )
+        self.assertEqual(FeatureValidation.objects.filter(area='Commercial').count(), 6)
         self.assertEqual(
             FeatureValidation.objects.filter(status=FeatureValidation.STATUS_TESTED).count(),
-            14,
+            20,
         )
         self.assertTrue(
             FeatureValidation.objects.filter(
@@ -210,6 +211,13 @@ class TestFeatureValidationApi(BootTestCase):
             FeatureValidation.objects.filter(
                 key='core-platform-hardening',
                 maintenance_notes__icontains='Run platformaudit',
+                last_tested_by=self.admin_user,
+            ).exists()
+        )
+        self.assertTrue(
+            FeatureValidation.objects.filter(
+                key='commercial-readiness-checklist',
+                maintenance_notes__icontains='client delivery',
                 last_tested_by=self.admin_user,
             ).exists()
         )

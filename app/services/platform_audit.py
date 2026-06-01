@@ -67,8 +67,17 @@ class PlatformAuditSummary:
 
 REQUIRED_FILES = (
     ("docs", "Pipeline source of truth", "PIPELINE.md", "Restore PIPELINE.md and keep the next priority in sync."),
+    ("docs", "User manual", "USER_MANUAL.md", "Restore the user manual for operators and pilot customers."),
+    ("docs", "Commercial package guide", "COMMERCIAL_PACKAGES.md", "Restore the commercial package and pricing reference."),
+    ("docs", "Commercial disclaimers", "COMMERCIAL_DISCLAIMERS.md", "Restore standard commercial caveats and handoff disclaimer language."),
+    ("docs", "Commercial orthomosaic package", "ORTHOMOSAIC_COMMERCIAL_FEATURES.md", "Restore the commercial orthomosaic feature coverage matrix."),
+    ("docs", "Deer detection validation guide", "DEER_DETECTION_VALIDATION.md", "Restore the deer detection validation gate before selling wildlife counts."),
     ("docs", "Architecture guide", "ARCHITECTURE.md", "Restore ARCHITECTURE.md before large fork upgrades."),
     ("docs", "Module boundaries guide", "MODULE_BOUNDARIES.md", "Restore MODULE_BOUNDARIES.md and update boundary tests."),
+    ("docs", "Production hardening guide", "PRODUCTION_HARDENING.md", "Restore the commercial deployment hardening runbook."),
+    ("docs", "Security review guide", "SECURITY_REVIEW.md", "Restore the commercial security review runbook."),
+    ("deploy", "Production compose overlay", "docker-compose.production.yml", "Restore production health checks and log rotation overlay."),
+    ("deploy", "Production environment example", ".env.production.example", "Restore the production environment template."),
     ("templates", "Feature validation dashboard", "app/templates/app/feature_validations.html", "Restore the staff validation ledger page."),
     ("templates", "Client portal", "app/templates/app/public/client_portal.html", "Restore the tokenized client portal template."),
     ("templates", "Map workspace", "app/templates/app/map.html", "Restore the project map template."),
@@ -77,6 +86,8 @@ REQUIRED_FILES = (
     ("templates", "API token settings page", "app/templates/app/account_token.html", "Restore the account token/settings page."),
     ("api", "AI issue detection API", "app/api/ai_issues.py", "Restore the AI issue detection API module."),
     ("api", "Client portal API", "app/api/client_portal.py", "Restore tokenized client portal API routes."),
+    ("api", "Commercial readiness API", "app/api/commercial_readiness.py", "Restore project commercial readiness API routes."),
+    ("api", "Delivery export API", "app/api/delivery_exports.py", "Restore client delivery bundle export API routes."),
     ("api", "Design overlay API", "app/api/design_overlays.py", "Restore design overlay API routes."),
     ("api", "Feature validation API", "app/api/feature_validation.py", "Restore feature validation API routes."),
     ("api", "Field photo API", "app/api/field_photos.py", "Restore field photo API routes."),
@@ -85,7 +96,12 @@ REQUIRED_FILES = (
     ("api", "Project report API", "app/api/reports.py", "Restore stakeholder report API routes."),
     ("api", "Textured model QA API", "app/api/textured_model_qa.py", "Restore textured model QA API routes."),
     ("services", "AI issue detection service", "app/services/ai_issue_detection.py", "Restore AI issue detection service logic."),
+    ("services", "Commercial readiness service", "app/services/commercial_readiness.py", "Restore project commercial readiness checklist logic."),
+    ("services", "Commercial demo project service", "app/services/demo_projects.py", "Restore synthetic commercial demo project generation."),
+    ("services", "Delivery export service", "app/services/delivery_exports.py", "Restore client delivery bundle export logic."),
     ("services", "Feature validation service", "app/services/feature_validation.py", "Restore feature validation logging service."),
+    ("services", "Production readiness service", "app/services/production_readiness.py", "Restore commercial deployment readiness checks."),
+    ("services", "Security review service", "app/services/security_review.py", "Restore commercial security review checks."),
     ("services", "Project reports service", "app/services/project_reports.py", "Restore report-building service logic."),
     ("services", "Textured model export service", "app/services/textured_model_exports.py", "Restore textured model export helpers."),
     ("services", "Textured model QA service", "app/services/textured_model_qa.py", "Restore textured model QA service logic."),
@@ -96,8 +112,16 @@ REQUIRED_FILES = (
     ("services", "Monitoring product service", "app/services/monitoring/products.py", "Restore monitoring product orchestration."),
     ("services", "Monitoring readiness service", "app/services/monitoring/readiness.py", "Restore monitoring readiness checks."),
     ("management", "Default NodeODM repair command", "app/management/commands/syncdefaultnodes.py", "Restore the default-node repair command."),
+    ("management", "Commercial demo project command", "app/management/commands/createdemoprojects.py", "Restore synthetic commercial demo project generation command."),
     ("management", "OneDrive intake command", "app/management/commands/onedriveintake.py", "Restore OneDrive task intake command."),
+    ("management", "Production readiness command", "app/management/commands/productionreadiness.py", "Restore production readiness checks."),
+    ("management", "Security review command", "app/management/commands/securityreview.py", "Restore security review checks."),
     ("tests", "Module boundary tests", "app/tests/test_module_boundaries.py", "Restore boundary regression tests."),
+    ("tests", "Commercial readiness tests", "app/tests/test_api_commercial_readiness.py", "Restore project commercial readiness regression tests."),
+    ("tests", "Commercial demo project tests", "app/tests/test_demo_projects.py", "Restore synthetic commercial demo project regression tests."),
+    ("tests", "Delivery export tests", "app/tests/test_api_delivery_exports.py", "Restore client delivery bundle regression tests."),
+    ("tests", "Production readiness tests", "app/tests/test_production_readiness.py", "Restore production readiness regression tests."),
+    ("tests", "Security review tests", "app/tests/test_security_review.py", "Restore security review regression tests."),
 )
 
 
@@ -121,6 +145,8 @@ REQUIRED_ROUTES = (
     ("routes", "Monitoring compare API", "/api/projects/1/tasks/2/monitoring/compare", "Restore monitoring compare route."),
     ("routes", "Monitoring timeline API", "/api/projects/1/monitoring/timeline", "Restore monitoring timeline route."),
     ("routes", "Project progress report API", "/api/projects/1/reports/progress", "Restore stakeholder report route."),
+    ("routes", "Project commercial readiness API", "/api/projects/1/commercial/readiness", "Restore project commercial readiness route."),
+    ("routes", "Project delivery export API", "/api/projects/1/delivery/export", "Restore project client delivery bundle export route."),
     ("routes", "AI issue detection API", "/api/projects/1/ai/issue-detection", "Restore AI issue detection route."),
     ("routes", "Client portal API", "/api/client-shares/token/", "Restore tokenized client portal API route."),
     ("routes", "Client textured model QA API", "/api/client-shares/token/tasks/2/3d/qa", "Restore tokenized client 3D QA route."),
@@ -134,6 +160,7 @@ REQUIRED_MODELS = (
     ("models", "Project field photo model", "app.ProjectFieldPhoto", "Restore the ProjectFieldPhoto model and migrations."),
     ("models", "Project design overlay model", "app.ProjectDesignOverlay", "Restore the ProjectDesignOverlay model and migrations."),
     ("models", "Project client share model", "app.ProjectClientShare", "Restore the ProjectClientShare model and migrations."),
+    ("models", "Project commercial readiness model", "app.ProjectCommercialReadiness", "Restore the ProjectCommercialReadiness model and migrations."),
 )
 
 

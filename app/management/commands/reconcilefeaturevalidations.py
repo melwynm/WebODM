@@ -6,14 +6,14 @@ from app.services.feature_validation import reconcile_pipeline_feature_validatio
 
 
 class Command(BaseCommand):
-    help = "Create or update P1-P14 feature validation ledger records from the canonical pipeline."
+    help = "Create or update canonical pipeline and commercial feature validation ledger records."
 
     def add_arguments(self, parser):
         parser.add_argument(
             '--status',
             choices=[choice[0] for choice in FeatureValidation.STATUS_CHOICES],
             default=None,
-            help='Optional status to apply to every pipeline validation record.',
+            help='Optional status to apply to every canonical validation record.',
         )
         parser.add_argument(
             '--tested',
@@ -54,7 +54,7 @@ class Command(BaseCommand):
 
         self.stdout.write(
             self.style.SUCCESS(
-                "Reconciled {} pipeline feature validations (created {}, updated {}, tested {}).".format(
+                "Reconciled {} feature validations (created {}, updated {}, tested {}).".format(
                     len(results),
                     created,
                     changed,

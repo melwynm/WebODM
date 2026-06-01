@@ -14,7 +14,7 @@ class ProjectProgressReport(APIView):
 
     def get(self, request, project_pk=None):
         project = ProjectPermissionPolicy.get_project(request, project_pk)
-        report = build_project_progress_report(project)
+        report = build_project_progress_report(project, template=request.query_params.get("template"))
         fmt = (request.query_params.get("format") or "").lower()
 
         if fmt == "html":

@@ -31,6 +31,9 @@ class TestApiPreset(BootTestCase):
         self.assertTrue(Preset.objects.filter(name="Multispectral", system=True).exists())
         self.assertTrue(Preset.objects.filter(name="Thermal", system=True).exists())
         self.assertTrue(Preset.objects.filter(name="DJI Drone", system=True).exists())
+        self.assertTrue(Preset.objects.filter(name="Architecture CAD Orthomosaic", system=True).exists())
+        self.assertTrue(Preset.objects.filter(name="Agriculture Field Analysis", system=True).exists())
+        self.assertTrue(Preset.objects.filter(name="Solar Panel Inspection", system=True).exists())
 
         thermal = Preset.objects.get(name="Thermal", system=True)
         self.assertTrue(any(option.get('name') == 'texturing-skip-global-seam-leveling' and option.get('value') is True for option in thermal.options))
@@ -43,6 +46,24 @@ class TestApiPreset(BootTestCase):
         self.assertTrue(commercial_3d.description)
         self.assertTrue(any(option.get('name') == 'pc-quality' and option.get('value') == 'ultra' for option in commercial_3d.options))
         self.assertTrue(any(option.get('name') == 'mesh-size' and option.get('value') == '2000000' for option in commercial_3d.options))
+
+        architecture = Preset.objects.get(name="Architecture CAD Orthomosaic", system=True)
+        self.assertIn("CAD/design overlay", architecture.description)
+        self.assertTrue(any(option.get('name') == 'dtm' and option.get('value') is True for option in architecture.options))
+        self.assertTrue(any(option.get('name') == 'orthophoto-resolution' and option.get('value') == '1.5' for option in architecture.options))
+        self.assertTrue(any(option.get('name') == 'cog' and option.get('value') is True for option in architecture.options))
+
+        agriculture = Preset.objects.get(name="Agriculture Field Analysis", system=True)
+        self.assertIn("plant-health", agriculture.description)
+        self.assertTrue(any(option.get('name') == 'radiometric-calibration' and option.get('value') == 'camera' for option in agriculture.options))
+        self.assertTrue(any(option.get('name') == 'sfm-algorithm' and option.get('value') == 'planar' for option in agriculture.options))
+        self.assertTrue(any(option.get('name') == 'build-overviews' and option.get('value') is True for option in agriculture.options))
+
+        solar = Preset.objects.get(name="Solar Panel Inspection", system=True)
+        self.assertIn("thermal follow-up", solar.description)
+        self.assertTrue(any(option.get('name') == 'orthophoto-resolution' and option.get('value') == '1.0' for option in solar.options))
+        self.assertTrue(any(option.get('name') == 'texturing-skip-global-seam-leveling' and option.get('value') is True for option in solar.options))
+        self.assertTrue(any(option.get('name') == 'cog' and option.get('value') is True for option in solar.options))
 
     def test_preset(self):
         client = APIClient()
@@ -77,6 +98,9 @@ class TestApiPreset(BootTestCase):
         self.assertTrue('High Resolution' in [preset['name'] for preset in res.data])
         self.assertTrue('DJI Drone' in [preset['name'] for preset in res.data])
         self.assertTrue('Commercial 3D Model' in [preset['name'] for preset in res.data])
+        self.assertTrue('Architecture CAD Orthomosaic' in [preset['name'] for preset in res.data])
+        self.assertTrue('Agriculture Field Analysis' in [preset['name'] for preset in res.data])
+        self.assertTrue('Solar Panel Inspection' in [preset['name'] for preset in res.data])
         self.assertTrue('Global Preset #1' in [preset['name'] for preset in res.data])
         self.assertTrue('Global Preset #2' in [preset['name'] for preset in res.data])
         self.assertFalse('Local Preset #1' in [preset['name'] for preset in res.data])
