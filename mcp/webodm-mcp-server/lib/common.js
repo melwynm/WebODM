@@ -4,6 +4,7 @@ import FormData from "form-data";
 import fetch from "node-fetch";
 
 export const WEBODM_BASE_URL = normalizeBaseUrl(process.env.WEBODM_BASE_URL || "http://localhost:8000");
+export const MCP_SERVER_VERSION = "1.1.0";
 export const AUTH_SCHEMES = {
   BEARER: "Bearer",
   TOKEN: "Token",
@@ -251,7 +252,7 @@ export function buildUrlResult(endpoint, query, includeJwtQuery, requiresAuth = 
   return result;
 }
 
-export async function uploadMultipart(endpoint, form) {
+export async function uploadMultipart(endpoint, form, method = "POST") {
   const url = buildUrl(endpoint);
   const headers = {
     ...form.getHeaders(),
@@ -260,7 +261,7 @@ export async function uploadMultipart(endpoint, form) {
   applyAuthHeader(headers);
 
   const response = await fetch(url, {
-    method: "POST",
+    method,
     headers,
     body: form,
   });

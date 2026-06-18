@@ -8,12 +8,12 @@ import {
 } from "@modelcontextprotocol/sdk/types.js";
 import { TOOL_HANDLERS } from "./lib/handlers.js";
 import { TOOL_DEFINITIONS } from "./lib/tool-definitions.js";
-import { WEBODM_BASE_URL, toolError, toolSuccess } from "./lib/common.js";
+import { MCP_SERVER_VERSION, WEBODM_BASE_URL, toolError, toolSuccess } from "./lib/common.js";
 
 const server = new Server(
   {
     name: "webodm-mcp-server",
-    version: "1.0.0",
+    version: MCP_SERVER_VERSION,
   },
   {
     capabilities: {

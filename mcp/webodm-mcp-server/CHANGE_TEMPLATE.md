@@ -30,6 +30,7 @@ Use this template when you change WebODM and need to keep the MCP package aligne
 
 - npm run smoke:
 - npm test:
+- npm run test:connection:
 - Manual scenario tested:
 
 ## Follow-up

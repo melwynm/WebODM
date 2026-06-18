@@ -357,6 +357,236 @@ export const TOOL_HANDLERS = {
     });
   },
 
+  async webodm_get_monitoring_timeline(args) {
+    ensureTokenAvailable();
+    return requestJson(`/api/projects/${args.project_id}/monitoring/timeline`, {
+      query: compactObject({ task: args.task_id }),
+    });
+  },
+
+  async webodm_get_textured_model_qa(args) {
+    ensureTokenAvailable();
+    return requestJson(`/api/projects/${args.project_id}/tasks/${args.task_id}/3d/qa`);
+  },
+
+  async webodm_get_progress_report(args) {
+    ensureTokenAvailable();
+    return requestJson(`/api/projects/${args.project_id}/reports/progress`, {
+      query: compactObject({ template: args.template, format: args.format }),
+      responseType: "auto",
+    });
+  },
+
+  async webodm_get_commercial_readiness(args) {
+    ensureTokenAvailable();
+    return requestJson(`/api/projects/${args.project_id}/commercial/readiness`, {
+      query: compactObject({ package: args.package }),
+    });
+  },
+
+  async webodm_update_commercial_readiness(args) {
+    ensureTokenAvailable();
+    return requestJson(`/api/projects/${args.project_id}/commercial/readiness`, {
+      method: "PATCH",
+      json: args.patch,
+    });
+  },
+
+  async webodm_get_delivery_export_url(args) {
+    return buildUrlResult(
+      `/api/projects/${args.project_id}/delivery/export`,
+      compactObject({ template: args.template }),
+      Boolean(args.include_jwt_query),
+      true
+    );
+  },
+
+  async webodm_detect_ai_issues(args) {
+    ensureTokenAvailable();
+    return requestJson(`/api/projects/${args.project_id}/ai/issue-detection`, {
+      method: "POST",
+      json: compactObject({
+        task: args.task_id,
+        source: args.source,
+        create: args.create,
+        max_images: args.max_images,
+      }),
+    });
+  },
+
+  async webodm_start_object_detection(args) {
+    ensureTokenAvailable();
+    return requestJson(`/api/plugins/objdetect/task/${args.task_id}/detect`, {
+      method: "POST",
+      json: { model: args.model },
+    });
+  },
+
+  async webodm_list_feature_validations(args) {
+    ensureTokenAvailable();
+    return requestJson("/api/feature-validations/", { query: args.query });
+  },
+
+  async webodm_get_feature_validation(args) {
+    ensureTokenAvailable();
+    return requestJson(`/api/feature-validations/${encodeURIComponent(args.key)}/`);
+  },
+
+  async webodm_create_feature_validation(args) {
+    ensureTokenAvailable();
+    return requestJson("/api/feature-validations/", {
+      method: "POST",
+      json: args.payload,
+    });
+  },
+
+  async webodm_update_feature_validation(args) {
+    ensureTokenAvailable();
+    return requestJson(`/api/feature-validations/${encodeURIComponent(args.key)}/`, {
+      method: "PATCH",
+      json: args.patch,
+    });
+  },
+
+  async webodm_delete_feature_validation(args) {
+    ensureTokenAvailable();
+    return requestJson(`/api/feature-validations/${encodeURIComponent(args.key)}/`, {
+      method: "DELETE",
+      responseType: "empty",
+    });
+  },
+
+  async webodm_list_project_issues(args) {
+    ensureTokenAvailable();
+    return requestJson(`/api/projects/${args.project_id}/issues/`, { query: args.query });
+  },
+
+  async webodm_get_project_issue(args) {
+    ensureTokenAvailable();
+    return requestJson(`/api/projects/${args.project_id}/issues/${args.issue_id}/`);
+  },
+
+  async webodm_create_project_issue(args) {
+    ensureTokenAvailable();
+    return requestJson(`/api/projects/${args.project_id}/issues/`, {
+      method: "POST",
+      json: args.payload,
+    });
+  },
+
+  async webodm_update_project_issue(args) {
+    ensureTokenAvailable();
+    return requestJson(`/api/projects/${args.project_id}/issues/${args.issue_id}/`, {
+      method: "PATCH",
+      json: args.patch,
+    });
+  },
+
+  async webodm_delete_project_issue(args) {
+    ensureTokenAvailable();
+    return requestJson(`/api/projects/${args.project_id}/issues/${args.issue_id}/`, {
+      method: "DELETE",
+      responseType: "empty",
+    });
+  },
+
+  async webodm_list_design_overlays(args) {
+    ensureTokenAvailable();
+    return requestJson(`/api/projects/${args.project_id}/design-overlays/`, { query: args.query });
+  },
+
+  async webodm_create_design_overlay(args) {
+    ensureTokenAvailable();
+    const filePath = assertFileExists(args.file_path, "Design overlay");
+    const form = createMultipartForm();
+    form.append("file", fs.createReadStream(filePath), path.basename(filePath));
+    appendMultipartField(form, "name", args.name);
+    appendMultipartField(form, "description", args.description);
+    return uploadMultipart(`/api/projects/${args.project_id}/design-overlays/`, form);
+  },
+
+  async webodm_update_design_overlay(args) {
+    ensureTokenAvailable();
+    return requestJson(`/api/projects/${args.project_id}/design-overlays/${args.overlay_id}/`, {
+      method: "PATCH",
+      json: args.patch,
+    });
+  },
+
+  async webodm_delete_design_overlay(args) {
+    ensureTokenAvailable();
+    return requestJson(`/api/projects/${args.project_id}/design-overlays/${args.overlay_id}/`, {
+      method: "DELETE",
+      responseType: "empty",
+    });
+  },
+
+  async webodm_list_field_photos(args) {
+    ensureTokenAvailable();
+    return requestJson(`/api/projects/${args.project_id}/field-photos/`, { query: args.query });
+  },
+
+  async webodm_create_field_photo(args) {
+    ensureTokenAvailable();
+    const imagePath = assertFileExists(args.image_path, "Field photo");
+    const form = createMultipartForm();
+    form.append("image", fs.createReadStream(imagePath), path.basename(imagePath));
+    for (const [key, value] of Object.entries(args.payload || {})) {
+      appendMultipartField(form, key, value);
+    }
+    return uploadMultipart(`/api/projects/${args.project_id}/field-photos/`, form);
+  },
+
+  async webodm_update_field_photo(args) {
+    ensureTokenAvailable();
+    return requestJson(`/api/projects/${args.project_id}/field-photos/${args.photo_id}/`, {
+      method: "PATCH",
+      json: args.patch,
+    });
+  },
+
+  async webodm_delete_field_photo(args) {
+    ensureTokenAvailable();
+    return requestJson(`/api/projects/${args.project_id}/field-photos/${args.photo_id}/`, {
+      method: "DELETE",
+      responseType: "empty",
+    });
+  },
+
+  async webodm_list_client_shares(args) {
+    ensureTokenAvailable();
+    return requestJson(`/api/projects/${args.project_id}/client-shares/`, { query: args.query });
+  },
+
+  async webodm_get_client_share(args) {
+    ensureTokenAvailable();
+    return requestJson(`/api/projects/${args.project_id}/client-shares/${args.share_id}/`);
+  },
+
+  async webodm_create_client_share(args) {
+    ensureTokenAvailable();
+    return requestJson(`/api/projects/${args.project_id}/client-shares/`, {
+      method: "POST",
+      json: args.payload,
+    });
+  },
+
+  async webodm_update_client_share(args) {
+    ensureTokenAvailable();
+    return requestJson(`/api/projects/${args.project_id}/client-shares/${args.share_id}/`, {
+      method: "PATCH",
+      json: args.patch,
+    });
+  },
+
+  async webodm_delete_client_share(args) {
+    ensureTokenAvailable();
+    return requestJson(`/api/projects/${args.project_id}/client-shares/${args.share_id}/`, {
+      method: "DELETE",
+      responseType: "empty",
+    });
+  },
+
   async webodm_list_processing_nodes(args) {
     ensureTokenAvailable();
     return requestJson("/api/processingnodes/", { query: args.query });

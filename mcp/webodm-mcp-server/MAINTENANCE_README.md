@@ -17,7 +17,8 @@ If a WebODM change does not touch `app/api/`, authentication, or returned payloa
 3. Add or update the MCP schema in `lib/tool-definitions.js`.
 4. Refresh `API_MAPPING.md`.
 5. Run `npm run smoke`.
-6. Run `npm test` against a real WebODM instance.
+6. Run `npm test` for schema/handler contract coverage.
+7. Run `npm run test:connection` against a real WebODM instance when credentials are available.
 
 If the change affects auth, also confirm whether the MCP layer should use `Bearer` JWTs, `Token` API keys, or both.
 

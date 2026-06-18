@@ -6,7 +6,7 @@ This package adds a standalone MCP server for the WebODM fork in this repository
 
 - Dual auth support that matches this fork: JWT/Bearer and permanent `Token` API keys.
 - Self-service token tools for `GET /api/token/` and `POST /api/token/regenerate/`.
-- Core project, task, processing-node, preset, monitoring, and worker tools.
+- Project, task, commercial delivery, issue/evidence, client-share, object-detection, processing-node, preset, monitoring, and worker tools.
 - Direct URL helpers for downloads and exported assets.
 - A repo-local maintenance workflow for adding tools when the WebODM API changes.
 - No interference with the root WebODM package.json.
@@ -87,7 +87,11 @@ The server covers these API areas:
 - Projects: list, get, create, patch, duplicate, permissions, and the special edit endpoint.
 - Tasks: list, get, create, partial upload flow, import, output, cancel, restart, remove, compact, duplicate.
 - Assets: download URLs, raw asset URLs, raster metadata endpoints, export requests.
-- 3D and monitoring: scene read/write, camera view write, monitoring candidates, monitoring compare.
+- 3D and monitoring: scene read/write, camera view write, QA, timeline, candidates, and comparison jobs.
+- Commercial delivery: readiness checks/sign-off, progress reports, and delivery ZIP URL generation.
+- Review workflows: AI issue detection, issue CRUD, design overlays, field photos, and client shares.
+- Object detection: asynchronous orthophoto detection for supported classes, including deer.
+- Staff operations: feature validation ledger CRUD.
 - Processing nodes: list, get, create, patch, delete, shared options.
 - Presets: list, get, create, patch, delete.
 - Workers and utilities: background task polling, worker result URLs, task status lookup, pending-action lookup.
@@ -112,7 +116,8 @@ npm test
 ```
 
 - `npm run smoke` checks JavaScript syntax for the entrypoint, helpers, handlers, and connection tester.
-- `npm test` runs the interactive connection check against a real WebODM instance.
+- `npm test` runs syntax, tool/handler contract, mock WebODM HTTP integration, and real MCP stdio list-tools checks without requiring WebODM credentials.
+- `npm run test:connection` runs the interactive check against a real WebODM instance.
 
 ## Maintenance Workflow
 

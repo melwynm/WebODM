@@ -131,7 +131,7 @@ export const TOOL_DEFINITIONS = [
     inputSchema: schema(
       {
         project_id: numberField("Project ID."),
-        task_id: numberField("Task ID."),
+        task_id: stringField("Task UUID."),
       },
       ["project_id", "task_id"]
     ),
@@ -179,7 +179,7 @@ export const TOOL_DEFINITIONS = [
     inputSchema: schema(
       {
         project_id: numberField("Project ID."),
-        task_id: numberField("Task ID."),
+        task_id: stringField("Task UUID."),
         image_paths: {
           type: "array",
           description: "Absolute or workspace-relative file paths.",
@@ -196,7 +196,7 @@ export const TOOL_DEFINITIONS = [
     inputSchema: schema(
       {
         project_id: numberField("Project ID."),
-        task_id: numberField("Task ID."),
+        task_id: stringField("Task UUID."),
       },
       ["project_id", "task_id"]
     ),
@@ -207,7 +207,7 @@ export const TOOL_DEFINITIONS = [
     inputSchema: schema(
       {
         project_id: numberField("Current project ID."),
-        task_id: numberField("Task ID."),
+        task_id: stringField("Task UUID."),
         patch: openObjectSchema,
       },
       ["project_id", "task_id", "patch"]
@@ -243,7 +243,7 @@ export const TOOL_DEFINITIONS = [
     inputSchema: schema(
       {
         project_id: numberField("Project ID."),
-        task_id: numberField("Task ID."),
+        task_id: stringField("Task UUID."),
         query: openObjectSchema,
       },
       ["project_id", "task_id"]
@@ -255,7 +255,7 @@ export const TOOL_DEFINITIONS = [
     inputSchema: schema(
       {
         project_id: numberField("Project ID."),
-        task_id: numberField("Task ID."),
+        task_id: stringField("Task UUID."),
       },
       ["project_id", "task_id"]
     ),
@@ -266,7 +266,7 @@ export const TOOL_DEFINITIONS = [
     inputSchema: schema(
       {
         project_id: numberField("Project ID."),
-        task_id: numberField("Task ID."),
+        task_id: stringField("Task UUID."),
       },
       ["project_id", "task_id"]
     ),
@@ -277,7 +277,7 @@ export const TOOL_DEFINITIONS = [
     inputSchema: schema(
       {
         project_id: numberField("Project ID."),
-        task_id: numberField("Task ID."),
+        task_id: stringField("Task UUID."),
       },
       ["project_id", "task_id"]
     ),
@@ -288,7 +288,7 @@ export const TOOL_DEFINITIONS = [
     inputSchema: schema(
       {
         project_id: numberField("Project ID."),
-        task_id: numberField("Task ID."),
+        task_id: stringField("Task UUID."),
       },
       ["project_id", "task_id"]
     ),
@@ -299,7 +299,7 @@ export const TOOL_DEFINITIONS = [
     inputSchema: schema(
       {
         project_id: numberField("Project ID."),
-        task_id: numberField("Task ID."),
+        task_id: stringField("Task UUID."),
       },
       ["project_id", "task_id"]
     ),
@@ -310,7 +310,7 @@ export const TOOL_DEFINITIONS = [
     inputSchema: schema(
       {
         project_id: numberField("Project ID."),
-        task_id: numberField("Task ID."),
+        task_id: stringField("Task UUID."),
         asset: stringField("Asset filename, for example all.zip or textured_model.zip."),
         filename: stringField("Optional download filename override."),
         include_jwt_query: booleanField("Whether to include the current JWT as a jwt query parameter in the returned authenticated_url. This only works when the current session is using JWT/Bearer auth."),
@@ -324,7 +324,7 @@ export const TOOL_DEFINITIONS = [
     inputSchema: schema(
       {
         project_id: numberField("Project ID."),
-        task_id: numberField("Task ID."),
+        task_id: stringField("Task UUID."),
         asset_path: stringField("Unsafe asset path segment accepted by WebODM, for example potree/metadata.json."),
         include_jwt_query: booleanField("Whether to include the current JWT as a jwt query parameter in the returned authenticated_url. This only works when the current session is using JWT/Bearer auth."),
       },
@@ -337,7 +337,7 @@ export const TOOL_DEFINITIONS = [
     inputSchema: schema(
       {
         project_id: numberField("Project ID."),
-        task_id: numberField("Task ID."),
+        task_id: stringField("Task UUID."),
         tile_type: {
           type: "string",
           enum: ["orthophoto", "dsm", "dtm"],
@@ -359,7 +359,7 @@ export const TOOL_DEFINITIONS = [
     inputSchema: schema(
       {
         project_id: numberField("Project ID."),
-        task_id: numberField("Task ID."),
+        task_id: stringField("Task UUID."),
         asset_type: {
           type: "string",
           enum: ["orthophoto", "dsm", "dtm", "georeferenced_model"],
@@ -376,7 +376,7 @@ export const TOOL_DEFINITIONS = [
     inputSchema: schema(
       {
         project_id: numberField("Project ID."),
-        task_id: numberField("Task ID."),
+        task_id: stringField("Task UUID."),
       },
       ["project_id", "task_id"]
     ),
@@ -387,7 +387,7 @@ export const TOOL_DEFINITIONS = [
     inputSchema: schema(
       {
         project_id: numberField("Project ID."),
-        task_id: numberField("Task ID."),
+        task_id: stringField("Task UUID."),
         scene: openObjectSchema,
       },
       ["project_id", "task_id", "scene"]
@@ -399,7 +399,7 @@ export const TOOL_DEFINITIONS = [
     inputSchema: schema(
       {
         project_id: numberField("Project ID."),
-        task_id: numberField("Task ID."),
+        task_id: stringField("Task UUID."),
         view: openObjectSchema,
       },
       ["project_id", "task_id", "view"]
@@ -411,7 +411,7 @@ export const TOOL_DEFINITIONS = [
     inputSchema: schema(
       {
         project_id: numberField("Project ID."),
-        task_id: numberField("Task ID."),
+        task_id: stringField("Task UUID."),
       },
       ["project_id", "task_id"]
     ),
@@ -422,10 +422,308 @@ export const TOOL_DEFINITIONS = [
     inputSchema: schema(
       {
         project_id: numberField("Project ID."),
-        task_id: numberField("Current task ID."),
+        task_id: stringField("Current task UUID."),
         compare_task: stringField("Comparison task ID."),
       },
       ["project_id", "task_id", "compare_task"]
+    ),
+  },
+  {
+    name: "webodm_get_monitoring_timeline",
+    description: "Fetch the ordered monitoring timeline and default comparison pair for a project.",
+    inputSchema: schema(
+      {
+        project_id: numberField("Project ID."),
+        task_id: stringField("Optional task UUID used as the timeline context."),
+      },
+      ["project_id"]
+    ),
+  },
+  {
+    name: "webodm_get_textured_model_qa",
+    description: "Fetch the commercial QA summary for a task's textured 3D model.",
+    inputSchema: schema(
+      {
+        project_id: numberField("Project ID."),
+        task_id: stringField("Task UUID."),
+      },
+      ["project_id", "task_id"]
+    ),
+  },
+  {
+    name: "webodm_get_progress_report",
+    description: "Fetch a project progress report as JSON or rendered HTML using an optional commercial template.",
+    inputSchema: schema(
+      {
+        project_id: numberField("Project ID."),
+        template: {
+          type: "string",
+          enum: ["general", "architecture_cad", "agriculture_field", "solar_inspection"],
+          description: "Optional commercial report template.",
+        },
+        format: {
+          type: "string",
+          enum: ["json", "html"],
+          description: "Response format. Omit or use json for structured data.",
+        },
+      },
+      ["project_id"]
+    ),
+  },
+  {
+    name: "webodm_get_commercial_readiness",
+    description: "Fetch package-specific system checks and manual sign-off state for commercial delivery.",
+    inputSchema: schema(
+      {
+        project_id: numberField("Project ID."),
+        package: {
+          type: "string",
+          enum: ["basic_orthomosaic", "architecture_cad", "agriculture_field", "solar_inspection"],
+          description: "Optional package override used for readiness checks.",
+        },
+      },
+      ["project_id"]
+    ),
+  },
+  {
+    name: "webodm_update_commercial_readiness",
+    description: "Update commercial package selection, reviewer notes, and manual delivery sign-off fields.",
+    inputSchema: schema(
+      {
+        project_id: numberField("Project ID."),
+        patch: openObjectSchema,
+      },
+      ["project_id", "patch"]
+    ),
+  },
+  {
+    name: "webodm_get_delivery_export_url",
+    description: "Build the authenticated project delivery ZIP URL, optionally selecting a commercial report template.",
+    inputSchema: schema(
+      {
+        project_id: numberField("Project ID."),
+        template: {
+          type: "string",
+          enum: ["general", "architecture_cad", "agriculture_field", "solar_inspection"],
+          description: "Optional report template included in the delivery bundle.",
+        },
+        include_jwt_query: booleanField("Include the active JWT in authenticated_url. This is unavailable for permanent Token auth."),
+      },
+      ["project_id"]
+    ),
+  },
+  {
+    name: "webodm_detect_ai_issues",
+    description: "Run server-side AI issue detection against project field photos or an orthophoto preview and optionally create review issues.",
+    inputSchema: schema(
+      {
+        project_id: numberField("Project ID."),
+        task_id: stringField("Optional task UUID."),
+        source: {
+          type: "string",
+          enum: ["auto", "field_photos", "orthophoto"],
+          description: "Image source selection.",
+        },
+        create: booleanField("Whether detected candidates should be created as in-review project issues."),
+        max_images: numberField("Maximum source images to inspect, from 1 to 8."),
+      },
+      ["project_id"]
+    ),
+  },
+  {
+    name: "webodm_start_object_detection",
+    description: "Start orthophoto object detection. Poll the returned celery_task_id with worker tools; deer results use the GSD-aware deer filter.",
+    inputSchema: schema(
+      {
+        task_id: stringField("Task UUID."),
+        model: {
+          type: "string",
+          enum: ["cars", "trees", "athletic", "boats", "planes", "cattle", "dogs", "deer"],
+          description: "Detection model or class family.",
+        },
+      },
+      ["task_id", "model"]
+    ),
+  },
+  {
+    name: "webodm_list_feature_validations",
+    description: "List the staff-only feature validation ledger with optional status, area, attention, and pagination filters.",
+    inputSchema: schema({ query: openObjectSchema }),
+  },
+  {
+    name: "webodm_get_feature_validation",
+    description: "Fetch one staff-only feature validation record by stable key.",
+    inputSchema: schema({ key: stringField("Feature validation key.") }, ["key"]),
+  },
+  {
+    name: "webodm_create_feature_validation",
+    description: "Create a staff-only feature validation ledger record.",
+    inputSchema: schema({ payload: openObjectSchema }, ["payload"]),
+  },
+  {
+    name: "webodm_update_feature_validation",
+    description: "Patch a staff-only feature validation record and update test attribution when status changes.",
+    inputSchema: schema(
+      { key: stringField("Feature validation key."), patch: openObjectSchema },
+      ["key", "patch"]
+    ),
+  },
+  {
+    name: "webodm_delete_feature_validation",
+    description: "Delete a staff-only feature validation record by key.",
+    inputSchema: schema({ key: stringField("Feature validation key.") }, ["key"]),
+  },
+  {
+    name: "webodm_list_project_issues",
+    description: "List project issues and annotations with optional task, status, issue_type, ordering, and pagination filters.",
+    inputSchema: schema(
+      { project_id: numberField("Project ID."), query: openObjectSchema },
+      ["project_id"]
+    ),
+  },
+  {
+    name: "webodm_get_project_issue",
+    description: "Fetch one project issue or annotation.",
+    inputSchema: schema(
+      { project_id: numberField("Project ID."), issue_id: numberField("Issue ID.") },
+      ["project_id", "issue_id"]
+    ),
+  },
+  {
+    name: "webodm_create_project_issue",
+    description: "Create a project issue or annotation, optionally linked to a task and GeoJSON geometry.",
+    inputSchema: schema(
+      { project_id: numberField("Project ID."), payload: openObjectSchema },
+      ["project_id", "payload"]
+    ),
+  },
+  {
+    name: "webodm_update_project_issue",
+    description: "Patch a project issue, including review status, assignment, properties, or geometry.",
+    inputSchema: schema(
+      { project_id: numberField("Project ID."), issue_id: numberField("Issue ID."), patch: openObjectSchema },
+      ["project_id", "issue_id", "patch"]
+    ),
+  },
+  {
+    name: "webodm_delete_project_issue",
+    description: "Delete a project issue or annotation.",
+    inputSchema: schema(
+      { project_id: numberField("Project ID."), issue_id: numberField("Issue ID.") },
+      ["project_id", "issue_id"]
+    ),
+  },
+  {
+    name: "webodm_list_design_overlays",
+    description: "List CAD, GeoJSON, or zipped Shapefile design overlays attached to a project.",
+    inputSchema: schema(
+      { project_id: numberField("Project ID."), query: openObjectSchema },
+      ["project_id"]
+    ),
+  },
+  {
+    name: "webodm_create_design_overlay",
+    description: "Upload a local design overlay file to a project.",
+    inputSchema: schema(
+      {
+        project_id: numberField("Project ID."),
+        file_path: stringField("Absolute or workspace-relative overlay file path."),
+        name: stringField("Optional overlay name."),
+        description: stringField("Optional overlay description."),
+      },
+      ["project_id", "file_path"]
+    ),
+  },
+  {
+    name: "webodm_update_design_overlay",
+    description: "Patch design overlay metadata.",
+    inputSchema: schema(
+      { project_id: numberField("Project ID."), overlay_id: numberField("Overlay ID."), patch: openObjectSchema },
+      ["project_id", "overlay_id", "patch"]
+    ),
+  },
+  {
+    name: "webodm_delete_design_overlay",
+    description: "Delete a project design overlay and its uploaded file.",
+    inputSchema: schema(
+      { project_id: numberField("Project ID."), overlay_id: numberField("Overlay ID.") },
+      ["project_id", "overlay_id"]
+    ),
+  },
+  {
+    name: "webodm_list_field_photos",
+    description: "List project field photos with optional task and pagination filters.",
+    inputSchema: schema(
+      { project_id: numberField("Project ID."), query: openObjectSchema },
+      ["project_id"]
+    ),
+  },
+  {
+    name: "webodm_create_field_photo",
+    description: "Upload a local field photo with optional task, location, capture, and metadata fields.",
+    inputSchema: schema(
+      {
+        project_id: numberField("Project ID."),
+        image_path: stringField("Absolute or workspace-relative image path."),
+        payload: openObjectSchema,
+      },
+      ["project_id", "image_path"]
+    ),
+  },
+  {
+    name: "webodm_update_field_photo",
+    description: "Patch field photo metadata.",
+    inputSchema: schema(
+      { project_id: numberField("Project ID."), photo_id: numberField("Field photo ID."), patch: openObjectSchema },
+      ["project_id", "photo_id", "patch"]
+    ),
+  },
+  {
+    name: "webodm_delete_field_photo",
+    description: "Delete a project field photo and its uploaded image.",
+    inputSchema: schema(
+      { project_id: numberField("Project ID."), photo_id: numberField("Field photo ID.") },
+      ["project_id", "photo_id"]
+    ),
+  },
+  {
+    name: "webodm_list_client_shares",
+    description: "List tokenized client portal shares for a project.",
+    inputSchema: schema(
+      { project_id: numberField("Project ID."), query: openObjectSchema },
+      ["project_id"]
+    ),
+  },
+  {
+    name: "webodm_get_client_share",
+    description: "Fetch one project client share, including role, expiry, enabled state, and portal URL.",
+    inputSchema: schema(
+      { project_id: numberField("Project ID."), share_id: numberField("Client share ID.") },
+      ["project_id", "share_id"]
+    ),
+  },
+  {
+    name: "webodm_create_client_share",
+    description: "Create a tokenized client viewer or reviewer share.",
+    inputSchema: schema(
+      { project_id: numberField("Project ID."), payload: openObjectSchema },
+      ["project_id", "payload"]
+    ),
+  },
+  {
+    name: "webodm_update_client_share",
+    description: "Patch a client share's name, role, enabled state, or expiry.",
+    inputSchema: schema(
+      { project_id: numberField("Project ID."), share_id: numberField("Client share ID."), patch: openObjectSchema },
+      ["project_id", "share_id", "patch"]
+    ),
+  },
+  {
+    name: "webodm_delete_client_share",
+    description: "Delete and invalidate a project client share.",
+    inputSchema: schema(
+      { project_id: numberField("Project ID."), share_id: numberField("Client share ID.") },
+      ["project_id", "share_id"]
     ),
   },
   {

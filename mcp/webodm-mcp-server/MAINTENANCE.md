@@ -83,6 +83,7 @@ Update `API_MAPPING.md` so future changes have one source of truth.
 ```bash
 npm run smoke
 npm test
+npm run test:connection  # when live credentials are available
 ```
 
 ## Adding a New Tool
@@ -103,6 +104,7 @@ This creates a markdown snippet in `generated/` with a candidate schema block an
 4. Add or update an example in `EXAMPLES.md` if the tool is user-facing.
 5. Run `npm run smoke`.
 6. Run `npm test`.
+7. Run `npm run test:connection` when a live WebODM credential is available.
 
 ## Editing Existing Tools Safely
 

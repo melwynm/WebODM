@@ -1,6 +1,6 @@
 {
   "name": "webodm-mcp-server",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "MCP server for this WebODM fork with JWT and permanent API token support.",
   "type": "module",
   "main": "index.js",
@@ -10,9 +10,12 @@
   "scripts": {
     "start": "node index.js",
     "dev": "node --watch index.js",
-    "test": "node test-connection.js",
+    "test": "npm run smoke && node test-contract.js && node test-handlers.js && node test-server.js",
+    "test:handlers": "node test-handlers.js",
+    "test:server": "node test-server.js",
+    "test:connection": "node test-connection.js",
     "generate": "node generate-tool.js",
-    "smoke": "node --check index.js && node --check generate-tool.js && node --check test-connection.js && node --check lib/common.js && node --check lib/handlers.js && node --check lib/tool-definitions.js"
+    "smoke": "node --check index.js && node --check generate-tool.js && node --check test-connection.js && node --check test-contract.js && node --check test-handlers.js && node --check test-server.js && node --check lib/common.js && node --check lib/handlers.js && node --check lib/tool-definitions.js"
   },
   "keywords": [
     "mcp",
@@ -23,8 +26,8 @@
   ],
   "license": "MIT",
   "dependencies": {
-    "@modelcontextprotocol/sdk": "^1.0.0",
-    "form-data": "^4.0.1",
+    "@modelcontextprotocol/sdk": "^1.29.0",
+    "form-data": "^4.0.6",
     "node-fetch": "^3.3.2"
   },
   "engines": {

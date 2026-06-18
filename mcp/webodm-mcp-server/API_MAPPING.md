@@ -58,6 +58,64 @@ This file maps the current WebODM API in this repository to the MCP tools in thi
 | POST /api/projects/{project_id}/tasks/{task_id}/3d/cameraview | webodm_save_task_camera_view |
 | GET /api/projects/{project_id}/tasks/{task_id}/monitoring/candidates | webodm_get_monitoring_candidates |
 | POST /api/projects/{project_id}/tasks/{task_id}/monitoring/compare | webodm_create_monitoring_compare |
+| GET /api/projects/{project_id}/monitoring/timeline | webodm_get_monitoring_timeline |
+| GET /api/projects/{project_id}/tasks/{task_id}/3d/qa | webodm_get_textured_model_qa |
+
+## Commercial Delivery And Review
+
+| WebODM Endpoint | MCP Tool |
+| --- | --- |
+| GET /api/projects/{project_id}/reports/progress | webodm_get_progress_report |
+| GET /api/projects/{project_id}/commercial/readiness | webodm_get_commercial_readiness |
+| PATCH /api/projects/{project_id}/commercial/readiness | webodm_update_commercial_readiness |
+| GET /api/projects/{project_id}/delivery/export | webodm_get_delivery_export_url |
+| POST /api/projects/{project_id}/ai/issue-detection | webodm_detect_ai_issues |
+
+## Project Issues And Evidence
+
+| WebODM Endpoint | MCP Tool |
+| --- | --- |
+| GET /api/projects/{project_id}/issues/ | webodm_list_project_issues |
+| GET /api/projects/{project_id}/issues/{issue_id}/ | webodm_get_project_issue |
+| POST /api/projects/{project_id}/issues/ | webodm_create_project_issue |
+| PATCH /api/projects/{project_id}/issues/{issue_id}/ | webodm_update_project_issue |
+| DELETE /api/projects/{project_id}/issues/{issue_id}/ | webodm_delete_project_issue |
+| GET /api/projects/{project_id}/design-overlays/ | webodm_list_design_overlays |
+| POST /api/projects/{project_id}/design-overlays/ | webodm_create_design_overlay |
+| PATCH /api/projects/{project_id}/design-overlays/{overlay_id}/ | webodm_update_design_overlay |
+| DELETE /api/projects/{project_id}/design-overlays/{overlay_id}/ | webodm_delete_design_overlay |
+| GET /api/projects/{project_id}/field-photos/ | webodm_list_field_photos |
+| POST /api/projects/{project_id}/field-photos/ | webodm_create_field_photo |
+| PATCH /api/projects/{project_id}/field-photos/{photo_id}/ | webodm_update_field_photo |
+| DELETE /api/projects/{project_id}/field-photos/{photo_id}/ | webodm_delete_field_photo |
+
+## Client Shares
+
+| WebODM Endpoint | MCP Tool |
+| --- | --- |
+| GET /api/projects/{project_id}/client-shares/ | webodm_list_client_shares |
+| GET /api/projects/{project_id}/client-shares/{share_id}/ | webodm_get_client_share |
+| POST /api/projects/{project_id}/client-shares/ | webodm_create_client_share |
+| PATCH /api/projects/{project_id}/client-shares/{share_id}/ | webodm_update_client_share |
+| DELETE /api/projects/{project_id}/client-shares/{share_id}/ | webodm_delete_client_share |
+
+## Feature Validation
+
+| WebODM Endpoint | MCP Tool |
+| --- | --- |
+| GET /api/feature-validations/ | webodm_list_feature_validations |
+| GET /api/feature-validations/{key}/ | webodm_get_feature_validation |
+| POST /api/feature-validations/ | webodm_create_feature_validation |
+| PATCH /api/feature-validations/{key}/ | webodm_update_feature_validation |
+| DELETE /api/feature-validations/{key}/ | webodm_delete_feature_validation |
+
+## Object Detection
+
+| WebODM Endpoint | MCP Tool |
+| --- | --- |
+| POST /api/plugins/objdetect/task/{task_id}/detect | webodm_start_object_detection |
+
+Use `webodm_check_worker_task` and `webodm_get_worker_result_url` with the returned `celery_task_id`. The available model values include `deer`.
 
 ## Processing Nodes
 
@@ -102,3 +160,5 @@ These tools do not hit WebODM directly:
 - `?jwt=` URL helpers only work when the current MCP session is using a JWT/Bearer token.
 - `/api/projects/` may return a plain array when `page` is not provided.
 - The worker result endpoint is mapped as a URL helper because the response may be a binary file.
+- WebODM task primary keys are UUID strings; MCP task schemas intentionally use strings.
+- Feature validation tools require a staff/admin WebODM account.

@@ -37,9 +37,12 @@ with `webodm_get_api_token`.
 
 ```bash
 npm test
+npm run test:connection
 ```
 
-This prompts for your username and password, requests a JWT from `/api/token-auth/`, verifies `/api/token/`, then checks a few core endpoints using permanent `Token` auth.
+`npm test` validates JavaScript syntax and the MCP tool/handler contract without credentials. `npm run test:connection` prompts for your username and password, requests a JWT from `/api/token-auth/`, verifies `/api/token/`, then checks core endpoints using permanent `Token` auth.
+
+For non-interactive live verification, set `WEBODM_USERNAME` and `WEBODM_PASSWORD` before running `npm run test:connection`.
 
 ## 4. Register the MCP Server
 

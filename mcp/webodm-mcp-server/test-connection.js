@@ -30,8 +30,8 @@ function countProjects(payload) {
 
 async function main() {
   const baseUrl = normalizeBaseUrl(process.env.WEBODM_BASE_URL || (await ask("WebODM URL [http://localhost:8000]: ")) || "http://localhost:8000");
-  const username = await ask("Username: ");
-  const password = await ask("Password: ");
+  const username = process.env.WEBODM_USERNAME || (await ask("Username: "));
+  const password = process.env.WEBODM_PASSWORD || (await ask("Password: "));
 
   console.log();
   console.log(`Checking ${baseUrl} ...`);

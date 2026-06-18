@@ -19,6 +19,14 @@ This file tracks the current state of this fork so future work can start from th
 
 ## Recently Completed
 
+### MCP Server Synchronization
+
+- Updated the WebODM MCP server to v1.1.0 with `@modelcontextprotocol/sdk` 1.29.0 and `form-data` 4.0.6
+- Added MCP tools for commercial readiness, delivery exports, progress reports, AI issue detection, feature validation, project issues, evidence uploads, client shares, monitoring timeline, 3D QA, and object detection including deer
+- Corrected task ID schemas to use WebODM UUID strings
+- Added non-interactive contract tests, mock WebODM HTTP handler tests, and an MCP stdio client/server handshake test
+- Updated MCP API mapping, examples, quickstart, maintenance, and connection-test guidance
+
 ### Commercial Disclaimers
 
 - Added `COMMERCIAL_DISCLAIMERS.md` with standard caveats for drone outputs, data quality, measurements, construction, agriculture, solar, thermal, AI/object detection, monitoring, client sharing, and open-source licensing

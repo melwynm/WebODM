@@ -127,3 +127,36 @@ Call that with `webodm_regenerate_api_token`. The old permanent token stops work
 1. Call `webodm_get_monitoring_candidates`.
 2. Choose a candidate task ID.
 3. Call `webodm_create_monitoring_compare` with `compare_task` set to that task ID.
+
+## 10. Check commercial readiness and export a delivery bundle
+
+1. Call `webodm_get_commercial_readiness`:
+
+```json
+{
+  "project_id": 1,
+  "package": "architecture_cad"
+}
+```
+
+2. Complete manual review fields with `webodm_update_commercial_readiness`.
+3. Call `webodm_get_delivery_export_url` and download the ZIP with the active auth header.
+
+## 11. Run deer detection
+
+Call `webodm_start_object_detection`:
+
+```json
+{
+  "task_id": "5f5d23f7-777e-40b8-bd55-440cb9a644ce",
+  "model": "deer"
+}
+```
+
+Poll the returned `celery_task_id` with `webodm_check_worker_task`, then use `webodm_get_worker_result_url` to retrieve the GeoJSON. Treat the result count as review candidates until field validation is complete.
+
+## 12. Upload project evidence
+
+- Use `webodm_create_design_overlay` with a local GeoJSON or zipped Shapefile path.
+- Use `webodm_create_field_photo` with a local image path and optional location/task metadata.
+- Use `webodm_create_project_issue` to turn reviewed findings into tracked project issues.
