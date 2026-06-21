@@ -46,6 +46,9 @@ class TestApiPreset(BootTestCase):
         self.assertTrue(commercial_3d.description)
         self.assertTrue(any(option.get('name') == 'pc-quality' and option.get('value') == 'ultra' for option in commercial_3d.options))
         self.assertTrue(any(option.get('name') == 'mesh-size' and option.get('value') == '2000000' for option in commercial_3d.options))
+        self.assertTrue(any(option.get('name') == 'texturing-single-material' and option.get('value') is True for option in commercial_3d.options))
+        self.assertTrue(any(option.get('name') == '3d-tiles' and option.get('value') is True for option in commercial_3d.options))
+        self.assertTrue(any(option.get('name') == 'gltf' and option.get('value') is True for option in commercial_3d.options))
 
         architecture = Preset.objects.get(name="Architecture CAD Orthomosaic", system=True)
         self.assertIn("CAD/design overlay", architecture.description)

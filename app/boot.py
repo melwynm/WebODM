@@ -269,7 +269,7 @@ def add_default_presets():
                                                               {'name': 'build-overviews', 'value': True},
                                                               {'name': 'cog', 'value': True}]})
         Preset.objects.update_or_create(name='Commercial 3D Model', system=True,
-                                        defaults={'description': 'Best-quality textured mesh workflow for client deliverables. Slower and memory intensive; use full-resolution source images.',
+                                        defaults={'description': 'Best-quality textured mesh workflow with native OGC 3D Tiles and Cesium ion-compatible outputs. Slower and memory intensive; use full-resolution source images.',
                                                   'options': [{'name': 'auto-boundary', 'value': True},
                                                               {'name': 'sfm-algorithm', 'value': 'triangulation'},
                                                               {'name': 'matcher-type', 'value': 'flann'},
@@ -280,6 +280,8 @@ def add_default_presets():
                                                               {'name': 'use-3dmesh', 'value': True},
                                                               {'name': 'mesh-octree-depth', 'value': '12'},
                                                               {'name': 'mesh-size', 'value': '2000000'},
+                                                              {'name': 'texturing-single-material', 'value': True},
+                                                              {'name': '3d-tiles', 'value': True},
                                                               {'name': 'gltf', 'value': True}]})
         Preset.objects.update_or_create(name='Gaussian Splat Source', system=True,
                                         defaults={'description': 'Highest-detail reconstruction source preset for Gaussian Splat post-processing. Produces ultra-quality point cloud, camera shots, and textured model assets for an external splat trainer.',
