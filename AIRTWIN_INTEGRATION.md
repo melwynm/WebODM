@@ -8,8 +8,9 @@ webhook after a task finishes successfully.
 
 1. As a WebODM administrator, create a normal user dedicated to AirTwin. Do not
    make it staff or a superuser and do not make it the project owner.
-2. Open each project AirTwin may import and grant that user only the project view
-   permission. Do not grant add, change, or delete permissions.
+2. Edit each project AirTwin may import and assign that user the **AirTwin
+   integration** role. This grants only project view and import acknowledgment;
+   it does not grant add, change, or delete permissions.
 3. Sign in as the integration user and open **Account > API Token**, or visit
    `/account/token/`. Reveal the persistent API key once and store it in AirTwin's
    secret manager.
@@ -69,7 +70,9 @@ curl -H "Authorization: Token $WEBODM_API_KEY" \
 
 The manifest includes project and task identifiers, status, EPSG, timestamps,
 supported assets and download URLs, optional site/survey metadata, retention dates,
-and readiness warnings. Existing API routes remain authoritative and compatible:
+readiness warnings, and the current AirTwin import state. Fetching the manifest
+starts retention protection for that completion event. Existing API routes remain
+authoritative and compatible:
 
 ```bash
 curl -H "Authorization: Token $WEBODM_API_KEY" \
@@ -126,13 +129,44 @@ HTTP status, and sanitized errors are recorded in Django admin; credentials are
 never included in webhook payloads or error records. Webhook failure cannot change
 the completed WebODM task status.
 
+## Import Acknowledgment And Retry
+
+AirTwin should report each import attempt to the task status endpoint. The
+`eventId` must match the stable completion event received by webhook or manifest:
+
+```bash
+curl -X POST -H "Authorization: Token $WEBODM_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"version":1,"eventId":"EVENT_UUID","status":"importing"}' \
+  http://webodm:8000/api/projects/7/tasks/TASK_UUID/airtwin/status
+
+curl -X POST -H "Authorization: Token $WEBODM_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"version":1,"eventId":"EVENT_UUID","status":"imported","importedAssets":["orthophoto.tif","textured_model.glb"]}' \
+  http://webodm:8000/api/projects/7/tasks/TASK_UUID/airtwin/status
+```
+
+Valid reported states are `importing`, `failed`, and `imported`. A failed attempt
+can return to `importing`; each new attempt increments the attempt count. An
+`imported` state is terminal and releases automatic quota-cleanup protection.
+Repeated identical acknowledgments are successful no-ops. Stale event IDs,
+unavailable assets, and state regressions return HTTP 400. Include a short `message`
+with failed acknowledgments; WebODM sanitizes credential-like values before storing
+it.
+
+Use `GET /api/projects/<project>/tasks/<task>/airtwin/status` to read timestamps,
+imported asset names, attempt count, retry availability, and retention protection.
+A non-sensitive state summary appears as `airtwin_import` in normal task API
+responses and as an AirTwin status label on the task list.
+
 ## Output Retention
 
 `AIRTWIN_OUTPUT_RETENTION_DAYS` defaults to 30 and is published in the manifest as
-an operational retention target. This integration never deletes outputs. Keep task
-owners off restrictive quota cleanup, retain completed task media until AirTwin has
-confirmed import, and include WebODM media in normal backups. Any later automated
-deletion policy must independently check AirTwin import confirmation.
+an operational retention target. General quota cleanup skips tasks whose AirTwin
+lifecycle has started until AirTwin confirms `imported`. Explicit deletion by an
+authorized WebODM user remains available and should be governed by normal customer
+retention policy. This integration does not otherwise delete outputs; include
+WebODM media in normal backups.
 
 ## Troubleshooting
 
@@ -147,5 +181,8 @@ deletion policy must independently check AirTwin import confirmation.
 - **No webhook:** confirm both web and worker containers received the variables, the
   Celery worker is online, the shared network resolves the AirTwin hostname, and the
   delivery record in Django admin shows the latest sanitized error.
+- **Acknowledgment rejected:** confirm the account has both project view and AirTwin
+  acknowledgment permissions, use the current event ID, and report only assets
+  listed by the task manifest.
 - **Signature mismatch:** verify against the raw body bytes before JSON parsing and
   use the timestamp and event ID header values exactly as received.

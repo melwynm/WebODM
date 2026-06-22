@@ -1,7 +1,9 @@
 from django.contrib.auth.models import User, Group
 from rest_framework import status
 from rest_framework.test import APIClient
-from app.models import Task, Project
+import uuid
+
+from app.models import AirTwinImportState, Task, Project
 from nodeodm.models import ProcessingNode
 from worker.tasks import check_quotas
 from .classes import BootTestCase
@@ -86,3 +88,23 @@ class TestQuota(BootTestCase):
         tasks = Task.objects.filter(project__owner=user)
         self.assertEqual(len(tasks), 1)
         self.assertEqual(tasks[0].name, "Test")
+
+    def test_quota_cleanup_skips_active_airtwin_imports(self):
+        user = User.objects.get(username="testuser")
+        user.profile.quota = 100
+        user.profile.save(update_fields=["quota"])
+        project = Project.objects.create(owner=user, name="AirTwin retention")
+        unprotected = Task.objects.create(project=project, name="Unprotected", size=75)
+        protected = Task.objects.create(project=project, name="Protected", size=75)
+        AirTwinImportState.objects.create(
+            task=protected,
+            event_id=uuid.uuid4(),
+            status=AirTwinImportState.STATUS_PENDING,
+        )
+        user.profile.clear_used_quota_cache()
+        user.profile.set_quota_deadline(0)
+
+        check_quotas()
+
+        self.assertFalse(Task.objects.filter(pk=unprotected.pk).exists())
+        self.assertTrue(Task.objects.filter(pk=protected.pk).exists())

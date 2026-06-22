@@ -553,6 +553,15 @@ Example header:
 Authorization: Token <your_api_key>
 ```
 
+### AirTwin Integration
+
+For an AirTwin service account, edit the project and select the **AirTwin
+integration** permission role. Process surveys with the **AirTwin Export** preset.
+The task list then shows whether AirTwin is pending, importing, imported, or failed.
+Do not delete a task before it shows **AirTwin imported** unless the import is being
+intentionally abandoned. See `AIRTWIN_INTEGRATION.md` for API, webhook, retry,
+networking, geospatial, and retention setup.
+
 ## 26. Troubleshooting
 
 ### The Site Does Not Load

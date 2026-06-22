@@ -7,6 +7,7 @@ class ProjectPermissionPolicy:
     VIEW = ("view_project",)
     CHANGE = ("change_project",)
     DELETE = ("delete_project",)
+    AIRTWIN_ACKNOWLEDGE = ("acknowledge_airtwin_import",)
 
     @staticmethod
     def get_project(request, project_pk, perms=VIEW):

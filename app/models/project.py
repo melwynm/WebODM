@@ -141,6 +141,9 @@ class Project(models.Model):
     class Meta:
         verbose_name = _("Project")
         verbose_name_plural = _("Projects")
+        permissions = (
+            ("acknowledge_airtwin_import", _("Can acknowledge AirTwin imports")),
+        )
 
 @receiver(signals.post_save, sender=Project, dispatch_uid="project_post_save")
 def project_post_save(sender, instance, created, **kwargs):

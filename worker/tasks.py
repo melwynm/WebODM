@@ -12,6 +12,7 @@ from django.core.exceptions import ObjectDoesNotExist
 from django.db.models import Count
 from django.db.models import Q
 from app.models import Profile
+from app.models import AirTwinImportState
 
 from app.models import Project
 from app.models import Task
@@ -288,13 +289,23 @@ def check_quotas():
             if now > deadline:
                 # deadline passed, delete tasks until quota is met
                 logger.info("Quota deadline expired for %s, deleting tasks" % str(p.user.username))
-                task_count = Task.objects.filter(project__owner=p.user).count()
+                protected_task_ids = AirTwinImportState.objects.exclude(
+                    status=AirTwinImportState.STATUS_IMPORTED
+                ).values("task_id")
+                deletion_candidates = Task.objects.filter(project__owner=p.user).exclude(
+                    id__in=protected_task_ids
+                )
+                task_count = deletion_candidates.count()
                 c = 0
 
                 while p.has_exceeded_quota():
                     try:
-                        last_task = Task.objects.filter(project__owner=p.user).order_by("-created_at").first()
+                        last_task = deletion_candidates.order_by("-created_at").first()
                         if last_task is None:
+                            logger.warning(
+                                "Quota remains exceeded for %s, but all remaining tasks are protected by active AirTwin imports",
+                                str(p.user.username),
+                            )
                             break
                         logger.info("Deleting %s" % last_task)
                         last_task.delete()

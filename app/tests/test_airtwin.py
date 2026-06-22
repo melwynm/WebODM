@@ -11,7 +11,7 @@ from guardian.shortcuts import assign_perm
 from nodeodm import status_codes
 from rest_framework.test import APIClient
 
-from app.models import AirTwinWebhookDelivery, Project, Task
+from app.models import AirTwinImportState, AirTwinWebhookDelivery, Project, Task
 from app.plugins.signals import task_completed
 from app.services.airtwin import (
     build_manifest,
@@ -109,6 +109,8 @@ class TestAirTwinIntegration(BootTestCase):
             ),
         )
         self.assertEqual(glb["epsg"], 32740)
+        self.assertEqual(manifest["airTwinImport"]["status"], "not_started")
+        self.assertFalse(manifest["airTwinImport"]["retentionProtected"])
 
     def test_geospatial_validation_rejects_missing_crs_and_invalid_wgs84(self):
         self.task.epsg = None
@@ -300,9 +302,132 @@ class TestAirTwinIntegration(BootTestCase):
         )
         self.assertEqual(manifest.status_code, 200)
         self.assertEqual(manifest.data["taskId"], str(self.task.id))
+        self.assertEqual(manifest.data["airTwinImport"]["status"], AirTwinImportState.STATUS_PENDING)
+        self.assertTrue(manifest.data["airTwinImport"]["retentionProtected"])
 
         other_client = APIClient(HTTP_AUTHORIZATION="Token {}".format(self.other_user.profile.api_key))
         denied = other_client.get(
             "/api/projects/{}/tasks/{}/airtwin/manifest".format(self.project.id, self.task.id)
         )
         self.assertEqual(denied.status_code, 404)
+
+    def test_import_acknowledgment_permissions_transitions_and_idempotency(self):
+        assign_perm("view_project", self.other_user, self.project)
+        client = APIClient(HTTP_AUTHORIZATION="Token {}".format(self.other_user.profile.api_key))
+        url = "/api/projects/{}/tasks/{}/airtwin/status".format(self.project.id, self.task.id)
+        event_id = str(stable_event_id(self.task))
+
+        status_response = client.get(url)
+        self.assertEqual(status_response.status_code, 200)
+        self.assertEqual(status_response.data["version"], 1)
+        self.assertEqual(status_response.data["taskId"], str(self.task.id))
+        self.assertEqual(status_response.data["status"], "not_started")
+
+        denied = client.post(url, {
+            "version": 1,
+            "eventId": event_id,
+            "status": "importing",
+        }, format="json")
+        self.assertEqual(denied.status_code, 404)
+
+        assign_perm("acknowledge_airtwin_import", self.other_user, self.project)
+        importing = client.post(url, {
+            "version": 1,
+            "eventId": event_id,
+            "status": "importing",
+        }, format="json")
+        self.assertEqual(importing.status_code, 200)
+        self.assertEqual(importing.data["status"], AirTwinImportState.STATUS_IMPORTING)
+        self.assertEqual(importing.data["attempts"], 1)
+        self.assertTrue(importing.data["retentionProtected"])
+
+        failed = client.post(url, {
+            "version": 1,
+            "eventId": event_id,
+            "status": "failed",
+            "message": "token=abc import rejected",
+        }, format="json")
+        self.assertEqual(failed.status_code, 200)
+        self.assertEqual(failed.data["status"], AirTwinImportState.STATUS_FAILED)
+        self.assertNotIn("abc", failed.data["lastError"])
+        self.assertTrue(failed.data["canRetry"])
+
+        retrying = client.post(url, {
+            "version": 1,
+            "eventId": event_id,
+            "status": "importing",
+        }, format="json")
+        self.assertEqual(retrying.status_code, 200)
+        self.assertEqual(retrying.data["attempts"], 2)
+
+        imported_payload = {
+            "version": 1,
+            "eventId": event_id,
+            "status": "imported",
+            "importedAssets": ["orthophoto.tif", "textured_model.glb"],
+        }
+        imported = client.post(url, imported_payload, format="json")
+        self.assertEqual(imported.status_code, 200)
+        self.assertEqual(imported.data["status"], AirTwinImportState.STATUS_IMPORTED)
+        self.assertEqual(imported.data["importedAssets"], ["textured_model.glb", "orthophoto.tif"])
+        self.assertFalse(imported.data["retentionProtected"])
+        self.assertIsNotNone(imported.data["importedAt"])
+
+        duplicate = client.post(url, imported_payload, format="json")
+        self.assertEqual(duplicate.status_code, 200)
+        self.assertEqual(duplicate.data["importedAt"], imported.data["importedAt"])
+
+        regression = client.post(url, {
+            "version": 1,
+            "eventId": event_id,
+            "status": "failed",
+            "message": "late failure",
+        }, format="json")
+        self.assertEqual(regression.status_code, 400)
+
+        detail = client.get("/api/projects/{}/tasks/{}/".format(self.project.id, self.task.id))
+        self.assertEqual(detail.status_code, 200)
+        self.assertEqual(detail.data["airtwin_import"]["status"], AirTwinImportState.STATUS_IMPORTED)
+
+    def test_project_edit_can_assign_least_privilege_airtwin_role(self):
+        owner_client = APIClient(HTTP_AUTHORIZATION="Token {}".format(self.user.profile.api_key))
+        response = owner_client.post("/api/projects/{}/edit/".format(self.project.id), {
+            "name": self.project.name,
+            "description": self.project.description,
+            "permissions": [{
+                "username": self.other_user.username,
+                "owner": False,
+                "permissions": ["view", "acknowledge_airtwin_import"],
+            }],
+        }, format="json")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(self.other_user.has_perm("view_project", self.project))
+        self.assertTrue(self.other_user.has_perm("acknowledge_airtwin_import", self.project))
+        self.assertFalse(self.other_user.has_perm("change_project", self.project))
+
+    def test_import_acknowledgment_rejects_stale_events_and_unavailable_assets(self):
+        assign_perm("view_project", self.other_user, self.project)
+        assign_perm("acknowledge_airtwin_import", self.other_user, self.project)
+        client = APIClient(HTTP_AUTHORIZATION="Token {}".format(self.other_user.profile.api_key))
+        url = "/api/projects/{}/tasks/{}/airtwin/status".format(self.project.id, self.task.id)
+        event_id = str(stable_event_id(self.task))
+
+        unavailable = client.post(url, {
+            "version": 1,
+            "eventId": event_id,
+            "status": "imported",
+            "importedAssets": ["3d_tiles_pointcloud.zip"],
+        }, format="json")
+        self.assertEqual(unavailable.status_code, 400)
+        self.assertIn("importedAssets", unavailable.data)
+
+        self.task.completed_at += timezone.timedelta(seconds=1)
+        self.task.save(update_fields=["completed_at"])
+        stale = client.post(url, {
+            "version": 1,
+            "eventId": event_id,
+            "status": "importing",
+        }, format="json")
+        self.assertEqual(stale.status_code, 400)
+        self.assertIn("eventId", stale.data)

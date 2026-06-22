@@ -36,4 +36,26 @@ describe('<TaskListItem />', () => {
     expect(wrapper.find('.status-slot').exists()).toBe(true);
     expect(wrapper.find('.status-slot .status-label').exists()).toBe(true);
   });
+
+  it('shows the AirTwin import lifecycle status when integration has started', () => {
+    const task = {
+      ...taskMock,
+      airtwin_import: {
+        status: 'imported',
+        importedAssets: ['orthophoto.tif'],
+        importedAt: '2026-06-22T10:00:00Z'
+      }
+    };
+    const wrapper = shallow(<TaskListItem history={createBrowserHistory()} data={task} hasPermission={() => true} />);
+
+    expect(wrapper.find('.airtwin-import-status.imported').exists()).toBe(true);
+    expect(wrapper.find('.airtwin-import-status.imported').text()).toContain('AirTwin imported');
+  });
+
+  it('does not show AirTwin status before the integration lifecycle starts', () => {
+    const task = {...taskMock, airtwin_import: {status: 'not_started'}};
+    const wrapper = shallow(<TaskListItem history={createBrowserHistory()} data={task} hasPermission={() => true} />);
+
+    expect(wrapper.find('.airtwin-import-status').exists()).toBe(false);
+  });
 });

@@ -1071,6 +1071,20 @@ class TaskListItem extends React.Component {
     const statusContent = showEditLink ?
       <a href="javascript:void(0);" className="status-link" onClick={this.startEditing}>{statusLabel}</a> :
       statusLabel;
+    const airTwinImport = task.airtwin_import;
+    const airTwinLabels = {
+      pending: _("AirTwin pending"),
+      importing: _("AirTwin importing"),
+      imported: _("AirTwin imported"),
+      failed: _("AirTwin failed")
+    };
+    const airTwinIcons = {
+      pending: "fa-clock",
+      importing: "fa-circle-notch fa-spin",
+      imported: "fa-check-circle",
+      failed: "fa-exclamation-circle"
+    };
+    const showAirTwinStatus = airTwinImport && airTwinLabels[airTwinImport.status];
 
     return (
       <div className="task-list-item">
@@ -1101,6 +1115,12 @@ class TaskListItem extends React.Component {
           <div className="col-xs-5 col-sm-6 col-md-4 col-lg-3 actions">
             <div className="status-slot">
               {statusContent}
+              {showAirTwinStatus ?
+                <div className={"airtwin-import-status " + airTwinImport.status}>
+                  <i className={"fa " + airTwinIcons[airTwinImport.status]}></i>
+                  <span>{airTwinLabels[airTwinImport.status]}</span>
+                </div>
+              : ""}
             </div>
             {taskActions.length > 0 ? 
                 <div className="btn-group">

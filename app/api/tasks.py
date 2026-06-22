@@ -179,6 +179,7 @@ class TaskSerializer(serializers.ModelSerializer):
     tags = TagsField(required=False)
     crop = PolygonGeometryField(required=False, allow_null=True)
     estimated_time_remaining = serializers.SerializerMethodField()
+    airtwin_import = serializers.SerializerMethodField()
 
     def get_processing_node_name(self, obj):
         if obj.processing_node is not None:
@@ -214,6 +215,21 @@ class TaskSerializer(serializers.ModelSerializer):
     def get_estimated_time_remaining(self, obj):
         return obj.get_estimated_time_remaining()
 
+    def get_airtwin_import(self, obj):
+        from app.services.airtwin import serialize_import_state
+
+        state = serialize_import_state(obj)
+        if state["status"] == "not_started":
+            return None
+        return {
+            "status": state["status"],
+            "attempts": state["attempts"],
+            "importedAssets": state["importedAssets"],
+            "acknowledgedAt": state["acknowledgedAt"],
+            "importedAt": state["importedAt"],
+            "retentionProtected": state["retentionProtected"],
+        }
+
     class Meta:
         model = models.Task
         exclude = ('orthophoto_extent', 'dsm_extent', 'dtm_extent', )
@@ -225,7 +241,7 @@ class TaskViewSet(viewsets.ViewSet):
     A task represents a set of images and other input to be sent to a processing node.
     Once a processing node completes processing, results are stored in the task.
     """
-    queryset = models.Task.objects.all()
+    queryset = models.Task.objects.select_related("airtwin_import_state").all()
     
     parser_classes = (parsers.MultiPartParser, parsers.JSONParser, parsers.FormParser, )
     ordering_fields = '__all__'

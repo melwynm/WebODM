@@ -8,6 +8,7 @@ Maintenance note 2026-05-29: deer detection and counting now use the same object
 Maintenance note 2026-06-01: plugin frontend builds now detect stale source files, and deer detection has a validation gate for real-world wildlife-count pilots.
 Maintenance note 2026-06-18: the WebODM MCP server was updated to v1.1.0 with current dependencies, UUID task schemas, commercial/review/object-detection API coverage, and automated contract, HTTP-handler, and stdio protocol tests.
 Maintenance note 2026-06-22: production AirTwin integration added a least-privilege manifest API, geospatial readiness validation, an AirTwin export preset, durable signed completion webhooks, retry tracking, and an optional shared Docker network overlay.
+Maintenance note 2026-06-22: AirTwin imports now have permission-scoped acknowledgments, idempotent retry state, imported-asset timestamps, task-list visibility, and quota-cleanup protection until confirmation.
 Maintenance note 2026-05-25: production deployment hardening now has a runbook, production compose overlay, environment template, and `productionreadiness` management command for commercial pilot gates.
 Maintenance note 2026-05-25: commercial security review now has a runbook, DRF throttle defaults, OneDrive intake root enforcement, and `securityreview` checks for sensitive token, secret, CORS, and client-share surfaces.
 Maintenance note 2026-05-27: commercial orthomosaic packages now have explicit presets and a coverage matrix for architecture/CAD construction review, agriculture field analysis, and solar panel inspection.

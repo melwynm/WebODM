@@ -189,9 +189,15 @@ class ProjectViewSet(viewsets.ModelViewSet):
                                 remove_perm(p, user, project)
                     
                     # Check users to add/edit
+                    permission_names = {
+                        "add": "add_project",
+                        "change": "change_project",
+                        "delete": "delete_project",
+                        "view": "view_project",
+                        "acknowledge_airtwin_import": "acknowledge_airtwin_import",
+                    }
                     for username in perms_map:
-                        for p in ["add", "change", "delete", "view"]:
-                            perm = p + "_project"
+                        for p, perm in permission_names.items():
                             user = User.objects.get(username=username)
 
                             # Skip owners
@@ -224,7 +230,6 @@ class ProjectViewSet(viewsets.ModelViewSet):
         else:
             # Do not remove the project, simply remove all user's permissions to the project
             # to avoid shared projects from being accidentally deleted
-            for p in ["add", "change", "delete", "view"]:
-                perm = p + "_project"
+            for perm in ["add_project", "change_project", "delete_project", "view_project", "acknowledge_airtwin_import"]:
                 remove_perm(perm, request.user, project)
             return Response(status=status.HTTP_204_NO_CONTENT)

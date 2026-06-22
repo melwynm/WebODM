@@ -132,8 +132,9 @@ class EditPermissionsPanel extends React.Component {
 
   simplifiedPermission = perms => {
       // We simplify WebODM's internal permission model into
-      // a simpler read or read/write model.
+      // a smaller set of project roles.
       if (perms.indexOf("change") !== -1) return "rw";
+      else if (perms.indexOf("acknowledge_airtwin_import") !== -1) return "airtwin";
       else if (perms.indexOf("view") !== -1) return "r";
       else return "";
   }
@@ -141,6 +142,8 @@ class EditPermissionsPanel extends React.Component {
   extendedPermissions = simPerm => {
       if (simPerm == "rw"){
           return ["add", "change", "delete", "view"];
+      }else if (simPerm == "airtwin"){
+          return ["view", "acknowledge_airtwin_import"];
       }else if (simPerm == "r"){
           return ["view"];
       }else return [];
@@ -148,12 +151,13 @@ class EditPermissionsPanel extends React.Component {
 
   permissionLabel = simPerm => {
       if (simPerm === "rw") return _("Read/Write");
+      else if (simPerm === "airtwin") return _("AirTwin integration");
       else if (simPerm === "r") return _("Read");
       else if (simPerm === "") return _("No Access");
   }
 
   allPermissions = () => {
-      return ["rw", "r"].map(p => { return {key: p, label: this.permissionLabel(p)}});
+      return ["rw", "airtwin", "r"].map(p => { return {key: p, label: this.permissionLabel(p)}});
   }
 
   getColorFor = (username) => {

@@ -147,6 +147,7 @@ REQUIRED_ROUTES = (
     ("routes", "Client share API", "/api/projects/1/client-shares/", "Restore project client-share API router."),
     ("routes", "Textured model QA API", "/api/projects/1/tasks/2/3d/qa", "Restore textured model QA API route."),
     ("routes", "AirTwin task manifest API", "/api/projects/1/tasks/2/airtwin/manifest", "Restore the AirTwin manifest API route."),
+    ("routes", "AirTwin import status API", "/api/projects/1/tasks/2/airtwin/status", "Restore the AirTwin acknowledgment and status API route."),
     ("routes", "Monitoring candidates API", "/api/projects/1/tasks/2/monitoring/candidates", "Restore monitoring candidates route."),
     ("routes", "Monitoring compare API", "/api/projects/1/tasks/2/monitoring/compare", "Restore monitoring compare route."),
     ("routes", "Monitoring timeline API", "/api/projects/1/monitoring/timeline", "Restore monitoring timeline route."),
@@ -168,6 +169,7 @@ REQUIRED_MODELS = (
     ("models", "Project client share model", "app.ProjectClientShare", "Restore the ProjectClientShare model and migrations."),
     ("models", "Project commercial readiness model", "app.ProjectCommercialReadiness", "Restore the ProjectCommercialReadiness model and migrations."),
     ("models", "AirTwin delivery model", "app.AirTwinWebhookDelivery", "Restore durable AirTwin webhook delivery tracking and migrations."),
+    ("models", "AirTwin import state model", "app.AirTwinImportState", "Restore AirTwin acknowledgment, retry state, and retention protection."),
 )
 
 

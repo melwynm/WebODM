@@ -12,11 +12,12 @@ import rasterio
 import requests
 from django.conf import settings
 from django.contrib.gis.gdal import SpatialReference
+from django.core.exceptions import ValidationError
 from django.db import transaction
 from django.utils import timezone
 from nodeodm import status_codes
 
-from app.models import AirTwinWebhookDelivery, Task
+from app.models import AirTwinImportState, AirTwinWebhookDelivery, Task
 
 
 MANIFEST_VERSION = 1
@@ -267,6 +268,128 @@ def task_completed_at(task):
     return task.created_at
 
 
+def get_or_create_import_state(task):
+    event_id = stable_event_id(task)
+    with transaction.atomic():
+        state, created = AirTwinImportState.objects.select_for_update().get_or_create(
+            task=task,
+            defaults={"event_id": event_id},
+        )
+        if not created and state.event_id != event_id:
+            state.event_id = event_id
+            state.status = AirTwinImportState.STATUS_PENDING
+            state.imported_assets = []
+            state.attempts = 0
+            state.last_error = ""
+            state.last_attempt_at = None
+            state.acknowledged_at = None
+            state.imported_at = None
+            state.save(update_fields=[
+                "event_id", "status", "imported_assets", "attempts", "last_error",
+                "last_attempt_at", "acknowledged_at", "imported_at", "updated_at",
+            ])
+    task._state.fields_cache["airtwin_import_state"] = state
+    return state
+
+
+def serialize_import_state(task, state=None):
+    if state is None:
+        try:
+            state = task.airtwin_import_state
+        except AirTwinImportState.DoesNotExist:
+            return {
+                "version": MANIFEST_VERSION,
+                "taskId": str(task.id),
+                "eventId": str(stable_event_id(task)),
+                "status": "not_started",
+                "attempts": 0,
+                "importedAssets": [],
+                "lastError": "",
+                "lastAttemptAt": None,
+                "acknowledgedAt": None,
+                "importedAt": None,
+                "retentionProtected": False,
+                "canRetry": False,
+            }
+
+    return {
+        "version": MANIFEST_VERSION,
+        "taskId": str(task.id),
+        "eventId": str(state.event_id),
+        "status": state.status,
+        "attempts": state.attempts,
+        "importedAssets": list(state.imported_assets or []),
+        "lastError": state.last_error,
+        "lastAttemptAt": state.last_attempt_at.isoformat() if state.last_attempt_at else None,
+        "acknowledgedAt": state.acknowledged_at.isoformat() if state.acknowledged_at else None,
+        "importedAt": state.imported_at.isoformat() if state.imported_at else None,
+        "retentionProtected": state.status != AirTwinImportState.STATUS_IMPORTED,
+        "canRetry": state.status in (AirTwinImportState.STATUS_PENDING, AirTwinImportState.STATUS_FAILED),
+    }
+
+
+def acknowledge_import(task, event_id, status, imported_assets=None, message="", now=None):
+    expected_event_id = stable_event_id(task)
+    if event_id != expected_event_id:
+        raise ValidationError({"eventId": "This completion event is stale or does not belong to the task."})
+
+    imported_assets = imported_assets or []
+    unknown_assets = sorted(set(imported_assets) - set(SUPPORTED_ASSETS))
+    unavailable_assets = sorted(set(imported_assets) - set(task.available_assets or []))
+    if unknown_assets:
+        raise ValidationError({"importedAssets": "Unsupported assets: {}.".format(", ".join(unknown_assets))})
+    if unavailable_assets:
+        raise ValidationError({"importedAssets": "Assets are not available on this task: {}.".format(", ".join(unavailable_assets))})
+    if status == AirTwinImportState.STATUS_IMPORTED and not imported_assets:
+        raise ValidationError({"importedAssets": "At least one imported asset is required for imported status."})
+
+    normalized_assets = [name for name in SUPPORTED_ASSETS if name in set(imported_assets)]
+    sanitized_message = sanitize_error(message, get_webhook_config()["secret"])
+    now = now or timezone.now()
+
+    with transaction.atomic():
+        state = get_or_create_import_state(task)
+        if state.status == AirTwinImportState.STATUS_IMPORTED:
+            if status == AirTwinImportState.STATUS_IMPORTED and state.imported_assets == normalized_assets:
+                return state
+            raise ValidationError({"status": "An imported task cannot move back to an earlier AirTwin state."})
+
+        if status == AirTwinImportState.STATUS_IMPORTING:
+            if state.status == AirTwinImportState.STATUS_IMPORTING:
+                return state
+            state.attempts += 1
+            state.status = status
+            state.last_error = ""
+            state.last_attempt_at = now
+            state.acknowledged_at = now
+        elif status == AirTwinImportState.STATUS_FAILED:
+            if state.status == AirTwinImportState.STATUS_FAILED and state.last_error == sanitized_message:
+                return state
+            if state.status == AirTwinImportState.STATUS_PENDING:
+                state.attempts = max(1, state.attempts)
+                state.last_attempt_at = now
+            state.status = status
+            state.last_error = sanitized_message
+            state.acknowledged_at = now
+        elif status == AirTwinImportState.STATUS_IMPORTED:
+            if state.status == AirTwinImportState.STATUS_PENDING:
+                state.attempts = max(1, state.attempts)
+                state.last_attempt_at = now
+            state.status = status
+            state.imported_assets = normalized_assets
+            state.last_error = ""
+            state.acknowledged_at = now
+            state.imported_at = now
+        else:
+            raise ValidationError({"status": "Unsupported AirTwin import status."})
+
+        state.save(update_fields=[
+            "status", "imported_assets", "attempts", "last_error", "last_attempt_at",
+            "acknowledged_at", "imported_at", "updated_at",
+        ])
+    return state
+
+
 def build_manifest(task, base_url=""):
     assets = discover_supported_assets(task, base_url=base_url)
     asset_names = [asset["name"] for asset in assets]
@@ -307,6 +430,7 @@ def build_manifest(task, base_url=""):
         },
         "retentionDays": retention_days,
         "retainUntil": (completed_at + datetime.timedelta(days=retention_days)).isoformat() if completed_at else None,
+        "airTwinImport": serialize_import_state(task),
     }
     if naming["surveyDate"]:
         manifest["surveyDate"] = naming["surveyDate"]
@@ -454,6 +578,7 @@ def schedule_task_completed_webhook(task_id, enqueue=None):
         task.save(update_fields=["completed_at"])
 
     event_id = stable_event_id(task)
+    get_or_create_import_state(task)
     delivery, created = AirTwinWebhookDelivery.objects.get_or_create(
         event_id=event_id,
         defaults={
