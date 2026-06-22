@@ -28,6 +28,7 @@ class TestApiPreset(BootTestCase):
         self.assertTrue(Preset.objects.filter(name="Buildings", system=True).exists())
         self.assertTrue(Preset.objects.filter(name="3D Model", system=True).exists())
         self.assertTrue(Preset.objects.filter(name="Commercial 3D Model", system=True).exists())
+        self.assertTrue(Preset.objects.filter(name="AirTwin Export", system=True).exists())
         self.assertTrue(Preset.objects.filter(name="Multispectral", system=True).exists())
         self.assertTrue(Preset.objects.filter(name="Thermal", system=True).exists())
         self.assertTrue(Preset.objects.filter(name="DJI Drone", system=True).exists())
@@ -49,6 +50,11 @@ class TestApiPreset(BootTestCase):
         self.assertTrue(any(option.get('name') == 'texturing-single-material' and option.get('value') is True for option in commercial_3d.options))
         self.assertTrue(any(option.get('name') == '3d-tiles' and option.get('value') is True for option in commercial_3d.options))
         self.assertTrue(any(option.get('name') == 'gltf' and option.get('value') is True for option in commercial_3d.options))
+
+        airtwin = Preset.objects.get(name="AirTwin Export", system=True)
+        self.assertIn("AirTwin-ready", airtwin.description)
+        for option_name in ('gltf', 'dsm', 'dtm', '3d-tiles'):
+            self.assertTrue(any(option.get('name') == option_name and option.get('value') is True for option in airtwin.options))
 
         architecture = Preset.objects.get(name="Architecture CAD Orthomosaic", system=True)
         self.assertIn("CAD/design overlay", architecture.description)

@@ -68,3 +68,28 @@ class ProductionReadinessTests(SimpleTestCase):
             with mock.patch.dict(os.environ, {"WO_SSL": "NO"}, clear=True):
                 with self.assertRaises(CommandError):
                     call_command("productionreadiness", "--skip-runtime")
+
+    def test_enabled_airtwin_webhook_requires_url_and_secret(self):
+        with TemporaryDirectory() as backup_dir:
+            with self._production_settings(), self._production_env(backup_dir), override_settings(
+                AIRTWIN_WEBHOOK_ENABLED=True,
+                AIRTWIN_WEBHOOK_URL="",
+                AIRTWIN_WEBHOOK_SECRET="",
+            ):
+                summary = run_production_readiness(include_runtime=False)
+
+        self.assertIn("AirTwin webhook", {result.name for result in summary.errors})
+
+    def test_enabled_airtwin_webhook_passes_with_complete_configuration(self):
+        with TemporaryDirectory() as backup_dir:
+            with self._production_settings(), self._production_env(backup_dir), override_settings(
+                AIRTWIN_WEBHOOK_ENABLED=True,
+                AIRTWIN_WEBHOOK_URL="http://airtwin:8080/events",
+                AIRTWIN_WEBHOOK_SECRET="test-only-secret",
+                AIRTWIN_OUTPUT_RETENTION_DAYS=30,
+            ):
+                summary = run_production_readiness(include_runtime=False)
+
+        self.assertNotIn("AirTwin webhook", {result.name for result in summary.errors})
+        result = next(item for item in summary.results if item.name == "AirTwin webhook")
+        self.assertEqual(result.status, "ok")

@@ -6,6 +6,8 @@ class MainConfig(AppConfig):
     verbose_name = 'Application'
 
     def ready(self):
+        from . import signals  # noqa: F401
+
         # Pillow 10+ removed Image.ANTIALIAS, but pilkit 2 still references it.
         try:
             from PIL import Image

@@ -12,6 +12,7 @@ from .project_field_photo import ProjectFieldPhoto
 from .project_client_share import ProjectClientShare, ProjectClientComment
 from .feature_validation import FeatureValidation
 from .project_commercial_readiness import ProjectCommercialReadiness
+from .airtwin_webhook_delivery import AirTwinWebhookDelivery
 
 # deprecated
 def image_directory_path(image_upload, filename):

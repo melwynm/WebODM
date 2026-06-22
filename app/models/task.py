@@ -267,6 +267,7 @@ class Task(models.Model):
 
     # mission
     created_at = models.DateTimeField(default=timezone.now, help_text=_("Creation date"), verbose_name=_("Created at"))
+    completed_at = models.DateTimeField(null=True, blank=True, help_text=_("Successful completion date"), verbose_name=_("Completed at"))
     pending_action = models.IntegerField(choices=PENDING_ACTIONS, db_index=True, null=True, blank=True, help_text=_("A requested action to be performed on the task. The selected action will be performed by the worker at the next iteration."), verbose_name=_("Pending Action"))
 
     public = models.BooleanField(default=False, help_text=_("A flag indicating whether this task is available to the public"), verbose_name=_("Public"))
@@ -1209,6 +1210,7 @@ class Task(models.Model):
         self.running_progress = 1.0
         self.crop = None
         self.status = status_codes.COMPLETED
+        self.completed_at = timezone.now()
 
         if is_backup:
             self.read_backup_file()

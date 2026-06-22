@@ -223,6 +223,53 @@ def _check_static_configuration(
         else:
             results.append(_result("persistence", label, STATUS_OK, "{}={}".format(env_name, value)))
 
+    airtwin_enabled = getattr(settings, "AIRTWIN_WEBHOOK_ENABLED", False)
+    if not airtwin_enabled:
+        results.append(_result(
+            "integration",
+            "AirTwin webhook",
+            STATUS_OK,
+            "AirTwin completion webhook is disabled.",
+        ))
+    else:
+        missing = []
+        if not getattr(settings, "AIRTWIN_WEBHOOK_URL", ""):
+            missing.append("AIRTWIN_WEBHOOK_URL")
+        if not getattr(settings, "AIRTWIN_WEBHOOK_SECRET", ""):
+            missing.append("AIRTWIN_WEBHOOK_SECRET")
+        if missing:
+            results.append(_result(
+                "integration",
+                "AirTwin webhook",
+                STATUS_ERROR,
+                "AirTwin webhook is enabled but configuration is incomplete.",
+                "Set {} in the container environment.".format(" and ".join(missing)),
+            ))
+        else:
+            results.append(_result(
+                "integration",
+                "AirTwin webhook",
+                STATUS_OK,
+                "AirTwin webhook URL and signing secret are configured.",
+            ))
+
+        retention = getattr(settings, "AIRTWIN_OUTPUT_RETENTION_DAYS", 0)
+        if retention >= 1:
+            results.append(_result(
+                "integration",
+                "AirTwin output retention",
+                STATUS_OK,
+                "{} day retention target is configured.".format(retention),
+            ))
+        else:
+            results.append(_result(
+                "integration",
+                "AirTwin output retention",
+                STATUS_WARNING,
+                "No positive AirTwin retention target is configured.",
+                "Set AIRTWIN_OUTPUT_RETENTION_DAYS and retain outputs until import is confirmed.",
+            ))
+
     return results
 
 

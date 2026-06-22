@@ -24,6 +24,7 @@ from .reports import ProjectProgressReport
 from .commercial_readiness import ProjectCommercialReadiness
 from .delivery_exports import ProjectDeliveryExport
 from .ai_issues import AIIssueDetection
+from .airtwin import AirTwinTaskManifest
 from .workers import CheckTask, GetTaskResult
 from .status import APIStatus
 from .users import UsersList
@@ -66,6 +67,7 @@ urlpatterns = [
     re_path(r'projects/(?P<project_pk>[^/.]+)/tasks/(?P<pk>[^/.]+)/download/(?P<asset>.+)$', TaskDownloads.as_view()),
     re_path(r'projects/(?P<project_pk>[^/.]+)/tasks/(?P<pk>[^/.]+)/textured_model/$', TaskSafeTexturedModel.as_view()),
     re_path(r'projects/(?P<project_pk>[^/.]+)/tasks/(?P<pk>[^/.]+)/3d/qa$', TexturedModelQA.as_view()),
+    re_path(r'projects/(?P<project_pk>[^/.]+)/tasks/(?P<pk>[^/.]+)/airtwin/manifest$', AirTwinTaskManifest.as_view(), name='api_airtwin_manifest'),
     re_path(r'projects/(?P<project_pk>[^/.]+)/tasks/(?P<pk>[^/.]+)/assets/(?P<unsafe_asset_path>.+)$', TaskAssets.as_view()),
     re_path(r'projects/(?P<project_pk>[^/.]+)/tasks/import$', TaskAssetsImport.as_view()),
     re_path(r'projects/(?P<project_pk>[^/.]+)/tasks/(?P<pk>[^/.]+)/thumbnail$', TaskThumbnail.as_view()),

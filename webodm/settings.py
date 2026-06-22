@@ -365,6 +365,37 @@ CELERY_INCLUDE=['worker.tasks', 'app.plugins.worker']
 CELERY_WORKER_REDIRECT_STDOUTS = False
 CELERY_WORKER_HIJACK_ROOT_LOGGER = False
 
+
+def _environment_bool(name, default=False):
+    value = os.environ.get(name)
+    if value is None:
+        return default
+    return value.strip().lower() in ("1", "true", "yes", "on")
+
+
+def _environment_int(name, default, minimum=0):
+    try:
+        return max(minimum, int(os.environ.get(name, default)))
+    except (TypeError, ValueError):
+        return default
+
+
+def _environment_float(name, default, minimum=0.1):
+    try:
+        return max(minimum, float(os.environ.get(name, default)))
+    except (TypeError, ValueError):
+        return default
+
+
+# Optional AirTwin task-completion integration. Secrets remain environment-only.
+AIRTWIN_WEBHOOK_ENABLED = _environment_bool("AIRTWIN_WEBHOOK_ENABLED", False)
+AIRTWIN_WEBHOOK_URL = os.environ.get("AIRTWIN_WEBHOOK_URL", "").strip()
+AIRTWIN_WEBHOOK_SECRET = os.environ.get("AIRTWIN_WEBHOOK_SECRET", "")
+AIRTWIN_WEBHOOK_TIMEOUT_SECONDS = _environment_float("AIRTWIN_WEBHOOK_TIMEOUT_SECONDS", 10.0)
+AIRTWIN_WEBHOOK_MAX_RETRIES = _environment_int("AIRTWIN_WEBHOOK_MAX_RETRIES", 5)
+AIRTWIN_WEBHOOK_RETRY_BASE_SECONDS = _environment_int("AIRTWIN_WEBHOOK_RETRY_BASE_SECONDS", 5, minimum=1)
+AIRTWIN_OUTPUT_RETENTION_DAYS = _environment_int("AIRTWIN_OUTPUT_RETENTION_DAYS", 30)
+
 CACHES = {
     "default": {
         "BACKEND": "django_redis.cache.RedisCache",

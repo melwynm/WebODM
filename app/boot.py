@@ -283,6 +283,13 @@ def add_default_presets():
                                                               {'name': 'texturing-single-material', 'value': True},
                                                               {'name': '3d-tiles', 'value': True},
                                                               {'name': 'gltf', 'value': True}]})
+        Preset.objects.update_or_create(name='AirTwin Export', system=True,
+                                        defaults={'description': 'AirTwin-ready survey export with GLB, orthophoto, report, camera positions, elevation models, point cloud, and native OGC 3D Tiles.',
+                                                  'options': [{'name': 'auto-boundary', 'value': True},
+                                                              {'name': 'gltf', 'value': True},
+                                                              {'name': 'dsm', 'value': True},
+                                                              {'name': 'dtm', 'value': True},
+                                                              {'name': '3d-tiles', 'value': True}]})
         Preset.objects.update_or_create(name='Gaussian Splat Source', system=True,
                                         defaults={'description': 'Highest-detail reconstruction source preset for Gaussian Splat post-processing. Produces ultra-quality point cloud, camera shots, and textured model assets for an external splat trainer.',
                                                   'options': [{'name': 'auto-boundary', 'value': True},

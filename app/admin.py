@@ -23,7 +23,7 @@ from app.models import Profile
 from app.plugins import get_plugin_by_name, enable_plugin, disable_plugin, delete_plugin, valid_plugin, \
     get_plugins_persistent_path, clear_plugins_cache, init_plugins
 from .models import Project, Task, Setting, Theme, ProjectIssue, ProjectDesignOverlay, ProjectFieldPhoto, \
-    ProjectClientShare, ProjectClientComment, FeatureValidation
+    ProjectClientShare, ProjectClientComment, FeatureValidation, AirTwinWebhookDelivery
 from django import forms
 from codemirror2.widgets import CodeMirrorEditor
 from webodm import settings
@@ -50,6 +50,20 @@ class TaskAdmin(admin.ModelAdmin):
 
 
 admin.site.register(Task, TaskAdmin)
+
+
+class AirTwinWebhookDeliveryAdmin(admin.ModelAdmin):
+    list_display = ('event_id', 'task', 'status', 'attempts', 'response_status', 'created_at', 'delivered_at')
+    list_filter = ('status', 'event', 'created_at')
+    search_fields = ('event_id', 'task__id', 'task__name', 'task__project__name')
+    readonly_fields = ('event_id', 'task', 'event', 'payload', 'status', 'attempts', 'response_status',
+                       'last_error', 'next_attempt_at', 'delivered_at', 'created_at', 'updated_at')
+
+    def has_add_permission(self, request):
+        return False
+
+
+admin.site.register(AirTwinWebhookDelivery, AirTwinWebhookDeliveryAdmin)
 
 admin.site.register(Preset, admin.ModelAdmin)
 

@@ -76,7 +76,9 @@ REQUIRED_FILES = (
     ("docs", "Module boundaries guide", "MODULE_BOUNDARIES.md", "Restore MODULE_BOUNDARIES.md and update boundary tests."),
     ("docs", "Production hardening guide", "PRODUCTION_HARDENING.md", "Restore the commercial deployment hardening runbook."),
     ("docs", "Security review guide", "SECURITY_REVIEW.md", "Restore the commercial security review runbook."),
+    ("docs", "AirTwin integration guide", "AIRTWIN_INTEGRATION.md", "Restore the AirTwin API, webhook, geospatial, and deployment guide."),
     ("deploy", "Production compose overlay", "docker-compose.production.yml", "Restore production health checks and log rotation overlay."),
+    ("deploy", "AirTwin network overlay", "docker-compose.airtwin.yml", "Restore the optional shared AirTwin Docker network overlay."),
     ("deploy", "Production environment example", ".env.production.example", "Restore the production environment template."),
     ("templates", "Feature validation dashboard", "app/templates/app/feature_validations.html", "Restore the staff validation ledger page."),
     ("templates", "Client portal", "app/templates/app/public/client_portal.html", "Restore the tokenized client portal template."),
@@ -95,6 +97,7 @@ REQUIRED_FILES = (
     ("api", "Project issue API", "app/api/issues.py", "Restore project issue and annotation API routes."),
     ("api", "Project report API", "app/api/reports.py", "Restore stakeholder report API routes."),
     ("api", "Textured model QA API", "app/api/textured_model_qa.py", "Restore textured model QA API routes."),
+    ("api", "AirTwin manifest API", "app/api/airtwin.py", "Restore the permission-scoped AirTwin manifest endpoint."),
     ("services", "AI issue detection service", "app/services/ai_issue_detection.py", "Restore AI issue detection service logic."),
     ("services", "Commercial readiness service", "app/services/commercial_readiness.py", "Restore project commercial readiness checklist logic."),
     ("services", "Commercial demo project service", "app/services/demo_projects.py", "Restore synthetic commercial demo project generation."),
@@ -111,6 +114,7 @@ REQUIRED_FILES = (
     ("services", "Monitoring payload service", "app/services/monitoring/payloads.py", "Restore monitoring API payload helpers."),
     ("services", "Monitoring product service", "app/services/monitoring/products.py", "Restore monitoring product orchestration."),
     ("services", "Monitoring readiness service", "app/services/monitoring/readiness.py", "Restore monitoring readiness checks."),
+    ("services", "AirTwin integration service", "app/services/airtwin.py", "Restore AirTwin manifest validation and webhook delivery logic."),
     ("management", "Default NodeODM repair command", "app/management/commands/syncdefaultnodes.py", "Restore the default-node repair command."),
     ("management", "Commercial demo project command", "app/management/commands/createdemoprojects.py", "Restore synthetic commercial demo project generation command."),
     ("management", "OneDrive intake command", "app/management/commands/onedriveintake.py", "Restore OneDrive task intake command."),
@@ -122,6 +126,7 @@ REQUIRED_FILES = (
     ("tests", "Delivery export tests", "app/tests/test_api_delivery_exports.py", "Restore client delivery bundle regression tests."),
     ("tests", "Production readiness tests", "app/tests/test_production_readiness.py", "Restore production readiness regression tests."),
     ("tests", "Security review tests", "app/tests/test_security_review.py", "Restore security review regression tests."),
+    ("tests", "AirTwin integration tests", "app/tests/test_airtwin.py", "Restore AirTwin manifest, validation, webhook, and API compatibility tests."),
 )
 
 
@@ -141,6 +146,7 @@ REQUIRED_ROUTES = (
     ("routes", "Field photo API", "/api/projects/1/field-photos/", "Restore field photo API router."),
     ("routes", "Client share API", "/api/projects/1/client-shares/", "Restore project client-share API router."),
     ("routes", "Textured model QA API", "/api/projects/1/tasks/2/3d/qa", "Restore textured model QA API route."),
+    ("routes", "AirTwin task manifest API", "/api/projects/1/tasks/2/airtwin/manifest", "Restore the AirTwin manifest API route."),
     ("routes", "Monitoring candidates API", "/api/projects/1/tasks/2/monitoring/candidates", "Restore monitoring candidates route."),
     ("routes", "Monitoring compare API", "/api/projects/1/tasks/2/monitoring/compare", "Restore monitoring compare route."),
     ("routes", "Monitoring timeline API", "/api/projects/1/monitoring/timeline", "Restore monitoring timeline route."),
@@ -161,6 +167,7 @@ REQUIRED_MODELS = (
     ("models", "Project design overlay model", "app.ProjectDesignOverlay", "Restore the ProjectDesignOverlay model and migrations."),
     ("models", "Project client share model", "app.ProjectClientShare", "Restore the ProjectClientShare model and migrations."),
     ("models", "Project commercial readiness model", "app.ProjectCommercialReadiness", "Restore the ProjectCommercialReadiness model and migrations."),
+    ("models", "AirTwin delivery model", "app.AirTwinWebhookDelivery", "Restore durable AirTwin webhook delivery tracking and migrations."),
 )
 
 

@@ -29,6 +29,19 @@ import redis
 logger = get_task_logger("app.logger")
 redis_client = redis.Redis.from_url(settings.CELERY_BROKER_URL)
 
+
+@app.task(bind=True, ignore_result=True)
+def deliver_airtwin_webhook(self, delivery_id):
+    from app.services.airtwin import deliver_webhook_attempt, get_webhook_config
+
+    result = deliver_webhook_attempt(delivery_id)
+    if result["retry"]:
+        raise self.retry(
+            countdown=result["delay"],
+            max_retries=get_webhook_config()["max_retries"],
+        )
+    return result
+
 @app.task(ignore_result=True)
 def update_nodes_info():
     if settings.NODE_OPTIMISTIC_MODE:
