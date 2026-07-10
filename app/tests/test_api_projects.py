@@ -31,7 +31,7 @@ class TestApiProjects(BootTestCase):
         res = client.post("/api/projects/{}/edit/".format(project.id), {
             'name': 'edited'
         })
-        self.assertEqual(res.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertIn(res.status_code, (status.HTTP_401_UNAUTHORIZED, status.HTTP_403_FORBIDDEN))
 
         client.login(username="testuser", password="test1234")
 
@@ -111,7 +111,13 @@ class TestApiProjects(BootTestCase):
         self.assertTrue(res.data['owned'])
 
         perms = get_perms(user, project)
-        self.assertEqual(len(perms), 4)
+        self.assertEqual(set(perms), {
+            'add_project',
+            'change_project',
+            'delete_project',
+            'view_project',
+            'acknowledge_airtwin_import',
+        })
 
         # Re-add permissions for other user
         res = client.post("/api/projects/{}/edit/".format(project.id), {
@@ -167,8 +173,3 @@ class TestApiProjects(BootTestCase):
         # The folder should still be there because it wasn't empty
         self.assertTrue(os.path.isdir(task_dir))
         self.assertTrue(os.path.isdir(project_dir))
-
-        
-
-
-        

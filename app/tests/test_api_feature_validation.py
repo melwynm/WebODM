@@ -201,6 +201,13 @@ class TestFeatureValidationApi(BootTestCase):
             FeatureValidation.objects.filter(status=FeatureValidation.STATUS_TESTED).count(),
             20,
         )
+        self.assertEqual(
+            FeatureValidation.objects.filter(
+                status=FeatureValidation.STATUS_TESTED,
+                last_tested_at__isnull=False,
+            ).count(),
+            20,
+        )
         self.assertTrue(
             FeatureValidation.objects.filter(
                 key='textured-model-qa-sharing',
