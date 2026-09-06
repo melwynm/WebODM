@@ -66,6 +66,20 @@ describe('<ProjectIssuesPanel />', () => {
     jest.restoreAllMocks();
   });
 
+  it('provides labels, busy state, and an accessible AI review toggle', () => {
+    const pending = deferredRequest();
+    $.getJSON.mockImplementationOnce(() => pending);
+    const wrapper = shallow(<ProjectIssuesPanel projectId={7} canEdit={true} />);
+
+    expect(wrapper.find('section.project-issues-panel').prop('aria-busy')).toBe(true);
+    expect(wrapper.find('input#issue-title-7').prop('required')).toBe(true);
+    expect(wrapper.find('label[htmlFor="issue-priority-7"]')).toHaveLength(1);
+    expect(wrapper.find('button.ai-review-toggle').prop('aria-expanded')).toBe(false);
+
+    wrapper.find('button.ai-review-toggle').simulate('click');
+    expect(wrapper.find('button.ai-review-toggle').prop('aria-expanded')).toBe(true);
+  });
+
   it('opens AI review for editors and inserts confirmed issues once', () => {
     const wrapper = shallow(<ProjectIssuesPanel projectId={7} canEdit={true} />);
 

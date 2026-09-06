@@ -92,6 +92,18 @@ describe('<MonitoringRunPanel />', () => {
     jest.restoreAllMocks();
   });
 
+  it('announces loading and errors to assistive technology', () => {
+    const pendingTimeline = deferredRequest();
+    $.getJSON.mockImplementationOnce(() => pendingTimeline).mockImplementationOnce(() => completedRequest([]));
+    const wrapper = shallow(<MonitoringRunPanel projectId={7} />);
+
+    expect(wrapper.find('.monitoring-run-panel').prop('aria-busy')).toBe(true);
+    expect(wrapper.find('.monitoring-run-loading').prop('role')).toBe('status');
+
+    pendingTimeline.reject({responseJSON: {detail: 'Timeline unavailable'}});
+    expect(wrapper.find('.monitoring-run-error').prop('role')).toBe('alert');
+  });
+
   it('starts a run with the suggested current and baseline surveys', () => {
     const ajax = jest.spyOn($, 'ajax').mockImplementation(() => completedRequest(reviewRun));
     const wrapper = shallow(<MonitoringRunPanel projectId={7} />);

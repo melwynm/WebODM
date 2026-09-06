@@ -60,6 +60,19 @@ describe('<AIIssueDetectionPanel />', () => {
     jest.restoreAllMocks();
   });
 
+  it('labels the review region and announces request errors', () => {
+    const pending = deferredRequest();
+    $.getJSON.mockImplementationOnce(() => pending);
+    const wrapper = shallow(<AIIssueDetectionPanel projectId={7} />);
+
+    expect(wrapper.find('section.ai-issue-detection').prop('aria-label')).toBe('AI issue review');
+    expect(wrapper.find('section.ai-issue-detection').prop('aria-busy')).toBe(true);
+    expect(wrapper.find('[role="status"]')).toHaveLength(1);
+
+    pending.reject({responseJSON: {detail: 'Tasks unavailable'}});
+    expect(wrapper.find('.ai-issue-error').prop('role')).toBe('alert');
+  });
+
   it('previews candidates and confirms the signed preview without rerunning it', () => {
     const preview = {
       model: 'gpt-test',

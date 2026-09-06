@@ -181,12 +181,12 @@ class ProjectIssuesPanel extends React.Component {
     const canEdit = this.props.canEdit;
 
     return (
-      <div className="project-issues-panel">
+      <section className="project-issues-panel" aria-labelledby={`project-issues-${this.props.projectId}`} aria-busy={this.state.loading || this.state.saving}>
         <div className="project-issues-panel__header">
-          <h4>{_('Issues and Annotations')}</h4>
+          <h4 id={`project-issues-${this.props.projectId}`}>{_('Issues and Annotations')}</h4>
           <div className="project-issues-panel__actions">
             {canEdit ?
-              <button type="button" className={'btn btn-xs ai-review-toggle ' + (this.state.showAIReview ? 'btn-primary' : 'btn-default')} onClick={this.toggleAIReview}>
+              <button type="button" className={'btn btn-xs ai-review-toggle ' + (this.state.showAIReview ? 'btn-primary' : 'btn-default')} onClick={this.toggleAIReview} aria-expanded={this.state.showAIReview} aria-controls={`ai-issue-review-${this.props.projectId}`}>
                 <i className="fa fa-search"></i> {_('AI Review')}
               </button>
             : ''}
@@ -196,7 +196,7 @@ class ProjectIssuesPanel extends React.Component {
           </div>
         </div>
 
-        {this.state.error ? <div className="alert alert-warning">{this.state.error}</div> : ''}
+        {this.state.error ? <div className="alert alert-warning" role="alert">{this.state.error}</div> : ''}
 
         {canEdit && this.state.showAIReview ?
           <AIIssueDetectionPanel
@@ -207,16 +207,20 @@ class ProjectIssuesPanel extends React.Component {
 
         {canEdit ?
           <form className="project-issue-form" onSubmit={this.createIssue}>
-            <input className="form-control" value={this.state.form.title} onChange={this.setFormValue('title')} placeholder={_('Issue title')} />
-            <textarea className="form-control" value={this.state.form.description} onChange={this.setFormValue('description')} placeholder={_('Notes')} />
+            <label className="sr-only" htmlFor={`issue-title-${this.props.projectId}`}>{_('Issue title')}</label>
+            <input id={`issue-title-${this.props.projectId}`} className="form-control" value={this.state.form.title} onChange={this.setFormValue('title')} placeholder={_('Issue title')} required />
+            <label className="sr-only" htmlFor={`issue-notes-${this.props.projectId}`}>{_('Notes')}</label>
+            <textarea id={`issue-notes-${this.props.projectId}`} className="form-control" value={this.state.form.description} onChange={this.setFormValue('description')} placeholder={_('Notes')} />
             <div className="project-issue-form__row">
-              <select className="form-control" value={this.state.form.issue_type} onChange={this.setFormValue('issue_type')}>
+              <label className="sr-only" htmlFor={`issue-type-${this.props.projectId}`}>{_('Issue type')}</label>
+              <select id={`issue-type-${this.props.projectId}`} className="form-control" value={this.state.form.issue_type} onChange={this.setFormValue('issue_type')}>
                 <option value="annotation">{_('Annotation')}</option>
                 <option value="change">{_('Change')}</option>
                 <option value="defect">{_('Defect')}</option>
                 <option value="progress">{_('Progress')}</option>
               </select>
-              <select className="form-control" value={this.state.form.priority} onChange={this.setFormValue('priority')}>
+              <label className="sr-only" htmlFor={`issue-priority-${this.props.projectId}`}>{_('Priority')}</label>
+              <select id={`issue-priority-${this.props.projectId}`} className="form-control" value={this.state.form.priority} onChange={this.setFormValue('priority')}>
                 <option value="low">{_('Low')}</option>
                 <option value="medium">{_('Medium')}</option>
                 <option value="high">{_('High')}</option>
@@ -230,12 +234,12 @@ class ProjectIssuesPanel extends React.Component {
         : ''}
 
         {this.state.loading ?
-          <div className="text-center"><i className="fa fa-circle-notch fa-spin"></i></div>
+          <div className="text-center" role="status"><i aria-hidden="true" className="fa fa-circle-notch fa-spin"></i> {_('Loading issues...')}</div>
         :
-          <ul className="project-issue-list">
+          <ul className="project-issue-list" aria-live="polite">
             {this.state.issues.length ? this.state.issues.map(issue => this.renderIssue(issue)) : <li className="project-issue-empty">{_('No issues yet')}</li>}
           </ul>}
-      </div>
+      </section>
     );
   }
 }

@@ -488,6 +488,120 @@
         }
     }
 
+    .project-issues-panel__actions,
+    .ai-issue-actions,
+    .ai-issue-preview__summary,
+    .ai-issue-candidate__meta {
+        display: flex;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+
+    .ai-issue-detection {
+        margin: 0 -14px 14px;
+        padding: 14px;
+        border-top: 1px solid var(--odm-border, rgba(255, 255, 255, 0.08));
+        border-bottom: 1px solid var(--odm-border, rgba(255, 255, 255, 0.08));
+        background: rgba(15, 23, 42, 0.38);
+    }
+
+    .ai-issue-controls {
+        display: grid;
+        grid-template-columns: minmax(120px, 1fr) minmax(150px, 1.35fr) 80px;
+        gap: 10px;
+        align-items: end;
+    }
+
+    .ai-issue-control {
+        min-width: 0;
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            color: var(--odm-text-secondary, rgba(255, 255, 255, 0.72));
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .form-control {
+            width: 100%;
+            background: rgba(15, 23, 42, 0.82);
+            border-color: var(--odm-border, rgba(255, 255, 255, 0.12));
+            color: var(--odm-text-primary, #ffffff);
+        }
+    }
+
+    .ai-issue-preview-button {
+        grid-column: 1 / -1;
+        justify-self: end;
+        min-height: 34px;
+        min-width: 120px;
+        white-space: nowrap;
+    }
+
+    .ai-issue-error,
+    .ai-issue-preview {
+        margin-top: 12px;
+    }
+
+    .ai-issue-preview__summary {
+        margin-bottom: 10px;
+        color: var(--odm-text-secondary, rgba(255, 255, 255, 0.72));
+        font-size: 12px;
+
+        span {
+            padding: 3px 8px;
+            border-radius: 6px;
+            background: rgba(59, 130, 246, 0.12);
+            color: #93c5fd;
+        }
+    }
+
+    .ai-issue-candidates {
+        list-style: none;
+        display: grid;
+        gap: 8px;
+        margin: 0 0 12px;
+        padding: 0;
+    }
+
+    .ai-issue-candidate {
+        padding: 10px;
+        border: 1px solid var(--odm-border, rgba(255, 255, 255, 0.1));
+        border-left: 3px solid #f59e0b;
+        border-radius: 6px;
+        background: rgba(255, 255, 255, 0.035);
+    }
+
+    .ai-issue-candidate__title {
+        color: var(--odm-text-primary, #ffffff);
+        font-weight: 700;
+    }
+
+    .ai-issue-candidate__description,
+    .ai-issue-empty {
+        margin-top: 5px;
+        color: var(--odm-text-secondary, rgba(255, 255, 255, 0.72));
+    }
+
+    .ai-issue-candidate__meta {
+        margin-top: 8px;
+        font-size: 12px;
+
+        span {
+            padding: 2px 7px;
+            border-radius: 6px;
+            background: rgba(16, 185, 129, 0.12);
+            color: #6ee7b7;
+        }
+    }
+
+    .ai-issue-created {
+        color: #6ee7b7;
+        font-weight: 700;
+    }
+
     .project-issue-form {
         display: grid;
         gap: 10px;
@@ -565,6 +679,243 @@
         flex: 0 0 130px;
     }
 
+    .monitoring-run-panel {
+        margin: 0 -14px 14px;
+        padding: 14px;
+        border-top: 1px solid var(--odm-border, rgba(255, 255, 255, 0.08));
+        border-bottom: 1px solid var(--odm-border, rgba(255, 255, 255, 0.08));
+        background: rgba(15, 23, 42, 0.38);
+    }
+
+    .monitoring-run-header,
+    .monitoring-run-header-actions,
+    .monitoring-run-actions,
+    .monitoring-run-pair {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .monitoring-run-header {
+        min-height: 36px;
+        justify-content: space-between;
+        margin-bottom: 14px;
+
+        > div:first-child {
+            color: var(--odm-text-primary, #ffffff);
+        }
+
+        .fa-route {
+            margin-right: 7px;
+            color: #38bdf8;
+        }
+    }
+
+    .monitoring-run-header-actions {
+        min-width: 0;
+
+        .form-control {
+            width: min(300px, 45vw);
+        }
+
+        .btn {
+            width: 36px;
+            min-width: 36px;
+            height: 34px;
+            padding: 0;
+        }
+    }
+
+    .monitoring-run-panel .form-control {
+        background: rgba(15, 23, 42, 0.82);
+        border-color: var(--odm-border, rgba(255, 255, 255, 0.12));
+        color: var(--odm-text-primary, #ffffff);
+    }
+
+    .monitoring-run-setup {
+        display: grid;
+        grid-template-columns: minmax(160px, 1fr) minmax(160px, 1fr) auto;
+        align-items: end;
+        gap: 10px;
+    }
+
+    .monitoring-run-field {
+        min-width: 0;
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            color: var(--odm-text-secondary, rgba(255, 255, 255, 0.72));
+            font-size: 12px;
+            font-weight: 600;
+        }
+    }
+
+    .monitoring-run-start {
+        min-width: 150px;
+        min-height: 34px;
+        white-space: nowrap;
+    }
+
+    .monitoring-run-pair {
+        justify-content: center;
+        min-height: 52px;
+        margin-bottom: 12px;
+
+        > div {
+            min-width: 0;
+            text-align: center;
+
+            span,
+            strong {
+                display: block;
+            }
+
+            span {
+                color: var(--odm-text-secondary, rgba(255, 255, 255, 0.68));
+                font-size: 11px;
+                text-transform: uppercase;
+            }
+
+            strong {
+                max-width: 260px;
+                overflow: hidden;
+                color: var(--odm-text-primary, #ffffff);
+                text-overflow: ellipsis;
+                white-space: nowrap;
+            }
+        }
+
+        > i {
+            color: #38bdf8;
+        }
+    }
+
+    .monitoring-run-steps {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(70px, 1fr));
+        gap: 8px;
+        margin: 0 0 14px;
+        padding: 0;
+        list-style: none;
+
+        li {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 0;
+            min-height: 36px;
+            gap: 6px;
+            border-bottom: 2px solid rgba(148, 163, 184, 0.28);
+            color: var(--odm-text-secondary, rgba(255, 255, 255, 0.64));
+            font-size: 12px;
+        }
+
+        li.is-active {
+            border-color: #38bdf8;
+            color: #7dd3fc;
+        }
+
+        li.is-complete {
+            border-color: #34d399;
+            color: #6ee7b7;
+        }
+
+        li.is-failed {
+            border-color: #f87171;
+            color: #fca5a5;
+        }
+    }
+
+    .monitoring-run-actions {
+        flex-wrap: wrap;
+        justify-content: flex-end;
+        min-height: 34px;
+    }
+
+    .monitoring-run-progress {
+        height: 3px;
+        margin-top: 12px;
+        overflow: hidden;
+        background: rgba(148, 163, 184, 0.2);
+
+        span {
+            display: block;
+            width: 38%;
+            height: 100%;
+            background: #38bdf8;
+            animation: monitoring-run-progress 1.25s ease-in-out infinite alternate;
+        }
+    }
+
+    @keyframes monitoring-run-progress {
+        from { transform: translateX(-15%); }
+        to { transform: translateX(180%); }
+    }
+
+    .monitoring-run-count,
+    .monitoring-run-empty,
+    .monitoring-run-loading {
+        color: var(--odm-text-secondary, rgba(255, 255, 255, 0.7));
+    }
+
+    .monitoring-run-count {
+        margin-top: 10px;
+        font-size: 12px;
+
+        i {
+            margin-right: 5px;
+            color: #fbbf24;
+        }
+    }
+
+    .monitoring-run-empty,
+    .monitoring-run-loading {
+        grid-column: 1 / -1;
+        padding: 12px 0;
+        text-align: center;
+    }
+
+    .monitoring-run-error {
+        margin: 0 0 12px;
+    }
+
+    .monitoring-ai-preview {
+        margin-top: 12px;
+        padding-top: 12px;
+        border-top: 1px solid var(--odm-border, rgba(255, 255, 255, 0.08));
+
+        ul {
+            display: grid;
+            gap: 8px;
+            margin: 0 0 10px;
+            padding: 0;
+            list-style: none;
+        }
+
+        li {
+            padding: 10px;
+            border: 1px solid var(--odm-border, rgba(255, 255, 255, 0.1));
+            border-left: 3px solid #fbbf24;
+            border-radius: 6px;
+            background: rgba(255, 255, 255, 0.035);
+
+            strong {
+                color: var(--odm-text-primary, #ffffff);
+            }
+
+            p {
+                margin: 5px 0;
+                color: var(--odm-text-secondary, rgba(255, 255, 255, 0.72));
+            }
+
+            span {
+                color: #fcd34d;
+                font-size: 12px;
+            }
+        }
+    }
+
     @media (min-width: 768px) {
         .project-header {
             gap: 14px;
@@ -583,6 +934,19 @@
         .task-filters {
             margin-left: 0;
             width: 100%;
+        }
+
+        .ai-issue-controls {
+            grid-template-columns: 1fr 1fr;
+        }
+
+        .monitoring-run-setup {
+            grid-template-columns: 1fr 1fr;
+        }
+
+        .monitoring-run-start {
+            grid-column: 1 / -1;
+            justify-self: end;
         }
     }
 
@@ -616,6 +980,57 @@
         .project-issue-form__row,
         .project-issue-item {
             flex-direction: column;
+        }
+
+        .project-issues-panel__header {
+            align-items: flex-start;
+        }
+
+        .ai-issue-controls {
+            grid-template-columns: 1fr;
+        }
+
+        .ai-issue-preview-button {
+            justify-self: stretch;
+            width: 100%;
+        }
+
+        .monitoring-run-header {
+            align-items: flex-start;
+            flex-direction: column;
+        }
+
+        .monitoring-run-header-actions,
+        .monitoring-run-header-actions .form-control {
+            width: 100%;
+        }
+
+        .monitoring-run-setup {
+            grid-template-columns: 1fr;
+        }
+
+        .monitoring-run-start {
+            grid-column: auto;
+            justify-self: stretch;
+            width: 100%;
+        }
+
+        .monitoring-run-steps {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+
+        .monitoring-run-pair > div strong {
+            max-width: 120px;
+        }
+
+        .monitoring-run-actions {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+
+            .btn {
+                min-width: 0;
+                white-space: normal;
+            }
         }
 
         .project-issue-form__row .form-control,

@@ -217,7 +217,7 @@ class AIIssueDetectionPanel extends React.Component {
 
     const candidates = Array.isArray(preview.candidates) ? preview.candidates : [];
     return (
-      <div className="ai-issue-preview">
+      <div className="ai-issue-preview" aria-live="polite">
         <div className="ai-issue-preview__summary">
           <span><i className="fa fa-image fa-fw"></i> {preview.source_count || 0}</span>
           <span><i className="fa fa-flag fa-fw"></i> {candidates.length}</span>
@@ -237,7 +237,7 @@ class AIIssueDetectionPanel extends React.Component {
             </button>
           : ''}
           {this.state.createdCount ?
-            <span className="ai-issue-created"><i className="fa fa-check-circle"></i> {_('Created')}: {this.state.createdCount}</span>
+            <span className="ai-issue-created" role="status"><i aria-hidden="true" className="fa fa-check-circle"></i> {_('Created')}: {this.state.createdCount}</span>
           : ''}
         </div>
       </div>
@@ -249,8 +249,8 @@ class AIIssueDetectionPanel extends React.Component {
     const busy = this.isBusy();
 
     return (
-      <section className="ai-issue-detection">
-        <form className="ai-issue-controls" onSubmit={this.previewIssues}>
+      <section id={`ai-issue-review-${this.props.projectId}`} className="ai-issue-detection" aria-label={_('AI issue review')} aria-busy={busy || this.state.loadingTasks}>
+        <form className="ai-issue-controls" onSubmit={this.previewIssues} aria-busy={busy}>
           <div className="ai-issue-control">
             <label htmlFor={`ai-source-${this.props.projectId}`}>{_('Source')}</label>
             <select id={`ai-source-${this.props.projectId}`} className="form-control" value={this.state.source} onChange={this.setSource} disabled={busy}>
@@ -278,7 +278,8 @@ class AIIssueDetectionPanel extends React.Component {
           </button>
         </form>
 
-        {this.state.error ? <div className="alert alert-warning ai-issue-error">{this.state.error}</div> : ''}
+        {this.state.loadingTasks ? <div className="ai-issue-empty" role="status">{_('Loading surveys...')}</div> : ''}
+        {this.state.error ? <div className="alert alert-warning ai-issue-error" role="alert">{this.state.error}</div> : ''}
         {this.renderPreview()}
       </section>
     );

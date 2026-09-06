@@ -331,7 +331,7 @@ class MonitoringRunPanel extends React.Component {
     const ready = this.state.tasks.length >= 2;
     const busy = this.isActionBusy();
     return (
-      <form className="monitoring-run-setup" onSubmit={this.startRun}>
+      <form className="monitoring-run-setup" onSubmit={this.startRun} aria-busy={busy}>
         <div className="monitoring-run-field">
           <label htmlFor={`monitor-current-${this.props.projectId}`}>{_('Current survey')}</label>
           <select id={`monitor-current-${this.props.projectId}`} className="form-control" value={this.state.currentTaskId} onChange={this.setCurrentTask} disabled={!ready || busy}>
@@ -347,7 +347,7 @@ class MonitoringRunPanel extends React.Component {
           </select>
         </div>
         <button type="submit" className="btn btn-primary monitoring-run-start" disabled={!ready || busy}>
-          <i className={'fa ' + (this.state.creating ? 'fa-circle-notch fa-spin' : 'fa-play')}></i>
+          <i aria-hidden="true" className={'fa ' + (this.state.creating ? 'fa-circle-notch fa-spin' : 'fa-play')}></i>
           {_('Start review run')}
         </button>
         {!ready && !this.state.loading ? <div className="monitoring-run-empty">{_('Two completed orthophoto surveys are required.')}</div> : ''}
@@ -359,16 +359,16 @@ class MonitoringRunPanel extends React.Component {
     const compareReady = run.status === 'review' || run.status === 'published';
     const published = run.status === 'published';
     return (
-      <ol className="monitoring-run-steps">
-        <li className="is-complete"><i className="fa fa-check"></i><span>{_('Surveys')}</span></li>
-        <li className={compareReady ? 'is-complete' : (run.status === 'failed' ? 'is-failed' : 'is-active')}>
-          <i className={'fa ' + (run.status === 'generating' ? 'fa-circle-notch fa-spin' : run.status === 'failed' ? 'fa-exclamation' : 'fa-check')}></i>
+      <ol className="monitoring-run-steps" aria-label={_('Monitoring progress')}>
+        <li className="is-complete"><i aria-hidden="true" className="fa fa-check"></i><span>{_('Surveys')}</span></li>
+        <li className={compareReady ? 'is-complete' : (run.status === 'failed' ? 'is-failed' : 'is-active')} aria-current={!compareReady ? 'step' : undefined}>
+          <i aria-hidden="true" className={'fa ' + (run.status === 'generating' ? 'fa-circle-notch fa-spin' : run.status === 'failed' ? 'fa-exclamation' : 'fa-check')}></i>
           <span>{_('Compare')}</span>
         </li>
-        <li className={run.issue_count ? 'is-complete' : (compareReady && !published ? 'is-active' : '')}>
-          <i className={'fa ' + (run.issue_count ? 'fa-check' : 'fa-search')}></i><span>{_('Review')}</span>
+        <li className={run.issue_count ? 'is-complete' : (compareReady && !published ? 'is-active' : '')} aria-current={compareReady && !published && !run.issue_count ? 'step' : undefined}>
+          <i aria-hidden="true" className={'fa ' + (run.issue_count ? 'fa-check' : 'fa-search')}></i><span>{_('Review')}</span>
         </li>
-        <li className={published ? 'is-complete' : ''}><i className={'fa ' + (published ? 'fa-check' : 'fa-share-alt')}></i><span>{_('Publish')}</span></li>
+        <li className={published ? 'is-complete' : ''}><i aria-hidden="true" className={'fa ' + (published ? 'fa-check' : 'fa-share-alt')}></i><span>{_('Publish')}</span></li>
       </ol>
     );
   }
@@ -400,14 +400,14 @@ class MonitoringRunPanel extends React.Component {
     const published = run.status === 'published';
     const busy = this.isActionBusy();
     return (
-      <div className="monitoring-run-review">
+      <div className="monitoring-run-review" aria-busy={busy}>
         <div className="monitoring-run-pair">
           <div><span>{_('Current')}</span><strong>{current.name}</strong></div>
           <i className="fa fa-long-arrow-alt-left"></i>
           <div><span>{_('Baseline')}</span><strong>{baseline.name}</strong></div>
         </div>
         {this.renderSteps(run)}
-        {run.last_error ? <div className="alert alert-warning">{run.last_error}</div> : ''}
+        {run.last_error ? <div className="alert alert-warning" role="alert">{run.last_error}</div> : ''}
 
         <div className="monitoring-run-actions">
           {run.status === 'failed' ? <button type="button" className="btn btn-warning" onClick={this.retryRun} disabled={busy}>
@@ -429,7 +429,7 @@ class MonitoringRunPanel extends React.Component {
             <i className="fa fa-external-link-alt"></i> {_('Open client portal')}
           </button> : ''}
         </div>
-        {run.status === 'generating' ? <div className="monitoring-run-progress"><span></span></div> : ''}
+        {run.status === 'generating' ? <div className="monitoring-run-progress" role="status" aria-label={_('Generating comparison')}><span></span></div> : ''}
         {run.issue_count ? <div className="monitoring-run-count"><i className="fa fa-flag"></i> {run.issue_count} {_('review issues')}</div> : ''}
         {this.renderCandidates()}
       </div>
@@ -440,22 +440,22 @@ class MonitoringRunPanel extends React.Component {
     const run = this.state.currentRun;
     const mutationBusy = this.isMutationBusy();
     return (
-      <section className="monitoring-run-panel">
+      <section className="monitoring-run-panel" aria-labelledby={`monitoring-runs-${this.props.projectId}`} aria-busy={this.state.loading || mutationBusy}>
         <header className="monitoring-run-header">
           <div>
-            <i className="fa fa-route"></i>
-            <strong>{_('Monitoring runs')}</strong>
+            <i aria-hidden="true" className="fa fa-route"></i>
+            <strong id={`monitoring-runs-${this.props.projectId}`}>{_('Monitoring runs')}</strong>
           </div>
           <div className="monitoring-run-header-actions">
             {this.state.runs.length ? <select className="form-control" aria-label={_('Monitoring run')} value={run ? run.id : ''} onChange={this.selectRun} disabled={mutationBusy}>
               <option value="">{_('New run')}</option>
               {this.state.runs.map(item => <option value={item.id} key={item.id}>{(item.current_task_detail || {}).name} | {item.status_label}</option>)}
             </select> : ''}
-            {run ? <button type="button" className="btn btn-default" title={_('New run')} onClick={this.newRun} disabled={mutationBusy}><i className="fa fa-plus"></i></button> : ''}
+            {run ? <button type="button" className="btn btn-default" title={_('New run')} aria-label={_('New monitoring run')} onClick={this.newRun} disabled={mutationBusy}><i aria-hidden="true" className="fa fa-plus"></i></button> : ''}
           </div>
         </header>
-        {this.state.error ? <div className="alert alert-warning monitoring-run-error">{this.state.error}</div> : ''}
-        {this.state.loading ? <div className="monitoring-run-loading"><i className="fa fa-circle-notch fa-spin"></i></div> : (run ? this.renderRun(run) : this.renderSetup())}
+        {this.state.error ? <div className="alert alert-warning monitoring-run-error" role="alert">{this.state.error}</div> : ''}
+        {this.state.loading ? <div className="monitoring-run-loading" role="status"><i aria-hidden="true" className="fa fa-circle-notch fa-spin"></i> {_('Loading monitoring runs...')}</div> : (run ? this.renderRun(run) : this.renderSetup())}
       </section>
     );
   }
