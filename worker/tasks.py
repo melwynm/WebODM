@@ -221,7 +221,7 @@ def process_pending_tasks():
 
 
 @app.task(bind=True, time_limit=settings.WORKERS_MAX_TIME_LIMIT)
-def generate_monitoring_compare(self, reference_task_id, compare_task_id):
+def generate_monitoring_compare(self, reference_task_id, compare_task_id, monitoring_run_id=None):
     try:
         from app.services.monitoring import ensure_monitoring_products, render_layer_payload
 
@@ -236,10 +236,36 @@ def generate_monitoring_compare(self, reference_task_id, compare_task_id):
             'output': render_layer_payload(reference_task, compare_task, metadata)
         }
 
+        if monitoring_run_id:
+            from app.models import ProjectMonitoringRun
+
+            ProjectMonitoringRun.objects.filter(
+                pk=monitoring_run_id,
+                status=ProjectMonitoringRun.STATUS_GENERATING,
+                celery_task_id=self.request.id,
+            ).update(
+                status=ProjectMonitoringRun.STATUS_REVIEW,
+                comparison_generated_at=timezone.now(),
+                last_error='',
+                updated_at=timezone.now(),
+            )
+
         store_task_result(self.request.id, result)
 
         return result
     except Exception as e:
+        if monitoring_run_id:
+            from app.models import ProjectMonitoringRun
+
+            ProjectMonitoringRun.objects.filter(
+                pk=monitoring_run_id,
+                status=ProjectMonitoringRun.STATUS_GENERATING,
+                celery_task_id=self.request.id,
+            ).update(
+                status=ProjectMonitoringRun.STATUS_FAILED,
+                last_error=str(e),
+                updated_at=timezone.now(),
+            )
         logger.error(str(e))
         return {'error': str(e)}
 
