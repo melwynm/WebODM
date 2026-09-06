@@ -1,6 +1,6 @@
 # Development Status
 
-Last updated: 2026-05-20
+Last updated: 2026-09-06
 
 ## Purpose
 
@@ -18,6 +18,15 @@ This file tracks the current state of this fork so future work can start from th
 - Reduce operational issues in local Docker and NodeODM setups
 
 ## Recently Completed
+
+### Integrated QA Hardening and Local Release
+
+- Hardened monitoring-run dispatch, retry, concurrency, and worker result ownership so late jobs cannot replace newer or published state
+- Prevented stale monitoring and AI review responses, serialized issue status updates, enforced read-only controls, and improved accessible control state
+- Added server-side client comment validation with preserved drafts and field-specific feedback
+- Passed 47 integrated backend tests, 15 focused frontend tests, migration consistency checks, and all 108 platform-audit checks; details are recorded in `QA_VERIFICATION_2026-09-06.md`
+- Refreshed only the exercised P2, P3, P6, P7-P12, and P15 feature-validation records as tested; other validation timestamps were left unchanged
+- Rebuilt the shared local web/worker image, collected current static assets, applied it to both services, and verified WebODM 2.9.2, the public status endpoint, current migrations, worker startup, and served Dashboard bundles
 
 ### MCP Server Synchronization
 
