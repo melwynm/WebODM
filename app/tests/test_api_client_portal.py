@@ -171,3 +171,86 @@ class TestClientPortalApi(BootTestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, self.project.name)
         self.assertContains(response, 'Add Comment')
+
+    def test_reviewer_can_submit_comment_from_portal_form(self):
+        share = ProjectClientShare.objects.create(
+            project=self.project,
+            name='Client Portal',
+            role=ProjectClientShare.ROLE_REVIEWER,
+            created_by=self.user,
+        )
+
+        response = self.public_client.post(
+            f'/client/projects/{share.token}/',
+            {
+                'author_name': '  Client User  ',
+                'author_email': 'client@example.com',
+                'body': '  Ready for sign-off.  ',
+            },
+        )
+
+        self.assertRedirects(response, share.portal_path())
+        comment = ProjectClientComment.objects.get(share=share)
+        self.assertEqual(comment.author_name, 'Client User')
+        self.assertEqual(comment.author_email, 'client@example.com')
+        self.assertEqual(comment.body, 'Ready for sign-off.')
+
+    def test_portal_form_preserves_values_and_shows_field_errors(self):
+        share = ProjectClientShare.objects.create(
+            project=self.project,
+            name='Client Portal',
+            role=ProjectClientShare.ROLE_REVIEWER,
+            created_by=self.user,
+        )
+        long_name = 'N' * 256
+
+        response = self.public_client.post(
+            f'/client/projects/{share.token}/',
+            {
+                'author_name': long_name,
+                'author_email': 'not-an-email',
+                'body': 'Please keep this draft.',
+            },
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(ProjectClientComment.objects.filter(share=share).count(), 0)
+        self.assertContains(response, 'author_name_errors')
+        self.assertContains(response, 'author_email_errors')
+        self.assertContains(response, long_name)
+        self.assertContains(response, 'not-an-email')
+        self.assertContains(response, 'Please keep this draft.')
+
+    def test_portal_form_rejects_blank_required_fields(self):
+        share = ProjectClientShare.objects.create(
+            project=self.project,
+            name='Client Portal',
+            role=ProjectClientShare.ROLE_REVIEWER,
+            created_by=self.user,
+        )
+
+        response = self.public_client.post(
+            f'/client/projects/{share.token}/',
+            {'author_name': '   ', 'author_email': '', 'body': '   '},
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(ProjectClientComment.objects.filter(share=share).count(), 0)
+        self.assertContains(response, 'author_name_errors')
+        self.assertContains(response, 'body_errors')
+
+    def test_viewer_cannot_submit_comment_from_portal_form(self):
+        share = ProjectClientShare.objects.create(
+            project=self.project,
+            name='Client Portal',
+            role=ProjectClientShare.ROLE_VIEWER,
+            created_by=self.user,
+        )
+
+        response = self.public_client.post(
+            f'/client/projects/{share.token}/',
+            {'author_name': 'Client User', 'body': 'Please change this.'},
+        )
+
+        self.assertEqual(response.status_code, 403)
+        self.assertEqual(ProjectClientComment.objects.filter(share=share).count(), 0)

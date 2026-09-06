@@ -4,46 +4,90 @@
 {% block page-wrapper %}
 <div id="page-wrapper" class="client-portal">
     <style>
+        #page-wrapper.client-portal {
+            margin-left: 0;
+        }
         .client-portal {
-            background: #f7f9fb;
-            color: #1f2933;
+            --cp-paper: #f2f5f1;
+            --cp-panel: #ffffff;
+            --cp-ink: #1e2b26;
+            --cp-muted: #5c6b63;
+            --cp-line: #dbe3da;
+            --cp-line-soft: #e9eee8;
+            --cp-pine: #22604a;
+            --cp-pine-deep: #17493a;
+            --cp-pine-tint: #e4efe8;
+            --cp-signal: #a84e21;
+            --cp-signal-tint: #f7e8de;
+            --cp-amber: #8a6202;
+            --cp-amber-tint: #f6eed7;
+            --cp-mono: ui-monospace, "Cascadia Mono", Consolas, "Liberation Mono", monospace;
+
+            background: var(--cp-paper);
+            color: var(--cp-ink);
             min-height: calc(100vh - 50px);
-            padding: 28px 0 48px;
+            padding: 0 0 56px;
         }
         .client-portal .portal-shell {
             max-width: 1120px;
             margin: 0 auto;
-            padding: 0 18px;
+            padding: 0 20px;
         }
         .client-portal .portal-header {
-            border-bottom: 1px solid #d9e2ec;
-            margin-bottom: 22px;
-            padding-bottom: 18px;
+            position: relative;
+            border-bottom: 2px solid var(--cp-ink);
+            margin-bottom: 26px;
+            padding: 34px 0 20px;
+            overflow: hidden;
+        }
+        .client-portal .portal-contours {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
         }
         .client-portal .portal-header h1 {
-            font-size: 28px;
-            font-weight: 600;
-            margin: 0 0 8px;
+            position: relative;
+            font-size: 32px;
+            font-weight: 650;
+            letter-spacing: -0.02em;
+            margin: 0 0 10px;
         }
         .client-portal .portal-meta {
-            color: #52606d;
-            font-size: 14px;
+            position: relative;
+            color: var(--cp-muted);
+            font-family: var(--cp-mono);
+            font-size: 12.5px;
+            letter-spacing: 0.02em;
+            text-transform: uppercase;
         }
+        .client-portal .portal-meta .sep { color: var(--cp-line); padding: 0 6px; }
         .client-portal .portal-grid {
             display: grid;
             grid-template-columns: 2fr 1fr;
-            gap: 18px;
+            gap: 20px;
         }
         .client-portal .portal-panel {
-            background: #fff;
-            border: 1px solid #d9e2ec;
-            border-radius: 6px;
-            margin-bottom: 18px;
-            padding: 18px;
+            background: var(--cp-panel);
+            border: 1px solid var(--cp-line);
+            border-radius: 8px;
+            margin-bottom: 20px;
+            padding: 20px 22px;
+        }
+        .client-portal .portal-eyebrow {
+            color: var(--cp-pine);
+            font-family: var(--cp-mono);
+            font-size: 11px;
+            font-weight: 600;
+            letter-spacing: 0.14em;
+            margin: 0 0 4px;
+            text-transform: uppercase;
         }
         .client-portal .portal-panel h2 {
             font-size: 18px;
-            font-weight: 600;
+            font-weight: 650;
+            letter-spacing: -0.01em;
             margin: 0 0 14px;
         }
         .client-portal .portal-list {
@@ -52,42 +96,124 @@
             padding: 0;
         }
         .client-portal .portal-list li {
-            border-top: 1px solid #eef2f6;
-            padding: 12px 0;
+            border-top: 1px solid var(--cp-line-soft);
+            padding: 14px 0;
         }
-        .client-portal .portal-list li:first-child {
-            border-top: 0;
-            padding-top: 0;
+        .client-portal .portal-list li:first-child { border-top: 0; padding-top: 0; }
+        .client-portal .portal-list li:last-child { padding-bottom: 0; }
+        .client-portal .portal-list strong { font-weight: 650; }
+        .client-portal .portal-list p { margin: 6px 0 0; }
+        .client-portal .portal-data {
+            color: var(--cp-muted);
+            font-family: var(--cp-mono);
+            font-size: 12px;
+            margin-top: 3px;
         }
         .client-portal .portal-pill {
-            background: #e6f4ea;
             border-radius: 999px;
-            color: #276749;
             display: inline-block;
-            font-size: 12px;
+            font-family: var(--cp-mono);
+            font-size: 11px;
             font-weight: 600;
-            padding: 3px 8px;
+            letter-spacing: 0.04em;
+            padding: 3px 10px;
             text-transform: uppercase;
+            background: var(--cp-pine-tint);
+            color: var(--cp-pine-deep);
         }
-        .client-portal .muted {
-            color: #697586;
+        .client-portal .portal-pill.is-attention { background: var(--cp-signal-tint); color: var(--cp-signal); }
+        .client-portal .portal-pill.is-progress { background: var(--cp-amber-tint); color: var(--cp-amber); }
+        .client-portal .portal-btn {
+            background: var(--cp-pine);
+            border: 1px solid var(--cp-pine-deep);
+            border-radius: 6px;
+            color: #fff;
+            display: inline-block;
+            font-size: 13px;
+            font-weight: 600;
+            margin-top: 8px;
+            padding: 7px 14px;
+            text-decoration: none;
         }
-        .client-portal textarea {
-            min-height: 120px;
-            resize: vertical;
+        .client-portal .portal-btn:hover,
+        .client-portal .portal-btn:focus {
+            background: var(--cp-pine-deep);
+            color: #fff;
+            text-decoration: none;
+        }
+        .client-portal a { color: var(--cp-pine); }
+        .client-portal a:hover { color: var(--cp-pine-deep); }
+        .client-portal :focus-visible {
+            outline: 2px solid var(--cp-pine);
+            outline-offset: 2px;
+        }
+        .client-portal .muted { color: var(--cp-muted); }
+        .client-portal .portal-empty {
+            border: 1px dashed var(--cp-line);
+            border-radius: 6px;
+            color: var(--cp-muted);
+            margin: 0;
+            padding: 16px;
+        }
+        .client-portal .portal-utility {
+            color: var(--cp-muted);
+            font-size: 12px;
+            margin: 10px 0 0;
+            word-break: break-all;
+        }
+        .client-portal .portal-utility code {
+            background: transparent;
+            color: var(--cp-muted);
+            font-family: var(--cp-mono);
+            padding: 0;
+        }
+        .client-portal label { font-weight: 600; }
+        .client-portal .form-hint {
+            color: var(--cp-muted);
+            font-size: 12px;
+            font-weight: 400;
+        }
+        .client-portal .form-control {
+            border-color: var(--cp-line);
+            box-shadow: none;
+        }
+        .client-portal .form-control:focus {
+            border-color: var(--cp-pine);
+            box-shadow: 0 0 0 2px var(--cp-pine-tint);
+        }
+        .client-portal textarea { min-height: 120px; resize: vertical; }
+        .client-portal .btn-primary {
+            background: var(--cp-pine);
+            border-color: var(--cp-pine-deep);
+        }
+        .client-portal .btn-primary:hover,
+        .client-portal .btn-primary:focus {
+            background: var(--cp-pine-deep);
+            border-color: var(--cp-pine-deep);
         }
         @media (max-width: 860px) {
-            .client-portal .portal-grid {
-                grid-template-columns: 1fr;
-            }
+            .client-portal .portal-grid { grid-template-columns: 1fr; }
+            .client-portal .portal-header h1 { font-size: 26px; }
+        }
+        @media print {
+            .client-portal { background: #fff; }
+            .client-portal .portal-panel { border-color: #bbb; break-inside: avoid; }
+            .client-portal form, .client-portal .portal-btn { display: none; }
         }
     </style>
     <div class="portal-shell">
         <div class="portal-header">
+            <svg class="portal-contours" viewBox="0 0 1120 130" preserveAspectRatio="none" aria-hidden="true" focusable="false">
+                <g fill="none" stroke="#22604a" stroke-opacity="0.14" stroke-width="1.2">
+                    <path d="M-10 118 C 160 84, 300 132, 470 96 S 800 44, 1130 88" />
+                    <path d="M-10 96 C 180 60, 330 108, 500 72 S 820 22, 1130 64" />
+                    <path d="M-10 74 C 200 40, 360 86, 530 52 S 840 4, 1130 42" />
+                    <path d="M620 118 C 700 96, 760 122, 840 104 S 990 78, 1130 108" stroke-opacity="0.10" />
+                </g>
+            </svg>
             <h1>{{ project.name }}</h1>
             <div class="portal-meta">
-                {{ share.name }} · {{ share.get_role_display }} ·
-                {% trans "Updated" %} {{ project.last_update|date:"Y-m-d H:i" }}
+                {{ share.name }}<span class="sep">/</span>{{ share.get_role_display }}{% if project.last_update %}<span class="sep">/</span>{% trans "Updated" %} {{ project.last_update|date:"Y-m-d H:i" }}{% endif %}
             </div>
         </div>
 
@@ -99,16 +225,38 @@
 
         <div class="portal-grid">
             <main>
+                {% if monitoring_runs %}
+                    <section class="portal-panel">
+                        <p class="portal-eyebrow">{% trans "Change over time" %}</p>
+                        <h2>{% trans "Published Monitoring Reviews" %}</h2>
+                        <ul class="portal-list">
+                            {% for run in monitoring_runs %}
+                                <li>
+                                    <strong>{{ run.current_task.name }}</strong>
+                                    <div class="portal-data">
+                                        {% trans "Baseline" %}: {{ run.baseline_task.name }}
+                                        {% if run.published_at %} · {% trans "Published" %} {{ run.published_at|date:"Y-m-d H:i" }}{% endif %}
+                                    </div>
+                                    <a class="portal-btn" href="{% url 'api_client_monitoring_run_report' share.token run.id %}?format=html">
+                                        {% trans "Open monitoring report" %}
+                                    </a>
+                                </li>
+                            {% endfor %}
+                        </ul>
+                    </section>
+                {% endif %}
+
                 <section class="portal-panel">
+                    <p class="portal-eyebrow">{% trans "Needs your attention" %}</p>
                     <h2>{% trans "Open Review Items" %}</h2>
                     {% if issues %}
                         <ul class="portal-list">
                             {% for issue in issues %}
                                 <li>
                                     <strong>{{ issue.title }}</strong>
-                                    <div class="muted">
-                                        {{ issue.get_status_display }} · {{ issue.get_priority_display }}
-                                        {% if issue.task %} · {{ issue.task.name }}{% endif %}
+                                    <div class="portal-data">
+                                        <span class="portal-pill{% if issue.priority == 'high' or issue.priority == 'critical' %} is-attention{% elif issue.status == 'in_review' %} is-progress{% endif %}">{{ issue.get_status_display }} · {{ issue.get_priority_display }}</span>
+                                        {% if issue.task %} <span class="muted">{{ issue.task.name }}</span>{% endif %}
                                     </div>
                                     {% if issue.description %}
                                         <p>{{ issue.description }}</p>
@@ -117,75 +265,95 @@
                             {% endfor %}
                         </ul>
                     {% else %}
-                        <p class="muted">{% trans "No open review items." %}</p>
+                        <p class="portal-empty">{% trans "No open review items. Anything that needs your review will appear here." %}</p>
                     {% endif %}
                 </section>
 
                 <section class="portal-panel">
+                    <p class="portal-eyebrow">{% trans "Discussion" %}</p>
                     <h2>{% trans "Client Comments" %}</h2>
                     {% if comments %}
                         <ul class="portal-list">
                             {% for comment in comments %}
                                 <li>
                                     <strong>{{ comment.author_name }}</strong>
-                                    <span class="muted"> · {{ comment.created_at|date:"Y-m-d H:i" }}</span>
+                                    <span class="portal-data"> · {{ comment.created_at|date:"Y-m-d H:i" }}</span>
                                     <p>{{ comment.body }}</p>
                                 </li>
                             {% endfor %}
                         </ul>
                     {% else %}
-                        <p class="muted">{% trans "No client comments yet." %}</p>
+                        {% if share.role == "reviewer" %}
+                            <p class="portal-empty">{% trans "No client comments yet. Use the comment form to start the conversation." %}</p>
+                        {% else %}
+                            <p class="portal-empty">{% trans "No client comments yet." %}</p>
+                        {% endif %}
                     {% endif %}
                 </section>
             </main>
 
             <aside>
                 <section class="portal-panel">
+                    <p class="portal-eyebrow">{% trans "Survey results" %}</p>
                     <h2>{% trans "Deliverables" %}</h2>
                     {% if tasks %}
                         <ul class="portal-list">
                             {% for task in tasks %}
                                 <li>
                                     <strong>{{ task.name }}</strong>
-                                    <div class="muted">{{ task.created_at|date:"Y-m-d H:i" }}</div>
+                                    <div class="portal-data">{{ task.created_at|date:"Y-m-d H:i" }}</div>
                                     {% if "textured_model.zip" in task.available_assets or "textured_model.glb" in task.available_assets or "georeferenced_model.laz" in task.available_assets %}
                                         <div>
-                                            <a href="{% url 'client_portal_3d' share.token task.id %}">{% trans "Open 3D Review" %}</a>
+                                            <a class="portal-btn" href="{% url 'client_portal_3d' share.token task.id %}">{% trans "Open 3D Review" %}</a>
                                         </div>
                                     {% endif %}
                                 </li>
                             {% endfor %}
                         </ul>
                     {% else %}
-                        <p class="muted">{% trans "No task deliverables yet." %}</p>
+                        <p class="portal-empty">{% trans "No task deliverables yet. Results will appear here once processing completes." %}</p>
                     {% endif %}
                 </section>
 
                 <section class="portal-panel">
+                    <p class="portal-eyebrow">{% trans "Your access" %}</p>
                     <h2>{% trans "Portal Access" %}</h2>
                     <p><span class="portal-pill">{{ share.get_role_display }}</span></p>
-                    <p class="muted">{% trans "Portal API" %}: <code>{{ api_url }}</code></p>
                     {% if share.expires_at %}
-                        <p class="muted">{% trans "Expires" %}: {{ share.expires_at|date:"Y-m-d H:i" }}</p>
+                        <p class="portal-data">{% trans "Expires" %}: {{ share.expires_at|date:"Y-m-d H:i" }}</p>
                     {% endif %}
+                    <p class="portal-utility">{% trans "Portal API" %}: <code>{{ api_url }}</code></p>
                 </section>
 
                 {% if share.role == "reviewer" %}
                     <section class="portal-panel">
+                        <p class="portal-eyebrow">{% trans "Send feedback" %}</p>
                         <h2>{% trans "Add Comment" %}</h2>
                         <form method="post">
                             {% csrf_token %}
-                            <div class="form-group">
+                            {% if comment_form.non_field_errors %}
+                                <div class="alert alert-warning" role="alert">{{ comment_form.non_field_errors }}</div>
+                            {% endif %}
+                            <div class="form-group{% if comment_form.author_name.errors %} has-error{% endif %}">
                                 <label for="author_name">{% trans "Name" %}</label>
-                                <input id="author_name" name="author_name" class="form-control" required>
+                                <input id="author_name" name="author_name" class="form-control" maxlength="255" required value="{{ comment_form.author_name.value|default_if_none:'' }}"{% if comment_form.author_name.errors %} aria-invalid="true" aria-describedby="author_name_errors"{% endif %}>
+                                {% if comment_form.author_name.errors %}
+                                    <div id="author_name_errors" class="help-block" role="alert">{{ comment_form.author_name.errors|join:" " }}</div>
+                                {% endif %}
                             </div>
-                            <div class="form-group">
-                                <label for="author_email">{% trans "Email" %}</label>
-                                <input id="author_email" name="author_email" type="email" class="form-control">
+                            <div class="form-group{% if comment_form.author_email.errors %} has-error{% endif %}">
+                                <label for="author_email">{% trans "Email" %} <span class="form-hint">{% trans "(optional)" %}</span></label>
+                                <input id="author_email" name="author_email" type="email" class="form-control" value="{{ comment_form.author_email.value|default_if_none:'' }}"{% if comment_form.author_email.errors %} aria-invalid="true" aria-describedby="author_email_errors"{% endif %}>
+                                {% if comment_form.author_email.errors %}
+                                    <div id="author_email_errors" class="help-block" role="alert">{{ comment_form.author_email.errors|join:" " }}</div>
+                                {% endif %}
                             </div>
-                            <div class="form-group">
+                            <div class="form-group{% if comment_form.body.errors %} has-error{% endif %}">
                                 <label for="body">{% trans "Comment" %}</label>
-                                <textarea id="body" name="body" class="form-control" required></textarea>
+                                <textarea id="body" name="body" class="form-control" required{% if comment_form.body.errors %} aria-invalid="true" aria-describedby="body_errors"{% endif %}>{{ comment_form.body.value|default_if_none:'' }}</textarea>
+                                {% if comment_form.body.errors %}
+                                    <div id="body_errors" class="help-block" role="alert">{{ comment_form.body.errors|join:" " }}</div>
+                                {% endif %}
                             </div>
                             <button type="submit" class="btn btn-primary">{% trans "Add Comment" %}</button>
                         </form>
