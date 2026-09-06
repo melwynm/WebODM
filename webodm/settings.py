@@ -200,9 +200,10 @@ LOCALE_PATHS = [
 
 STATIC_URL = '/static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'build', 'static')
-STATICFILES_DIRS = [
-    os.path.join(BASE_DIR, 'app', 'static'),
-]
+# Installed applications are discovered by AppDirectoriesFinder below. Listing
+# app/static here as well makes collectstatic encounter every application asset
+# twice and emit misleading duplicate-file warnings.
+STATICFILES_DIRS = []
 STATICFILES_FINDERS = [
     'django.contrib.staticfiles.finders.FileSystemFinder',
     'django.contrib.staticfiles.finders.AppDirectoriesFinder',

@@ -2,7 +2,8 @@
 {% load i18n static %}
 
 {% block extra-headers %}
-    <link rel="stylesheet" type="text/css" href="{% block stylesheet %}{% static "admin/css/base.css" %}{% endblock %}" />
+    <link rel="stylesheet" type="text/css" href="{% block stylesheet %}{% static "admin/css/webodm-base.css" %}{% endblock %}" />
+    {% if LANGUAGE_BIDI %}<link rel="stylesheet" type="text/css" href="{% static "admin/css/webodm-rtl.css" %}" />{% endif %}
     {% block extrastyle %}{% endblock %}
     {% block extrahead %}{% endblock %}
     {% block blockbots %}<meta name="robots" content="NONE,NOARCHIVE" />{% endblock %}
