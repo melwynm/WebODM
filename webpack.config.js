@@ -22,7 +22,8 @@ module.exports = {
 
   output: {
     path: path.join(__dirname, './app/static/app/bundles/'),
-    filename: "[name]-[hash].js",
+    filename: "[name]-[contenthash].js",
+    chunkFilename: "[name]-[contenthash].js",
     publicPath: '/static/app/bundles/'
   },
 
@@ -33,8 +34,8 @@ module.exports = {
       path: path.join(__dirname, './'),
     }),
     new MiniCssExtractPlugin({
-      filename: "./css/[name]-[hash].css",
-      chunkFilename: "[id].css"
+      filename: "./css/[name]-[contenthash].css",
+      chunkFilename: "./css/[name]-[contenthash].css"
     }),
     new webpack.ProvidePlugin({
       Buffer: ['buffer', 'Buffer'],

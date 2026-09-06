@@ -4,7 +4,9 @@ import update from 'immutability-helper';
 import TaskList from './TaskList';
 import NewTaskPanel from './NewTaskPanel';
 import ImportTaskPanel from './ImportTaskPanel';
-import ProjectIssuesPanel from './ProjectIssuesPanel';
+const ProjectIssuesPanel = React.lazy(() => import(
+  /* webpackChunkName: "project-issues-panel" */ './ProjectIssuesPanel'
+));
 import UploadProgressBar from './UploadProgressBar';
 import ErrorMessage from './ErrorMessage';
 import EditProjectDialog from './EditProjectDialog';
@@ -910,10 +912,12 @@ class ProjectListItem extends React.Component {
           : ""}
 
           {this.state.showIssues ?
-            <ProjectIssuesPanel
-              projectId={this.state.data.id}
-              canEdit={this.hasPermission("change")}
-            />
+            <React.Suspense fallback={<div className="panel-loading" role="status">{_("Loading issues...")}</div>}>
+              <ProjectIssuesPanel
+                projectId={this.state.data.id}
+                canEdit={this.hasPermission("change")}
+              />
+            </React.Suspense>
           : ""}
 
           {this.state.showTaskList ? 

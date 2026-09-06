@@ -1,7 +1,9 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import '../css/LayersControlLayer.scss';
-import Histogram from './Histogram';
+const Histogram = React.lazy(() => import(
+  /* webpackChunkName: "map-histogram" */ './Histogram'
+));
 import { Checkbox, ExpandButton } from './Toggle';
 import Utils from '../classes/Utils';
 import Workers from '../classes/Workers';
@@ -410,15 +412,17 @@ export default class LayersControlLayer extends React.Component {
 
         {this.state.expanded ? 
         (meta.monitoring ? this.renderMonitoringDetails() : <div className="layer-expanded">
-            <Histogram width={274}
-                        loading={histogramLoading}
-                        statistics={tmeta.statistics}
-                        unitForward={meta.unitForward}
-                        unitBackward={meta.unitBackward}
-                        colorMap={cmapValues}
-                        min={hmin}
-                        max={hmax}
-                        onUpdate={this.handleHistogramUpdate} />
+            <React.Suspense fallback={<div className="histogram-loading" role="status">{_("Loading chart...")}</div>}>
+              <Histogram width={274}
+                          loading={histogramLoading}
+                          statistics={tmeta.statistics}
+                          unitForward={meta.unitForward}
+                          unitBackward={meta.unitBackward}
+                          colorMap={cmapValues}
+                          min={hmin}
+                          max={hmax}
+                          onUpdate={this.handleHistogramUpdate} />
+            </React.Suspense>
 
             <ErrorMessage bind={[this, "error"]} />
 
@@ -485,4 +489,3 @@ export default class LayersControlLayer extends React.Component {
 
    }
 }
-
