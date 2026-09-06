@@ -1,11 +1,15 @@
 import json
 import os
+import time
 from datetime import timedelta
+from unittest.mock import patch
 
 import numpy as np
 import rasterio
 from django.contrib.auth.models import User
+from django.db import connection
 from django.test import Client
+from django.test.utils import CaptureQueriesContext
 from django.utils import timezone
 from rasterio.enums import ColorInterp
 from rasterio.transform import Affine, from_origin
@@ -143,6 +147,32 @@ class TestMonitoring(BootTestCase):
         self.assertEqual(payload['results'][1]['next_task_id'], str(newest.id))
         self.assertTrue(payload['results'][2]['readiness']['can_compare'])
         self.assertTrue(payload['results'][2]['readiness']['assets']['orthophoto'])
+
+    @patch('app.services.monitoring.readiness.os.path.isfile', return_value=True)
+    def test_monitoring_timeline_scales_to_large_project_history(self, _isfile):
+        start = timezone.now() - timedelta(days=500)
+        Task.objects.bulk_create([
+            Task(
+                project=self.project,
+                name=f'Survey {index:03d}',
+                status=status_codes.COMPLETED,
+                available_assets=['orthophoto.tif'],
+                created_at=start + timedelta(days=index),
+            )
+            for index in range(500)
+        ])
+
+        started_at = time.monotonic()
+        with CaptureQueriesContext(connection) as queries:
+            response = self.client.get(f'/api/projects/{self.project.id}/monitoring/timeline')
+        elapsed = time.monotonic() - started_at
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.json()['results']), 500)
+        task_queries = [query for query in queries if 'FROM "app_task"' in query['sql']]
+        self.assertEqual(len(task_queries), 1)
+        self.assertLessEqual(len(queries), 6)
+        self.assertLess(elapsed, 5.0)
 
     def test_monitoring_compare_api_generates_layers(self):
         reference = self.create_task_with_orthophoto('Current', from_origin(500000, 1000, 1, 1), with_dem=True, dem_offset=2)

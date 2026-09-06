@@ -28,12 +28,13 @@ class MonitoringCompareSerializer(serializers.Serializer):
 
 def completed_orthophoto_tasks(project, exclude_task_id=None):
     exclude_task_id = str(exclude_task_id) if exclude_task_id is not None else None
-    tasks = project.task_set.filter(status=status_codes.COMPLETED).order_by("created_at", "id")
-    return [
-        task
-        for task in tasks
-        if str(task.id) != exclude_task_id and "orthophoto.tif" in (task.available_assets or [])
-    ]
+    tasks = project.task_set.filter(
+        status=status_codes.COMPLETED,
+        available_assets__contains=["orthophoto.tif"],
+    ).only("id", "project_id", "name", "status", "available_assets", "created_at")
+    if exclude_task_id is not None:
+        tasks = tasks.exclude(pk=exclude_task_id)
+    return list(tasks.order_by("created_at", "id"))
 
 
 def default_monitoring_compare_task_id(tasks, reference_task_id):
