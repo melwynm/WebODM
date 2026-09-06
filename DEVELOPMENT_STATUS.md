@@ -19,6 +19,15 @@ This file tracks the current state of this fork so future work can start from th
 
 ## Recently Completed
 
+### Application Hardening Follow-up
+
+- Repaired the production frontend command and verified the exact package script completes successfully
+- Lazy-loaded the project issue panel and map histogram, moved the D3-backed chart out of the initial map bundle, and added stable content-hashed lazy chunks
+- Removed duplicate static discovery and gave embedded-admin styles unique asset names; `collectstatic --dry-run` now completes without duplicate-path warnings
+- Added a 500-survey monitoring regression and removed per-task project lookups; the large timeline now uses one task query and six total request queries
+- Improved phone and tablet layouts, accessible names, busy states, active-step semantics, and loading/error announcements across issue, AI review, and monitoring panels
+- Passed 41 focused regressions for P1, P4, P5, P13, P14, and the commercial feature set, then refreshed those 11 ledger entries; all 21 canonical records are tested
+
 ### Integrated QA Hardening and Local Release
 
 - Hardened monitoring-run dispatch, retry, concurrency, and worker result ownership so late jobs cannot replace newer or published state
