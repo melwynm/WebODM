@@ -89,14 +89,14 @@ class MapPreview extends React.Component {
 
     const customLayer = L.layerGroup();
     customLayer.on("add", a => {
-        const defaultCustomBm = window.localStorage.getItem('lastCustomBasemap') || 'https://tile.openstreetmap.org/{z}/{x}/{y}.png';
+        const defaultCustomBm = window.localStorage.getItem('lastCustomBasemap') || 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}';
       
         let url = window.prompt([_('Enter a tile URL template. Valid coordinates are:'),
 _('{z}, {x}, {y} for Z/X/Y tile scheme'),
 _('{-y} for flipped TMS-style Y coordinates'),
 '',
 _('Example:'),
-'https://tile.openstreetmap.org/{z}/{x}/{y}.png'].join("\n"), defaultCustomBm);
+'https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}'].join("\n"), defaultCustomBm);
         
     if (url){
         customLayer.clearLayers();

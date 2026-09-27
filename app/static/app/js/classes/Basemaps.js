@@ -20,6 +20,15 @@ export default [
   },
   {
     attribution:
+      "Sources: Esri, DeLorme, HERE, USGS, Intermap, iPC, NRCAN, Esri Japan, METI, Esri China (Hong Kong), Esri (Thailand), MapmyIndia, TomTom",
+    maxZoom: 19,
+    minZoom: 0,
+    label: _("ESRI Streets"),
+    url:
+      "//server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}"
+  },
+  {
+    attribution:
       '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
     maxZoom: 19,
     minZoom: 0,
