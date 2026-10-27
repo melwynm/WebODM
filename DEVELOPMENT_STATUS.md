@@ -1,6 +1,6 @@
 # Development Status
 
-Last updated: 2026-09-06
+Last updated: 2026-10-27
 
 ## Purpose
 
@@ -18,6 +18,16 @@ This file tracks the current state of this fork so future work can start from th
 - Reduce operational issues in local Docker and NodeODM setups
 
 ## Recently Completed
+
+### P16 Gaussian Splat and P17 Help Center Registration
+
+- Registered Gaussian splat training/viewer (P16) and the in-app help center (P17) in `PIPELINE.md`, the feature validation ledger (now 23 records), and the platform audit (now 118 surfaces, including the `/help/` route and bundled viewer license)
+- Training now copies `reconstruction.json`, `camera_models.json`, and `reference_lla.json` into the task's `assets/opensfm` and replaces dangling input links, so retraining works after NodeODM's 48-hour task cleanup
+- A pending or running training job whose status has not changed for 15 minutes (`GAUSSIAN_SPLAT_STALE_JOB_SECONDS`) can be queued again; previously a worker restart left the task permanently stuck as running
+- Removed `--no-check-certificate` from the libtorch download; the URL validates over TLS in the CUDA build image
+- Kept the NVIDIA GPU stack as this fork's compose baseline and documented the host requirement in `PRODUCTION_HARDENING.md`; added Gaussian splat steps to `USER_MANUAL.md`
+- End-to-end check: processed 40 images from project 14 with the Gaussian Splat Source preset (project 17), trained 7,000 iterations with CUDA OpenSplat in about 5 minutes (162 MB PLY), confirmed owner-only download, and rendered the splat in the bundled viewer
+- The preset ran out of memory in Poisson meshing (octree depth 12, 2M faces) on this ~15 GB WSL host even with 40 images; the run completed after restarting from meshing at octree depth 11 and 1M faces. Splat training does not use the mesh
 
 ### Application Hardening Follow-up
 

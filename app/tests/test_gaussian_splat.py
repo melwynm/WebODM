@@ -1,7 +1,10 @@
+from datetime import datetime, timedelta, timezone
+import json
 import os
 from pathlib import Path
-import sys
 import shutil
+import sys
+from unittest import mock
 
 from django.contrib.auth.models import User
 from django.test import override_settings
@@ -13,8 +16,11 @@ from app.tests.utils import clear_test_media_root
 from coreplugins.gaussian_splat.gaussian_splat.tasks import (
     _progress_from_line,
     build_status_payload,
+    enqueue_gaussian_splat,
     prepare_opensplat_input,
+    run_gaussian_splat,
     train_gaussian_splat,
+    write_job_status,
 )
 
 
@@ -42,6 +48,33 @@ class TestGaussianSplat(BootTestCase):
         self.assertEqual(status["status"], "idle")
         self.assertEqual(status["progress"], 0)
         self.assertIsNone(status["celery_task_id"])
+
+    def test_stale_running_job_can_be_requeued(self):
+        user = User.objects.get(username="testuser")
+        project = Project.objects.create(owner=user, name="Stale Splat Project")
+        task = Task.objects.create(
+            project=project,
+            name="Stale Splat Task",
+            status=status_codes.COMPLETED,
+        )
+        write_job_status(task, {"status": "running", "celery_task_id": "lost-job"})
+
+        with mock.patch.object(run_gaussian_splat, "delay") as delay:
+            delay.return_value = mock.Mock(id="live-job")
+            result = enqueue_gaussian_splat(task)
+            self.assertEqual(result.celery_task_id, "lost-job")
+            delay.assert_not_called()
+
+            stale = (datetime.now(timezone.utc) - timedelta(hours=1)).isoformat()
+            status_path = Path(task.data_path("gaussian_splat_status.json"))
+            stored = json.loads(status_path.read_text(encoding="utf-8"))
+            stored["updated_at"] = stale
+            status_path.write_text(json.dumps(stored), encoding="utf-8")
+
+            result = enqueue_gaussian_splat(task)
+
+        self.assertEqual(result.celery_task_id, "live-job")
+        self.assertEqual(build_status_payload(task)["status"], "pending")
 
     def test_trainer_command_writes_gaussian_splat_asset(self):
         user = User.objects.get(username="testuser")

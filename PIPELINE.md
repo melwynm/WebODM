@@ -1,9 +1,10 @@
 # Priority Pipeline
 
-Last updated: 2026-07-12
+Last updated: 2026-10-27
 
 Maintenance note 2026-07-11: P1 mobile/field photo capture passed focused API and platform-audit regressions; feature validation reconciliation now supports key-scoped updates and explicit tested-timestamp refreshes.
 Maintenance note 2026-07-11: P2 AI-assisted issue detection now has a project Issues UI with source/task selection, bounded candidate previews, signed confirmation, idempotent creation, and controlled provider-failure handling.
+Maintenance note 2026-10-27: P16 Gaussian splat training and viewer and P17 in-app help center are registered in the roadmap, ledger, and platform audit. A 40-image end-to-end run trained a splat with GPU OpenSplat in the worker and rendered it in the bundled viewer; retraining now survives NodeODM task cleanup and worker restarts.
 Maintenance note 2026-07-12: P15 automated monitoring runs now orchestrate survey pairing, cached comparison generation, change-heatmap AI review, report snapshots, and client-portal publication through a persistent review workflow.
 Maintenance note 2026-05-21: admin setting changelist controls, action bars, and paginators now use the shared shell theme tokens so they remain readable in both dark and light mode.
 Maintenance note 2026-05-21: dog detection now stays on the existing GeoDeep/WebODM object-detection path, adds GSD-aware dog-size filtering, and can promote detections into reviewable project issues from the map UI.
@@ -137,6 +138,7 @@ These are the standard WebODM processing stages. They remain the working runtime
 - 2026-05-20 QA hardening added `reconcilefeaturevalidations`, reconciled P1-P14 into the feature validation ledger as tested, and verified feature validation, platform audit, textured-model QA, project issue/report, and monitoring regression coverage.
 - 2026-07-11 P1 QA reconciliation verified field-photo create/list/delete behavior, file and location validation, project permissions, and all 98 platform-audit surfaces. Key-scoped reconciliation refreshed only the P1 ledger timestamp after 21 focused regressions passed.
 - 2026-07-11 P2 implementation added preview-and-confirm AI Review controls to the project Issues panel, bounded untrusted model output, signed exact-candidate confirmation, idempotent retry handling, and focused API/UI regression coverage.
+- 2026-10-27 P16/P17 registration added the Gaussian splat plugin and help center to the feature validation ledger (23 records) and platform audit (118 surfaces), preserved OpenSfM reconstruction files with the task, recovered stale training jobs, removed the libtorch TLS bypass, and documented the NVIDIA GPU baseline.
 - 2026-07-12 P15 added automated monitoring runs that connect existing timeline, comparison, AI issue, stakeholder report, and client-share capabilities behind one dashboard workflow with retry and publication state.
 - 2026-05-20 UI coverage hardening added a staff Operations page so platform audit and OneDrive folder intake can be used from the browser, and the platform audit now protects that route and template.
 - 2026-05-25 production hardening added `PRODUCTION_HARDENING.md`, `docker-compose.production.yml`, `.env.production.example`, and `productionreadiness` to gate commercial pilot deployments on HTTPS, stable secrets, backups, persistence, runtime health, and platform audit.

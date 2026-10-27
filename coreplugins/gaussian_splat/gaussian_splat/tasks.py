@@ -354,11 +354,27 @@ def train_gaussian_splat(task_obj: Task, options: Optional[dict] = None, progres
     }
 
 
+def _is_stale(status: dict) -> bool:
+    # A worker restart kills training without updating the status file. Live
+    # jobs report progress every few seconds, so a long silence means the job
+    # is gone and must not block a new run forever.
+    try:
+        updated_at = datetime.fromisoformat(status.get("updated_at") or "")
+    except ValueError:
+        return True
+    age = (datetime.now(timezone.utc) - updated_at).total_seconds()
+    return age > config.STALE_JOB_SECONDS
+
+
 def enqueue_gaussian_splat(task_obj: Task, options: Optional[dict] = None):
     options = options or {}
     current = build_status_payload(task_obj)
 
-    if current.get("status") in ("pending", "running") and current.get("celery_task_id"):
+    if (
+        current.get("status") in ("pending", "running")
+        and current.get("celery_task_id")
+        and not _is_stale(current)
+    ):
         return SimpleNamespace(task_id=str(task_obj.id), celery_task_id=current["celery_task_id"])
 
     write_job_status(
