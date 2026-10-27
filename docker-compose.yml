@@ -3,6 +3,7 @@
 volumes:
   dbdata:
   appmedia:
+  nodeodmdata:
 services:
   db:
     build:
@@ -65,9 +66,11 @@ services:
   worker:
     image: webodm_webapp_local
     container_name: worker
+    gpus: all
     entrypoint: /bin/bash -c "/webodm/wait-for-postgres.sh db /webodm/wait-for-it.sh -t 0 broker:6379 -- /webodm/wait-for-it.sh -t 0 webapp:8000 -- /webodm/worker.sh start"
     volumes:
       - ${WO_MEDIA_DIR}:/webodm/app/media:z
+      - nodeodmdata:/var/www/data:ro
     depends_on:
       - db
       - broker
@@ -75,6 +78,9 @@ services:
       - WO_BROKER
       - WO_DEBUG
       - WO_SECRET_KEY
+      - "GAUSSIAN_SPLAT_TRAINER_COMMAND=/opt/opensplat/bin/opensplat {input} -n {iterations} -o {output}"
+      - GAUSSIAN_SPLAT_DOWNSCALE_FACTOR=${GAUSSIAN_SPLAT_DOWNSCALE_FACTOR:-2}
+      - GAUSSIAN_SPLAT_NODEODM_DATA_ROOT=/var/www/data
       - WEB_CONCURRENCY
       - AIRTWIN_WEBHOOK_ENABLED
       - AIRTWIN_WEBHOOK_URL
@@ -99,4 +105,6 @@ services:
       - "3001:3000"
     environment:
       - WO_HOST=webapp
+    volumes:
+      - nodeodmdata:/var/www/data
     restart: unless-stopped

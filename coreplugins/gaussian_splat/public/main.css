@@ -1,0 +1,70 @@
+body.app-shell .content .gaussian-splat-action a.gaussian-splat-download,
+body.app-shell .content .gaussian-splat-action a.gaussian-splat-download:visited,
+body.app-shell .content .gaussian-splat-action a.gaussian-splat-view,
+body.app-shell .content .gaussian-splat-action a.gaussian-splat-view:visited,
+body.app-shell #page-wrapper .gaussian-splat-action a.gaussian-splat-download,
+body.app-shell #page-wrapper .gaussian-splat-action a.gaussian-splat-download:visited,
+body.app-shell #page-wrapper .gaussian-splat-action a.gaussian-splat-view,
+body.app-shell #page-wrapper .gaussian-splat-action a.gaussian-splat-view:visited {
+  background: #1d4ed8 !important;
+  border-color: #1d4ed8 !important;
+  color: #fff !important;
+  text-decoration: none !important;
+}
+
+body.app-shell .content .gaussian-splat-action a.gaussian-splat-download:hover,
+body.app-shell .content .gaussian-splat-action a.gaussian-splat-download:focus,
+body.app-shell .content .gaussian-splat-action a.gaussian-splat-view:hover,
+body.app-shell .content .gaussian-splat-action a.gaussian-splat-view:focus,
+body.app-shell #page-wrapper .gaussian-splat-action a.gaussian-splat-download:hover,
+body.app-shell #page-wrapper .gaussian-splat-action a.gaussian-splat-download:focus,
+body.app-shell #page-wrapper .gaussian-splat-action a.gaussian-splat-view:hover,
+body.app-shell #page-wrapper .gaussian-splat-action a.gaussian-splat-view:focus {
+  background: #1e40af !important;
+  border-color: #1e40af !important;
+  color: #fff !important;
+}
+
+body.app-shell .gaussian-splat-action a.gaussian-splat-download:focus-visible,
+body.app-shell .gaussian-splat-action a.gaussian-splat-view:focus-visible {
+  outline: 3px solid rgba(29, 78, 216, 0.35);
+  outline-offset: 2px;
+}
+
+.gaussian-splat-train-options {
+  width: 100%;
+  max-width: 360px;
+  margin-top: 10px;
+  padding: 12px;
+  border: 1px solid var(--odm-border, rgba(148, 163, 184, 0.28));
+  border-radius: 12px;
+  background: var(--odm-bg-panel, rgba(148, 163, 184, 0.08));
+  color: var(--odm-text-primary, #111827);
+}
+
+.gaussian-splat-train-label {
+  display: block;
+  margin-bottom: 6px;
+  color: inherit;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.gaussian-splat-iterations {
+  max-width: 180px;
+  color: var(--odm-text-primary, #111827) !important;
+}
+
+.gaussian-splat-train-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.gaussian-splat-train-warning {
+  display: block;
+  margin-top: 8px;
+  color: var(--odm-text-secondary, #64748b);
+  line-height: 1.4;
+}

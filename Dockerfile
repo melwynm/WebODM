@@ -31,6 +31,42 @@ RUN <<EOT
     echo "UTC" > /etc/timezone
 EOT
 
+FROM nvidia/cuda:12.1.1-devel-ubuntu22.04 AS opensplat-build
+
+ARG DEBIAN_FRONTEND=noninteractive
+ARG OPENSPLAT_COMMIT=4eb1c5e157853bd2742e3c9907a4ffb861a46b1c
+ARG OPENSPLAT_CUDA_ARCHITECTURES=89
+ARG OPENSPLAT_TORCH_VERSION=2.2.1
+
+SHELL ["/bin/bash", "-euxo", "pipefail", "-c"]
+
+RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
+    --mount=type=cache,target=/var/lib/apt,sharing=locked \
+    apt-get update && apt-get install -y --no-install-recommends \
+        build-essential ca-certificates cmake git libopencv-dev ninja-build unzip wget
+
+WORKDIR /opt/opensplat-src
+
+RUN git init . && \
+    git remote add origin https://github.com/WebODM/OpenSplat.git && \
+    git fetch --depth 1 origin "${OPENSPLAT_COMMIT}" && \
+    git checkout --detach FETCH_HEAD && \
+    test "$(git rev-parse HEAD)" = "${OPENSPLAT_COMMIT}"
+
+RUN wget --no-check-certificate -nv \
+        "https://download.pytorch.org/libtorch/cu121/libtorch-cxx11-abi-shared-with-deps-${OPENSPLAT_TORCH_VERSION}%2Bcu121.zip" \
+        -O /tmp/libtorch.zip && \
+    unzip -q /tmp/libtorch.zip -d /opt && \
+    rm /tmp/libtorch.zip
+
+RUN cmake -S . -B build -GNinja \
+        -DCMAKE_BUILD_TYPE=Release \
+        -DCMAKE_PREFIX_PATH=/opt/libtorch \
+        -DCMAKE_CUDA_ARCHITECTURES="${OPENSPLAT_CUDA_ARCHITECTURES}" \
+        -DOPENSPLAT_BUILD_VISUALIZER=OFF && \
+    cmake --build build --parallel 2 && \
+    strip build/opensplat
+
 FROM common AS build
 
 # Install Python deps -- install & remove cleanup build-only deps in the process
@@ -137,11 +173,13 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     apt-get update
     # Install common deps, starting with NodeJS
     apt-get -qq install -y nodejs
-    # Python, GDAL, PDAL, nginx, letsencrypt, psql, git
+    # Python, GDAL, PDAL, nginx, letsencrypt, psql, git, OpenSplat runtime
     apt-get install -y --no-install-recommends \
         python$PYTHON_VERSION python$PYTHON_VERSION-distutils gdal-bin pdal \
         nginx certbot gettext-base cron postgresql-client gettext tzdata git libimage-exiftool-perl \
-        libgl1 libglib2.0-0 assimp-utils
+        libgl1 libglib2.0-0 assimp-utils libopencv-calib3d4.5d libopencv-core4.5d \
+        libopencv-features2d4.5d libopencv-flann4.5d libopencv-highgui4.5d \
+        libopencv-imgcodecs4.5d libopencv-imgproc4.5d
     npm config set fund false
     npm config set audit false
     # Install webpack, webpack CLI
@@ -155,5 +193,15 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
 EOT
 
 COPY --from=build $WORKDIR ./
+COPY --from=opensplat-build /opt/opensplat-src/build/opensplat /opt/opensplat/bin/opensplat
+COPY --from=opensplat-build /opt/libtorch/lib /opt/opensplat/lib
+
+ENV LD_LIBRARY_PATH=/opt/opensplat/lib:/usr/local/nvidia/lib:/usr/local/nvidia/lib64
+ENV GAUSSIAN_SPLAT_TRAINER_COMMAND="/opt/opensplat/bin/opensplat {input} -n {iterations} -o {output}"
+
+RUN ln -s /opt/opensplat/lib/libcudart-*.so.12 /opt/opensplat/lib/libcudart.so.12 && \
+    ln -s /opt/opensplat/lib/libnvToolsExt-*.so.1 /opt/opensplat/lib/libnvToolsExt.so.1 && \
+    /opt/opensplat/bin/opensplat --help >/dev/null && \
+    ! ldd /opt/opensplat/bin/opensplat | grep "not found"
 
 VOLUME /webodm/app/media

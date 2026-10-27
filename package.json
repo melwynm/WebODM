@@ -31,6 +31,7 @@
     "@babel/runtime": "^7.24.5",
     "@gltf-transform/extensions": "^4.2.1",
     "@gltf-transform/functions": "^4.2.1",
+    "@playcanvas/supersplat-viewer": "^1.28.0",
     "async": "^3.2.6",
     "babel-core": "^7.0.0-bridge.0",
     "babel-jest": "^29.7.0",

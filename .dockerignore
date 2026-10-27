@@ -1,4 +1,5 @@
 **/.git
+Dockerfile
 .secret_key
 node_modules/
 **/node_modules/

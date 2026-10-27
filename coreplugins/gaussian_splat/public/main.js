@@ -38,6 +38,12 @@
     return (task.available_assets || []).indexOf("gaussian_splat.ply") !== -1;
   }
 
+  function trainingPercentFromMessage(message) {
+    const match = String(message || "").match(/\[\s*(\d+(?:\.\d+)?)\s*%\s*\]/);
+    if (!match) return null;
+    return Math.max(0, Math.min(100, Math.floor(parseFloat(match[1]))));
+  }
+
   class GaussianSplatButton extends React.Component {
     constructor(props) {
       super(props);
@@ -45,6 +51,9 @@
         status: null,
         loading: false,
         error: "",
+        showTrainOptions: false,
+        iterations: "7000",
+        trainingPercent: null,
       };
       this.pollTimer = null;
     }
@@ -60,7 +69,15 @@
     refreshStatus = async () => {
       try {
         const status = await apiGet(`${API_BASE}/task/${this.props.task.id}/status`);
-        this.setState({ status, error: "" });
+        const parsedTrainingPercent = trainingPercentFromMessage(status.message);
+        let trainingPercent = this.state.trainingPercent;
+        if (status.status === "pending") trainingPercent = null;
+        if (status.status === "running" && parsedTrainingPercent !== null) {
+          trainingPercent = trainingPercent === null
+            ? parsedTrainingPercent
+            : Math.max(trainingPercent, parsedTrainingPercent);
+        }
+        this.setState({ status, error: "", trainingPercent });
         if (["pending", "running"].indexOf(status.status) !== -1) {
           this.pollTimer = window.setTimeout(this.refreshStatus, POLL_INTERVAL_MS);
         }
@@ -70,11 +87,7 @@
     };
 
     train = async () => {
-      const defaultIterations = hasSplat(this.props.task) ? "7000" : "7000";
-      const rawIterations = window.prompt("Gaussian Splat iterations", defaultIterations);
-      if (rawIterations === null) return;
-
-      const iterations = parseInt(rawIterations, 10);
+      const iterations = parseInt(this.state.iterations, 10);
       if (!Number.isFinite(iterations) || iterations < 100) {
         this.setState({ error: "Iterations must be at least 100." });
         return;
@@ -88,6 +101,7 @@
             force: hasSplat(this.props.task),
           },
         });
+        this.setState({ showTrainOptions: false });
         await this.refreshStatus();
       } catch (error) {
         this.setState({ error: error.message });
@@ -96,17 +110,111 @@
       }
     };
 
+    openTrainOptions = () => {
+      this.setState({ showTrainOptions: true, error: "" });
+    };
+
+    closeTrainOptions = () => {
+      this.setState({ showTrainOptions: false, error: "" });
+    };
+
+    renderTrainOptions() {
+      if (!this.state.showTrainOptions) return null;
+
+      return React.createElement("div", { className: "gaussian-splat-train-options" },
+        React.createElement("label", {
+          className: "gaussian-splat-train-label",
+          htmlFor: `gaussian-splat-iterations-${this.props.task.id}`,
+        }, "Training iterations"),
+        React.createElement("input", {
+          id: `gaussian-splat-iterations-${this.props.task.id}`,
+          className: "form-control input-sm gaussian-splat-iterations",
+          type: "number",
+          min: 100,
+          step: 100,
+          value: this.state.iterations,
+          disabled: this.state.loading,
+          onChange: event => this.setState({ iterations: event.target.value, error: "" }),
+        }),
+        React.createElement("div", { className: "gaussian-splat-train-actions" },
+          React.createElement("button", {
+            type: "button",
+            className: "btn btn-sm btn-primary",
+            disabled: this.state.loading,
+            onClick: this.train,
+          },
+            React.createElement("i", { className: this.state.loading ? "fa fa-circle-notch fa-spin" : "fa fa-play" }),
+            " ",
+            this.state.loading ? "Starting..." : "Start Training"
+          ),
+          React.createElement("button", {
+            type: "button",
+            className: "btn btn-sm btn-default",
+            disabled: this.state.loading,
+            onClick: this.closeTrainOptions,
+          }, "Cancel")
+        ),
+        hasSplat(this.props.task)
+          ? React.createElement("small", { className: "gaussian-splat-train-warning" }, "Starting will replace the current splat when training completes.")
+          : null
+      );
+    }
+
     renderStatus() {
       const status = this.state.status;
       if (!status || status.status === "pending") return null;
 
+      if (status.status === "completed") {
+        const result = status.result || {};
+        const downloadUrl = result.download_url ||
+          `/api/projects/${this.props.task.project}/tasks/${this.props.task.id}/download/gaussian_splat.ply`;
+        const returnUrl = `${window.location.pathname}${window.location.search}`;
+        const viewerUrl = "/plugins/gaussian_splat/viewer/index.html" +
+          `?content=${encodeURIComponent(downloadUrl)}` +
+          `&return=${encodeURIComponent(returnUrl)}`;
+
+        return React.createElement("span", {
+          style: {
+            display: "inline-flex",
+            alignItems: "center",
+            flexWrap: "wrap",
+            gap: "8px",
+            marginLeft: "8px",
+          },
+        },
+          React.createElement("span", {
+            style: {
+              color: "var(--odm-text-secondary, #64748b)",
+              fontSize: "12px",
+              fontWeight: 600,
+            },
+            title: status.message || "Gaussian Splat training complete.",
+          }, "Splat ready"),
+          React.createElement("a", {
+            className: "btn btn-sm btn-primary gaussian-splat-view",
+            href: viewerUrl,
+            title: "Open the trained Gaussian Splat in the interactive viewer",
+          },
+            React.createElement("i", { className: "fa fa-eye" }),
+            " View Splat"
+          ),
+          React.createElement("a", {
+            className: "btn btn-sm btn-primary gaussian-splat-download",
+            href: downloadUrl,
+            download: "gaussian_splat.ply",
+            title: "Download the trained Gaussian Splat PLY",
+          },
+            React.createElement("i", { className: "fa fa-download" }),
+            " Download Splat"
+          )
+        );
+      }
+
       const text = status.status === "running"
-        ? `Splat ${status.progress || 0}%`
-        : status.status === "completed"
-          ? "Splat ready"
-          : status.status === "failed"
-            ? "Splat failed"
-            : "";
+        ? `Splat ${this.state.trainingPercent === null ? (status.progress || 0) : this.state.trainingPercent}%`
+        : status.status === "failed"
+          ? "Splat failed"
+          : "";
 
       if (!text) return null;
       return React.createElement("span", {
@@ -135,7 +243,7 @@
           type: "button",
           className: "btn btn-sm btn-default",
           disabled,
-          onClick: this.train,
+          onClick: this.openTrainOptions,
           title: "Train a Gaussian Splat PLY with OpenSplat",
         },
           React.createElement("i", { className: inProgress ? "fa fa-circle-notch fa-spin" : "fa fa-braille" }),
@@ -143,6 +251,7 @@
           label
         ),
         this.renderStatus(),
+        this.renderTrainOptions(),
         this.state.error ? React.createElement("span", {
           style: { marginLeft: "8px", color: "#ef4444", fontSize: "12px", fontWeight: 600 },
         }, this.state.error) : null
