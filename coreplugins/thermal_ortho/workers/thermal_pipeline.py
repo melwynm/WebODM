@@ -13,9 +13,34 @@ logger = logging.getLogger('app.logger')
 STATUS_FILE = 'thermal_ortho_status.json'
 SUPPORTED_IMAGE_EXTENSIONS = {'.jpg', '.jpeg', '.tif', '.tiff', '.rjpeg'}
 
+# A queued/running job whose Celery result is still PENDING after this long is
+# treated as lost (worker died, broker restarted, result expired) so it can be re-run.
+STALE_WORKER_SECONDS = 30 * 60
+
+# Filename conventions. DJI names the lenses of the same capture with a suffix
+# (M3T/H20T: _W wide, _Z zoom, _T thermal; M2EA: _V visual, _T thermal).
+THERMAL_NAME_TOKENS = ('_T.', '_T_', 'THERMAL', 'RJPEG', 'R.JPEG', '_IR.', '_IR_')
+RGB_NAME_TOKENS = ('_W.', '_W_', '_Z.', '_Z_', '_V.', '_V_', '_RGB', '_VIS', '_WIDE', '_ZOOM')
+
+# Tags that identify a frame on their own, without relying on the camera model
+# (the Model tag is identical for every lens of an M3T or H20T).
+THERMAL_METADATA_TAGS = ['Make', 'Model', 'PlanckR1', 'RawThermalImageType', 'ImageSource']
+
 
 def _now_iso():
     return datetime.now(timezone.utc).isoformat()
+
+
+def _parse_iso(value):
+    if not value:
+        return None
+    try:
+        parsed = datetime.fromisoformat(str(value))
+    except (TypeError, ValueError):
+        return None
+    if parsed.tzinfo is None:
+        parsed = parsed.replace(tzinfo=timezone.utc)
+    return parsed
 
 
 def _status_path(task):
@@ -48,33 +73,69 @@ def write_pipeline_status(task, payload):
 
 def _iter_task_images(task_root):
     root = Path(task_root)
+    if not root.is_dir():
+        return
     for path in root.rglob('*'):
         if not path.is_file():
             continue
-        if any(part in ('assets', 'data') for part in path.parts):
+        # Skip ODM outputs and plugin data, judged relative to the task folder so a
+        # media root such as /data/webodm does not hide every image.
+        if any(part in ('assets', 'data') for part in path.relative_to(root).parts[:-1]):
             continue
         if path.suffix.lower() in SUPPORTED_IMAGE_EXTENSIONS:
             yield str(path)
 
 
-def _detect_from_filename(path):
+def _classify_from_filename(path):
+    """
+    Returns 'thermal', 'rgb' or None when the filename alone does not say.
+    """
     name = os.path.basename(path).upper()
-    return any(token in name for token in ('_T.', '_T_', 'THERMAL', 'RJPEG', 'R.JPEG', '_IR'))
+    if any(token in name for token in THERMAL_NAME_TOKENS):
+        return 'thermal'
+    if any(token in name for token in RGB_NAME_TOKENS):
+        return 'rgb'
+    return None
 
 
-def _detect_from_metadata(path):
+def _classify_from_metadata(path):
+    """
+    Returns 'thermal', 'rgb' or None when the metadata does not say.
+
+    Only tags that describe the frame itself are used. The camera model is
+    deliberately not a thermal indicator: a Mavic 3T or H20T writes the same
+    Model tag into its wide, zoom and thermal frames.
+    """
     try:
         from coreplugins.thermal_ortho.workers.radiometric import read_exif_metadata
     except Exception:
-        return False
+        return None
 
     try:
-        metadata = read_exif_metadata(path, tags=['Make', 'Model', 'PlanckR1', 'PlanckB', 'RawThermalImageType'])
+        metadata = read_exif_metadata(path, tags=THERMAL_METADATA_TAGS)
     except Exception:
-        return False
+        return None
 
-    values = ' '.join(str(metadata.get(key, '')) for key in metadata.keys()).upper()
-    return any(token in values for token in ('PLANCK', 'THERMAL', 'FLIR', 'M3T', 'H20T'))
+    if metadata.get('PlanckR1') not in (None, '') or metadata.get('RawThermalImageType') not in (None, ''):
+        # FLIR radiometric container (FLIR cameras, Zenmuse XT)
+        return 'thermal'
+
+    image_source = str(metadata.get('ImageSource', '') or '').upper()
+    if image_source:
+        # DJI XMP: WideCamera / ZoomCamera / InfraredCamera
+        if 'INFRARED' in image_source or 'THERMAL' in image_source:
+            return 'thermal'
+        return 'rgb'
+
+    make_model = ' '.join(str(metadata.get(key, '') or '') for key in ('Make', 'Model')).upper()
+    if 'FLIR' in make_model or 'THERMAL' in make_model:
+        return 'thermal'
+
+    return None
+
+
+def classify_image(path):
+    return _classify_from_filename(path) or _classify_from_metadata(path) or 'rgb'
 
 
 def detect_thermal_images(task_root):
@@ -82,11 +143,7 @@ def detect_thermal_images(task_root):
     thermal_paths = []
 
     for path in _iter_task_images(task_root):
-        is_thermal = _detect_from_filename(path)
-        if not is_thermal:
-            is_thermal = _detect_from_metadata(path)
-
-        if is_thermal:
+        if classify_image(path) == 'thermal':
             thermal_paths.append(path)
         else:
             rgb_paths.append(path)
@@ -104,22 +161,41 @@ def detect_input_summary(task_root):
     }
 
 
+def is_pipeline_active(task):
+    """
+    True when a thermal job for this task is queued or running according to
+    the worker (a lost or failed job is not active).
+    """
+    current = reconcile_pipeline_status(task)
+    return current.get('state') in ('queued', 'running') and bool(current.get('celery_task_id'))
+
+
 def enqueue_thermal_pipeline(task, camera_type='auto', trigger='manual', summary=None):
     summary = summary or detect_input_summary(task.task_path())
-    current = read_pipeline_status(task)
+    current = reconcile_pipeline_status(task)
     if current.get('state') in ('queued', 'running') and current.get('celery_task_id'):
         return SimpleNamespace(task_id=current['celery_task_id'])
 
-    celery_result = run_function_async(run_thermal_pipeline, task.id, camera_type=camera_type, with_progress=True)
+    # Write the queued state before dispatching: the worker may start (and in
+    # eager mode, finish) inside the dispatch call, and must not be overwritten.
     write_pipeline_status(task, {
         'state': 'queued',
         'progress': 0,
         'message': 'Queued thermal processing.',
-        'celery_task_id': celery_result.task_id,
+        'celery_task_id': None,
+        'error': None,
         'trigger': trigger,
         'rgb_images': summary['rgb_images'],
         'thermal_images': summary['thermal_images'],
     })
+    try:
+        celery_result = run_function_async(run_thermal_pipeline, task.id, camera_type=camera_type, with_progress=True)
+    except Exception as exc:
+        error = f'Could not dispatch thermal processing to the worker: {exc}'
+        write_pipeline_status(task, {'state': 'failed', 'error': error, 'message': error, 'progress': 100})
+        raise
+
+    write_pipeline_status(task, {'celery_task_id': celery_result.task_id})
     return celery_result
 
 
@@ -131,36 +207,112 @@ def _asset_url(task, asset_path):
     return f'/api/projects/{task.project.id}/tasks/{task.id}/assets/{asset_path}'
 
 
+def _failure(error, state='FAILURE'):
+    return {'ready': True, 'failed': True, 'error': error, 'state': state}
+
+
 def _query_worker_status(celery_task_id):
+    """
+    Returns a dict describing the Celery result, never raising: a failed worker
+    is reported as {'ready': True, 'failed': True, 'error': ...}.
+    """
     if not celery_task_id:
         return None
-    result = get_async_result(celery_task_id)
-    if result.ready():
-        return {'ready': True, 'result': result.get() or {}, 'state': getattr(result, 'state', 'SUCCESS')}
-    return {'ready': False, 'info': getattr(result, 'info', None), 'state': getattr(result, 'state', 'PENDING')}
+
+    try:
+        result = get_async_result(celery_task_id)
+    except Exception as exc:
+        return _failure(f'Could not query the worker result: {exc}', state='UNKNOWN')
+
+    state = getattr(result, 'state', 'PENDING')
+    if state in ('FAILURE', 'REVOKED'):
+        error = getattr(result, 'result', None)
+        return _failure(str(error) if error else f'Worker task {state.lower()}.', state=state)
+
+    try:
+        ready = result.ready()
+    except Exception as exc:
+        return _failure(f'Could not query the worker result: {exc}', state='UNKNOWN')
+
+    if not ready:
+        return {'ready': False, 'info': getattr(result, 'info', None), 'state': state}
+
+    try:
+        # Celery re-raises the worker's exception here when the task failed.
+        value = result.get()
+    except Exception as exc:
+        return _failure(str(exc) or exc.__class__.__name__)
+
+    if isinstance(value, BaseException):
+        return _failure(str(value) or value.__class__.__name__)
+
+    return {'ready': True, 'failed': False, 'result': value or {}, 'state': state}
+
+
+def _is_stale(stored):
+    updated_at = _parse_iso(stored.get('updated_at'))
+    if updated_at is None:
+        return True
+    age = (datetime.now(timezone.utc) - updated_at).total_seconds()
+    return age > STALE_WORKER_SECONDS
+
+
+def reconcile_pipeline_status(task):
+    """
+    Returns the stored status after syncing a queued/running entry with the
+    Celery worker. A failed or lost worker job is persisted as 'failed' so the
+    pipeline can be started again.
+    """
+    stored = read_pipeline_status(task)
+    if stored.get('state') not in ('queued', 'running'):
+        return stored
+
+    worker_status = _query_worker_status(stored.get('celery_task_id'))
+    if worker_status is None:
+        # No Celery id was ever recorded: the dispatch did not complete.
+        if _is_stale(stored):
+            error = 'Thermal processing was not dispatched to the worker.'
+            return write_pipeline_status(task, {'state': 'failed', 'error': error, 'message': error, 'progress': 100})
+        return stored
+
+    if worker_status['ready']:
+        if worker_status.get('failed'):
+            error = worker_status.get('error') or 'Thermal processing failed on the worker.'
+            return write_pipeline_status(task, {'state': 'failed', 'error': error, 'message': error, 'progress': 100})
+
+        result = worker_status.get('result') or {}
+        update = dict(result.get('output')) if isinstance(result.get('output'), dict) else {}
+        if result.get('error'):
+            update.update({'state': 'failed', 'error': result['error'], 'message': result['error'], 'progress': 100})
+        elif update.get('state') in (None, 'queued', 'running'):
+            update['state'] = 'completed'
+        return write_pipeline_status(task, update)
+
+    info = worker_status.get('info')
+    if not isinstance(info, dict):
+        info = {}
+
+    if worker_status['state'] in ('PROGRESS', 'STARTED', 'RETRY'):
+        stored['state'] = 'running'
+        stored['progress'] = int(info.get('progress', stored.get('progress', 0)) or 0)
+        stored['message'] = info.get('status') or info.get('message') or stored.get('message', '')
+        return stored
+
+    # PENDING: either not picked up yet, or the job is gone (worker died, broker
+    # restarted, result expired). Only the status file's age can tell the two apart.
+    if _is_stale(stored):
+        error = 'Thermal processing stopped responding and was marked as failed. You can start it again.'
+        return write_pipeline_status(task, {'state': 'failed', 'error': error, 'message': error, 'progress': 100})
+
+    return stored
 
 
 def build_status_payload(task):
-    stored = read_pipeline_status(task)
+    stored = reconcile_pipeline_status(task)
     output_path = task.assets_path('thermal_orthophoto', 'thermal_orthophoto.tif')
     preview_path = task.assets_path('thermal_orthophoto', 'thermal_preview.png')
     output_available = os.path.isfile(output_path)
     preview_available = os.path.isfile(preview_path)
-
-    worker_status = _query_worker_status(stored.get('celery_task_id'))
-    if worker_status and not worker_status['ready']:
-        info = worker_status.get('info') or {}
-        stored['state'] = 'running' if worker_status['state'] == 'PROGRESS' else 'queued'
-        stored['progress'] = int(info.get('progress', stored.get('progress', 0)) or 0)
-        stored['message'] = info.get('status') or info.get('message') or stored.get('message', '')
-    elif worker_status and worker_status['ready']:
-        result = worker_status.get('result') or {}
-        if isinstance(result.get('output'), dict):
-            stored.update(result['output'])
-        if result.get('error'):
-            stored['state'] = 'failed'
-            stored['error'] = result['error']
-            stored['message'] = result['error']
 
     if stored.get('rgb_images') is None or stored.get('thermal_images') is None:
         summary = detect_input_summary(task.task_path())
@@ -284,6 +436,20 @@ def _update_progress(task, progress_callback, progress, message, extra=None):
 
 
 def run_thermal_pipeline(task_id, camera_type='auto', progress_callback=None):
+    """
+    Celery entry point.
+
+    run_function_async ships only this function's source text to the worker and
+    evaluates it in an empty namespace, so nothing from this module is in scope
+    here. Keep it a one-line delegation; the real work lives in
+    execute_thermal_pipeline, which runs with the module's normal globals.
+    """
+    from coreplugins.thermal_ortho.workers.thermal_pipeline import execute_thermal_pipeline
+
+    return execute_thermal_pipeline(task_id, camera_type=camera_type, progress_callback=progress_callback)
+
+
+def execute_thermal_pipeline(task_id, camera_type='auto', progress_callback=None):
     from app.cogeo import assure_cogeo
     from app.models import Task
     from coreplugins.thermal_ortho.workers.coregistration import coregister_thermal_to_rgb, match_rgb_thermal_pairs

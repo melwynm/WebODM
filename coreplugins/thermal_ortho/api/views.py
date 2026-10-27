@@ -9,7 +9,7 @@ from coreplugins.thermal_ortho.workers.thermal_pipeline import (
     build_status_payload,
     detect_input_summary,
     enqueue_thermal_pipeline,
-    read_pipeline_status,
+    is_pipeline_active,
 )
 
 
@@ -33,8 +33,7 @@ class TaskThermalProcess(TaskView):
         if camera_type not in ('auto', 'dji', 'flir'):
             return Response({'error': 'camera_type must be one of auto, dji, flir.'}, status=status.HTTP_200_OK)
 
-        current = read_pipeline_status(task)
-        if current.get('state') in ('queued', 'running') and current.get('celery_task_id'):
+        if is_pipeline_active(task):
             return Response(build_status_payload(task), status=status.HTTP_200_OK)
 
         summary = detect_input_summary(task.task_path())

@@ -25,7 +25,7 @@ def thermal_ortho_on_task_completed(sender, task_id, **kwargs):
         return
 
     from app.models import Task
-    from .workers.thermal_pipeline import detect_input_summary, enqueue_thermal_pipeline, read_pipeline_status
+    from .workers.thermal_pipeline import detect_input_summary, enqueue_thermal_pipeline, is_pipeline_active
 
     try:
         task = Task.objects.get(pk=task_id)
@@ -36,8 +36,7 @@ def thermal_ortho_on_task_completed(sender, task_id, **kwargs):
     if summary['thermal_images'] == 0 or summary['rgb_images'] == 0:
         return
 
-    status = read_pipeline_status(task)
-    if status.get('state') in ('queued', 'running'):
+    if is_pipeline_active(task):
         return
 
     enqueue_thermal_pipeline(task, camera_type='auto', trigger='auto', summary=summary)
