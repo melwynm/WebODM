@@ -208,6 +208,10 @@ body.app-shell[data-shell-theme="light"] #dashboard-app {
         border-color: rgba(15, 23, 42, 0.08);
     }
 
+    .project-list-item .asset-download-buttons .btn:not(.btn-modern) {
+        color: var(--odm-text-primary, #0f172a);
+    }
+
     .project-list-empty {
         background: rgba(255, 255, 255, 0.75);
         border-color: rgba(15, 23, 42, 0.12);
