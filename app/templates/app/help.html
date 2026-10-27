@@ -1,0 +1,321 @@
+{% extends "app/logged_in_base.html" %}
+{% load i18n static %}
+
+{% block extra-headers %}
+    <script defer src="{% static 'app/js/help.js' %}"></script>
+{% endblock %}
+
+{% block content %}
+<main class="help-center" aria-labelledby="help-title">
+    <header class="help-hero">
+        <div class="help-hero__content">
+            <span class="help-eyebrow"><i class="fa fa-compass" aria-hidden="true"></i> {% trans "WebODM Help Center" %}</span>
+            <h1 id="help-title">{% trans "What would you like to do?" %}</h1>
+            <p>{% trans "Find a capability, follow the practical steps, and jump directly to the right tool." %}</p>
+
+            <div class="help-search" role="search">
+                <i class="fa fa-search help-search__icon" aria-hidden="true"></i>
+                <label class="sr-only" for="help-search">{% trans "Search help" %}</label>
+                <input
+                    id="help-search"
+                    class="help-search__input"
+                    type="search"
+                    autocomplete="off"
+                    placeholder="{% trans 'Search processing, maps, 3D, reports, GPU…' %}"
+                    aria-controls="help-topic-grid"
+                >
+                <button id="help-clear" class="help-search__clear" type="button" hidden>
+                    <i class="fa fa-times" aria-hidden="true"></i>
+                    <span>{% trans "Clear" %}</span>
+                </button>
+            </div>
+
+            <p
+                id="help-search-status"
+                class="help-search-status"
+                aria-live="polite"
+                data-result-singular="{% trans 'guide found' %}"
+                data-result-plural="{% trans 'guides found' %}"
+                data-no-results="{% trans 'No guides found' %}"
+            ></p>
+        </div>
+        <div class="help-hero__mark" aria-hidden="true">
+            <i class="fa fa-map-marked-alt"></i>
+        </div>
+    </header>
+
+    <nav class="help-quick-links" aria-label="{% trans 'Help sections' %}">
+        <a href="#start"><i class="fa fa-play-circle" aria-hidden="true"></i> {% trans "Start" %}</a>
+        <a href="#process"><i class="fa fa-cogs" aria-hidden="true"></i> {% trans "Process" %}</a>
+        <a href="#review"><i class="fa fa-map" aria-hidden="true"></i> {% trans "Review" %}</a>
+        <a href="#analyze"><i class="fa fa-chart-line" aria-hidden="true"></i> {% trans "Analyze" %}</a>
+        <a href="#deliver"><i class="fa fa-share-alt" aria-hidden="true"></i> {% trans "Deliver" %}</a>
+        <a href="#manage"><i class="fa fa-tools" aria-hidden="true"></i> {% trans "Manage" %}</a>
+    </nav>
+
+    <section class="help-start" aria-labelledby="help-start-title">
+        <div class="help-section-heading">
+            <span>{% trans "Recommended workflow" %}</span>
+            <h2 id="help-start-title">{% trans "From images to a usable result" %}</h2>
+        </div>
+        <ol class="help-workflow">
+            <li><span>1</span><div><strong>{% trans "Create" %}</strong><small>{% trans "Start a project and name the job." %}</small></div></li>
+            <li><span>2</span><div><strong>{% trans "Upload" %}</strong><small>{% trans "Add geotagged images and optional GCPs." %}</small></div></li>
+            <li><span>3</span><div><strong>{% trans "Process" %}</strong><small>{% trans "Choose a preset, node, and outputs." %}</small></div></li>
+            <li><span>4</span><div><strong>{% trans "Review & deliver" %}</strong><small>{% trans "Inspect, measure, annotate, and export." %}</small></div></li>
+        </ol>
+    </section>
+
+    <section class="help-library" aria-labelledby="help-library-title">
+        <div class="help-section-heading">
+            <span>{% trans "Capability library" %}</span>
+            <h2 id="help-library-title">{% trans "Everything you can do" %}</h2>
+            <p>{% trans "Search above or browse the guides below. Each guide gives you the shortest path to the result." %}</p>
+        </div>
+
+        <div id="help-topic-grid" class="help-topic-grid">
+            <article id="start" class="help-card" data-help-item data-help-search="project create dashboard first job workspace">
+                <div class="help-card__icon"><i class="fa fa-folder-plus" aria-hidden="true"></i></div>
+                <div class="help-card__body">
+                    <span class="help-card__category">{% trans "Start" %}</span>
+                    <h3>{% trans "Create and organize a project" %}</h3>
+                    <p>{% trans "Projects keep related flights, processing tasks, maps, models, and reports together." %}</p>
+                    <ol><li>{% trans "Open Dashboard and choose Add Project." %}</li><li>{% trans "Give the project a clear site or job name." %}</li><li>{% trans "Use separate tasks for each flight or processing variation." %}</li></ol>
+                    <a class="help-card__link" href="{% url 'dashboard' %}">{% trans "Open Dashboard" %} <i class="fa fa-arrow-right" aria-hidden="true"></i></a>
+                </div>
+            </article>
+
+            <article class="help-card" data-help-item data-help-search="capture flight drone images photos overlap camera gps blur quality">
+                <div class="help-card__icon"><i class="fa fa-camera" aria-hidden="true"></i></div>
+                <div class="help-card__body">
+                    <span class="help-card__category">{% trans "Start" %}</span>
+                    <h3>{% trans "Capture a reliable dataset" %}</h3>
+                    <p>{% trans "Good source imagery is the biggest factor in reconstruction quality." %}</p>
+                    <ol><li>{% trans "Use consistent altitude, exposure, and focus." %}</li><li>{% trans "Capture high forward and side overlap with extra coverage around edges." %}</li><li>{% trans "Avoid blurred images, abrupt lighting changes, and moving subjects where possible." %}</li></ol>
+                </div>
+            </article>
+
+            <article class="help-card" data-help-item data-help-search="upload import images gcp zip cloud folder one drive dataset">
+                <div class="help-card__icon"><i class="fa fa-cloud-upload-alt" aria-hidden="true"></i></div>
+                <div class="help-card__body">
+                    <span class="help-card__category">{% trans "Start" %}</span>
+                    <h3>{% trans "Upload images and GCPs" %}</h3>
+                    <p>{% trans "Create a task from local images, a supported import, or a watched folder." %}</p>
+                    <ol><li>{% trans "Choose Select Images and GCP on the project." %}</li><li>{% trans "Add the images and, when needed, a GCP file." %}</li><li>{% trans "Review the image count and task options before starting." %}</li></ol>
+                    <a class="help-card__link" href="{% url 'dashboard' %}">{% trans "Select a project" %} <i class="fa fa-arrow-right" aria-hidden="true"></i></a>
+                </div>
+            </article>
+
+            <article id="process" class="help-card" data-help-item data-help-search="process processing task preset options orthophoto dsm dtm mesh point cloud restart">
+                <div class="help-card__icon"><i class="fa fa-cogs" aria-hidden="true"></i></div>
+                <div class="help-card__body">
+                    <span class="help-card__category">{% trans "Process" %}</span>
+                    <h3>{% trans "Process a photogrammetry task" %}</h3>
+                    <p>{% trans "Turn overlapping photos into an orthophoto, elevation surfaces, a point cloud, and a 3D mesh." %}</p>
+                    <ol><li>{% trans "Choose a preset that matches the survey goal." %}</li><li>{% trans "Enable only the outputs you need to save time and disk space." %}</li><li>{% trans "Start processing and keep the computer awake until the task completes." %}</li></ol>
+                    <a class="help-card__link" href="{% url 'dashboard' %}">{% trans "Open processing tasks" %} <i class="fa fa-arrow-right" aria-hidden="true"></i></a>
+                </div>
+            </article>
+
+            <article class="help-card" data-help-item data-help-search="progress status queue resizing images processing eta failed error logs cancel restart memory ram disk">
+                <div class="help-card__icon"><i class="fa fa-tasks" aria-hidden="true"></i></div>
+                <div class="help-card__body">
+                    <span class="help-card__category">{% trans "Process" %}</span>
+                    <h3>{% trans "Track progress and recover a failed task" %}</h3>
+                    <p>{% trans "The task card shows the current stage, elapsed time, ETA, node, disk use, and detailed output." %}</p>
+                    <ol><li>{% trans "Expand the task and turn Task Output on to read the last successful step." %}</li><li>{% trans "Check Diagnostic for memory, disk, GPU, and service health." %}</li><li>{% trans "Correct the resource or dataset problem, then rerun with safer options if needed." %}</li></ol>
+                    <a class="help-card__link" href="/plugins/diagnostic/">{% trans "Open Diagnostic" %} <i class="fa fa-arrow-right" aria-hidden="true"></i></a>
+                </div>
+            </article>
+
+            <article class="help-card" data-help-item data-help-search="gcp ground control point accuracy georeference coordinate projection epsg marking checkpoints">
+                <div class="help-card__icon"><i class="fa fa-map-marker-alt" aria-hidden="true"></i></div>
+                <div class="help-card__body">
+                    <span class="help-card__category">{% trans "Process" %}</span>
+                    <h3>{% trans "Use ground control points" %}</h3>
+                    <p>{% trans "GCPs improve absolute positioning and let you validate survey accuracy." %}</p>
+                    <ol><li>{% trans "Prepare a GCP file with the correct coordinate reference system." %}</li><li>{% trans "Upload it with the images and mark each point in several photos." %}</li><li>{% trans "Reserve independent checkpoints when you need an accuracy report." %}</li></ol>
+                    <a class="help-card__link" href="/plugins/posm-gcpi/">{% trans "Open GCP Interface" %} <i class="fa fa-arrow-right" aria-hidden="true"></i></a>
+                </div>
+            </article>
+
+            <article class="help-card" data-help-item data-help-search="mission planner flight plan route drone waypoint altitude overlap survey">
+                <div class="help-card__icon"><i class="fa fa-route" aria-hidden="true"></i></div>
+                <div class="help-card__body">
+                    <span class="help-card__category">{% trans "Process" %}</span>
+                    <h3>{% trans "Plan a drone mission" %}</h3>
+                    <p>{% trans "Build a coverage plan around the project area before flying." %}</p>
+                    <ol><li>{% trans "Choose Mission Planner from the project." %}</li><li>{% trans "Draw the survey area and set altitude, overlap, and flight direction." %}</li><li>{% trans "Review obstacles, local rules, battery limits, and terrain before export." %}</li></ol>
+                    <a class="help-card__link" href="{% url 'dashboard' %}">{% trans "Choose a project" %} <i class="fa fa-arrow-right" aria-hidden="true"></i></a>
+                </div>
+            </article>
+
+            <article id="review" class="help-card" data-help-item data-help-search="map 2d orthophoto dsm dtm contour hillshade layers opacity inspect measure distance area location">
+                <div class="help-card__icon"><i class="fa fa-map" aria-hidden="true"></i></div>
+                <div class="help-card__body">
+                    <span class="help-card__category">{% trans "Review" %}</span>
+                    <h3>{% trans "Review and measure the 2D map" %}</h3>
+                    <p>{% trans "Inspect orthophotos and elevation products together with reference layers." %}</p>
+                    <ol><li>{% trans "Choose View Map on a task or project." %}</li><li>{% trans "Switch layers and adjust opacity to compare outputs." %}</li><li>{% trans "Use the map tools to inspect coordinates and measure distance or area." %}</li></ol>
+                </div>
+            </article>
+
+            <article class="help-card" data-help-item data-help-search="3d model point cloud mesh measurement clipping camera navigation profile inspect tools">
+                <div class="help-card__icon"><i class="fa fa-cube" aria-hidden="true"></i></div>
+                <div class="help-card__body">
+                    <span class="help-card__category">{% trans "Review" %}</span>
+                    <h3>{% trans "Inspect the point cloud and 3D model" %}</h3>
+                    <p>{% trans "Navigate the reconstruction, isolate an area, and take measurements in three dimensions." %}</p>
+                    <ol><li>{% trans "Open the task's 3D view and choose the point cloud or textured model." %}</li><li>{% trans "Use clipping boxes to isolate the part of the site you need." %}</li><li>{% trans "Use measurement tools for points, distances, heights, areas, profiles, and volumes." %}</li></ol>
+                </div>
+            </article>
+
+            <article class="help-card" data-help-item data-help-search="gaussian splat opensplat train cuda gpu 3d photorealistic model ply viewer">
+                <div class="help-card__icon"><i class="fa fa-atom" aria-hidden="true"></i></div>
+                <div class="help-card__body">
+                    <span class="help-card__category">{% trans "Review" %}</span>
+                    <h3>{% trans "Create a Gaussian Splat" %}</h3>
+                    <p>{% trans "Train a photorealistic 3D splat from a completed reconstruction using the GPU worker." %}</p>
+                    <ol><li>{% trans "Complete a compatible photogrammetry task with camera reconstruction data." %}</li><li>{% trans "Start Gaussian Splat training from the task actions." %}</li><li>{% trans "Wait for the GPU job to finish, then open or download the generated PLY result." %}</li></ol>
+                </div>
+            </article>
+
+            <article class="help-card" data-help-item data-help-search="field photo image marker overlay plan bim cad design georeference compare site">
+                <div class="help-card__icon"><i class="fa fa-layer-group" aria-hidden="true"></i></div>
+                <div class="help-card__body">
+                    <span class="help-card__category">{% trans "Review" %}</span>
+                    <h3>{% trans "Add field photos and design overlays" %}</h3>
+                    <p>{% trans "Place site evidence on the map and compare the surveyed condition with a drawing or plan." %}</p>
+                    <ol><li>{% trans "Add field photos with location and notes to the project." %}</li><li>{% trans "Upload a supported plan or image overlay and align it to known points." %}</li><li>{% trans "Adjust visibility and opacity while reviewing the latest survey." %}</li></ol>
+                </div>
+            </article>
+
+            <article id="analyze" class="help-card" data-help-item data-help-search="issue annotation finding defect ai detection object label priority assign status evidence">
+                <div class="help-card__icon"><i class="fa fa-map-pin" aria-hidden="true"></i></div>
+                <div class="help-card__body">
+                    <span class="help-card__category">{% trans "Analyze" %}</span>
+                    <h3>{% trans "Record issues and run detections" %}</h3>
+                    <p>{% trans "Turn visual observations into traceable findings, with optional AI or object detection assistance." %}</p>
+                    <ol><li>{% trans "Open Issues from the project and place an annotation on the map." %}</li><li>{% trans "Add a title, description, priority, assignee, status, and supporting images." %}</li><li>{% trans "Run a configured detector, review every suggestion, and accept only valid findings." %}</li></ol>
+                </div>
+            </article>
+
+            <article class="help-card" data-help-item data-help-search="monitor compare before after swipe timeline repeat automated run change progress construction inspection">
+                <div class="help-card__icon"><i class="fa fa-history" aria-hidden="true"></i></div>
+                <div class="help-card__body">
+                    <span class="help-card__category">{% trans "Analyze" %}</span>
+                    <h3>{% trans "Monitor change over time" %}</h3>
+                    <p>{% trans "Compare repeat surveys, follow a site timeline, and automate consistent monitoring runs." %}</p>
+                    <ol><li>{% trans "Keep repeat flights in the same project with clear dates." %}</li><li>{% trans "Open Compare or Timeline and choose the relevant tasks." %}</li><li>{% trans "Use the same processing preset and alignment method for defensible change review." %}</li></ol>
+                </div>
+            </article>
+
+            <article class="help-card" data-help-item data-help-search="dsm dtm delta elevation cut fill volume stockpile surface change difference terrain">
+                <div class="help-card__icon"><i class="fa fa-mountain" aria-hidden="true"></i></div>
+                <div class="help-card__body">
+                    <span class="help-card__category">{% trans "Analyze" %}</span>
+                    <h3>{% trans "Calculate elevation change and volume" %}</h3>
+                    <p>{% trans "Use DSM or DTM surfaces to quantify stockpiles, cut/fill, and terrain change." %}</p>
+                    <ol><li>{% trans "Process compatible elevation outputs in the same coordinate system." %}</li><li>{% trans "Select the baseline, comparison surface, and area of interest." %}</li><li>{% trans "Review the sign convention, units, and alignment before using the result." %}</li></ol>
+                </div>
+            </article>
+
+            <article id="deliver" class="help-card" data-help-item data-help-search="report pdf stakeholder export download orthophoto geotiff laz las obj dsm dtm contour deliver">
+                <div class="help-card__icon"><i class="fa fa-file-export" aria-hidden="true"></i></div>
+                <div class="help-card__body">
+                    <span class="help-card__category">{% trans "Deliver" %}</span>
+                    <h3>{% trans "Build reports and export deliverables" %}</h3>
+                    <p>{% trans "Package maps, measurements, issues, and processing outputs for the people who need them." %}</p>
+                    <ol><li>{% trans "Open Report to select the content and audience." %}</li><li>{% trans "Verify dates, units, coordinate system, captions, and issue status." %}</li><li>{% trans "Download the report or task assets in the format required by the next tool." %}</li></ol>
+                    <a class="help-card__link" href="{% url 'dashboard' %}">{% trans "Choose a project" %} <i class="fa fa-arrow-right" aria-hidden="true"></i></a>
+                </div>
+            </article>
+
+            <article class="help-card" data-help-item data-help-search="share client portal public link reviewer stakeholder read only access security expiry">
+                <div class="help-card__icon"><i class="fa fa-user-friends" aria-hidden="true"></i></div>
+                <div class="help-card__body">
+                    <span class="help-card__category">{% trans "Deliver" %}</span>
+                    <h3>{% trans "Share with clients and reviewers" %}</h3>
+                    <p>{% trans "Give stakeholders focused access to a project, map, or model without exposing administration tools." %}</p>
+                    <ol><li>{% trans "Choose the project or task and create the appropriate share or client portal link." %}</li><li>{% trans "Open the link in a private browser to verify exactly what the recipient can see." %}</li><li>{% trans "Revoke or replace access when the review period ends." %}</li></ol>
+                </div>
+            </article>
+
+            <article class="help-card" data-help-item data-help-search="integration import cloud onedrive openaerialmap dronedb cesium ion lightning charts notification plugins">
+                <div class="help-card__icon"><i class="fa fa-plug" aria-hidden="true"></i></div>
+                <div class="help-card__body">
+                    <span class="help-card__category">{% trans "Deliver" %}</span>
+                    <h3>{% trans "Use imports and integrations" %}</h3>
+                    <p>{% trans "Connect projects with cloud intake, external catalogs, Cesium ion, DroneDB, Lightning, charts, and notifications." %}</p>
+                    <ol><li>{% trans "Open the integration from the sidebar or the project Import action." %}</li><li>{% trans "Configure credentials or the destination once, using the least access required." %}</li><li>{% trans "Test with one small task before automating a production workflow." %}</li></ol>
+                    <a class="help-card__link" href="/plugins/cesiumion/">{% trans "Open Cesium ion" %} <i class="fa fa-arrow-right" aria-hidden="true"></i></a>
+                </div>
+            </article>
+
+            <article id="manage" class="help-card" data-help-item data-help-search="processing node nodeodm gpu nvidia cuda worker add manual queue performance ram memory limit">
+                <div class="help-card__icon"><i class="fa fa-microchip" aria-hidden="true"></i></div>
+                <div class="help-card__body">
+                    <span class="help-card__category">{% trans "Manage" %}</span>
+                    <h3>{% trans "Manage processing nodes and GPU work" %}</h3>
+                    <p>{% trans "Processing nodes run photogrammetry jobs; the worker GPU runs supported acceleration and Gaussian Splat training." %}</p>
+                    <ol><li>{% trans "Open Processing Nodes to check availability, queue size, and limits." %}</li><li>{% trans "Choose the correct node when creating a task and avoid oversubscribing RAM." %}</li><li>{% trans "Use Diagnostic to confirm the worker can see the NVIDIA GPU and CUDA runtime." %}</li></ol>
+                    {% if user.is_staff %}<a class="help-card__link" href="/admin/nodeodm/processingnode/">{% trans "Manage nodes" %} <i class="fa fa-arrow-right" aria-hidden="true"></i></a>{% endif %}
+                </div>
+            </article>
+
+            <article class="help-card" data-help-item data-help-search="diagnostic health cpu gpu ram memory disk services docker database redis worker troubleshoot clean">
+                <div class="help-card__icon"><i class="fa fa-heartbeat" aria-hidden="true"></i></div>
+                <div class="help-card__body">
+                    <span class="help-card__category">{% trans "Manage" %}</span>
+                    <h3>{% trans "Check system health" %}</h3>
+                    <p>{% trans "Diagnostic brings resource usage and critical service checks into one place." %}</p>
+                    <ol><li>{% trans "Check free RAM and disk before starting a large dataset." %}</li><li>{% trans "Confirm web, worker, database, broker, node, and GPU checks are healthy." %}</li><li>{% trans "Use task output together with health data to identify the actual bottleneck." %}</li></ol>
+                    <a class="help-card__link" href="/plugins/diagnostic/">{% trans "Open Diagnostic" %} <i class="fa fa-arrow-right" aria-hidden="true"></i></a>
+                </div>
+            </article>
+
+            <article class="help-card" data-help-item data-help-search="account password profile api token automation integration authentication key regenerate">
+                <div class="help-card__icon"><i class="fa fa-key" aria-hidden="true"></i></div>
+                <div class="help-card__body">
+                    <span class="help-card__category">{% trans "Manage" %}</span>
+                    <h3>{% trans "Manage your account and API token" %}</h3>
+                    <p>{% trans "Update account details and use the API token for approved scripts or integrations." %}</p>
+                    <ol><li>{% trans "Open the user menu for Account Settings or API Token." %}</li><li>{% trans "Treat the token like a password and never place it in screenshots or source control." %}</li><li>{% trans "Regenerate it immediately if it may have been exposed." %}</li></ol>
+                    <a class="help-card__link" href="{% url 'account_token' %}">{% trans "Open API Token" %} <i class="fa fa-arrow-right" aria-hidden="true"></i></a>
+                </div>
+            </article>
+
+            {% if user.is_staff %}
+            <article class="help-card" data-help-item data-help-search="administration admin users accounts groups permissions brand theme plugins settings security">
+                <div class="help-card__icon"><i class="fa fa-user-shield" aria-hidden="true"></i></div>
+                <div class="help-card__body">
+                    <span class="help-card__category">{% trans "Administrator" %}</span>
+                    <h3>{% trans "Administer users, access, and appearance" %}</h3>
+                    <p>{% trans "Control accounts, groups, permissions, branding, themes, plugins, and application settings." %}</p>
+                    <ol><li>{% trans "Grant only the permissions each role needs." %}</li><li>{% trans "Test branding and theme changes in both light and dark mode." %}</li><li>{% trans "Review plugins and settings after upgrades or workflow changes." %}</li></ol>
+                    <a class="help-card__link" href="/admin/app/">{% trans "Open Administration" %} <i class="fa fa-arrow-right" aria-hidden="true"></i></a>
+                </div>
+            </article>
+
+            <article class="help-card" data-help-item data-help-search="operations production readiness audit security backup feature validation onedrive intake admin">
+                <div class="help-card__icon"><i class="fa fa-shield-alt" aria-hidden="true"></i></div>
+                <div class="help-card__body">
+                    <span class="help-card__category">{% trans "Administrator" %}</span>
+                    <h3>{% trans "Validate production readiness" %}</h3>
+                    <p>{% trans "Use operational audits and feature validation records to keep the installation dependable." %}</p>
+                    <ol><li>{% trans "Open Operations and resolve failed or warning checks." %}</li><li>{% trans "Record feature verification evidence after meaningful changes." %}</li><li>{% trans "Verify backups, restore procedures, access controls, and free capacity regularly." %}</li></ol>
+                    <div class="help-card__actions"><a class="help-card__link" href="{% url 'operations' %}">{% trans "Operations" %}</a><a class="help-card__link" href="{% url 'feature_validations' %}">{% trans "Feature Validation" %}</a></div>
+                </div>
+            </article>
+            {% endif %}
+        </div>
+
+        <div id="help-empty" class="help-empty" hidden>
+            <i class="fa fa-search" aria-hidden="true"></i>
+            <h3>{% trans "No matching guide" %}</h3>
+            <p>{% trans "Try a broader word such as processing, map, 3D, report, GPU, or account." %}</p>
+            <button type="button" class="btn btn-primary" data-help-reset>{% trans "Show all guides" %}</button>
+        </div>
+    </section>
+</main>
+{% endblock %}

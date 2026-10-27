@@ -121,6 +121,11 @@ def model_display(request, project_pk=None, task_pk=None):
             }.items()
         })
 
+@login_required
+def help_center(request):
+    return render(request, 'app/help.html', {'title': _('Help')})
+
+
 def about(request):
     return render(request, 'app/about.html', {'title': _('About'), 'version': settings.VERSION})
 

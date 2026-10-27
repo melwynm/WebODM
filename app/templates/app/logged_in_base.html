@@ -103,8 +103,11 @@
                             <a href="/dev-tools/"><i class="fa fa-bug fa-fw"></i> {% trans 'Developer Tools' %}</a>
                         </li>
                         {% endif %}
+                        <li id="help-menu">
+                            <a href="{% url 'help' %}"><i class="fa fa-question-circle fa-fw"></i> {% trans 'Help' %}</a>
+                        </li>
                         <li id="about-menu">
-                            <a href="/about/"><i class="fa fa-info-circle fa-fw"></i> {% trans 'About' %}</a>
+                            <a href="{% url 'about' %}"><i class="fa fa-info-circle fa-fw"></i> {% trans 'About' %}</a>
                         </li>
                     </ul>
                 </div>

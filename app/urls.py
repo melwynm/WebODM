@@ -55,6 +55,7 @@ urlpatterns = [
 
     re_path(r'^plugins/(?P<plugin_name>[^/.]+)/(.*)$', app_view_handler),
 
+    re_path(r'^help/$', app_views.help_center, name='help'),
     re_path(r'^about/$', app_views.about, name='about'),
     re_path(r'^dev-tools/(?P<action>.*)$', dev_views.dev_tools, name='dev_tools'),
 
