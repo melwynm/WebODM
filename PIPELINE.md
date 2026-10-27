@@ -36,7 +36,7 @@ The next item is the first stage marked `Next` in the priority roadmap.
 
 Roadmap implementation reconciliation and QA hardening
 
-P1 through P15 have working implementation slices. The next priority is to use the feature validation ledger, platform audit, and focused regression tests to mark which working slices are tested, untested, failing, or blocked.
+P1 through P17 have working implementation slices. The next priority is to use the feature validation ledger, platform audit, and focused regression tests to mark which working slices are tested, untested, failing, or blocked.
 
 ## Priority Roadmap
 
@@ -57,6 +57,8 @@ P1 through P15 have working implementation slices. The next priority is to use t
 | P13 | Design/BIM/Plan Overlays | Workflow | Working | Lets project teams compare reality against design, BIM, or plan references directly on the 2D map. |
 | P14 | OneDrive Folder Task Intake | Workflow | Working | Streamlines repeated task creation from a configured OneDrive-synced folder. |
 | P15 | Automated Monitoring Runs | Workflow | Working | Turns repeated surveys into one resumable compare, review, report, and client-publication workflow. |
+| P16 | Gaussian Splat Training and Viewer | Workflow | Working | Turns completed reconstructions into photorealistic Gaussian splat scenes that teams can inspect in the browser. |
+| P17 | In-App Help Center | Platform | Working | Gives users searchable, task-oriented guidance without leaving WebODM. |
 
 ## Working Product Foundation
 
@@ -75,6 +77,8 @@ These workflow and platform capabilities are already available and should be pro
 | P13 | Design/BIM/Plan Overlays | Workflow | Working | Store project design overlays and render supported GeoJSON/Shapefile references on 2D maps. |
 | P14 | OneDrive Folder Task Intake | Workflow | Working | Create import tasks from a configured OneDrive-synced folder via the `onedriveintake` management command. |
 | P15 | Automated Monitoring Runs | Workflow | Working | Pair ready surveys, reuse or generate comparison products, attach AI-reviewed issues, snapshot a report, and publish through a client share. |
+| P16 | Gaussian Splat Training and Viewer | Workflow | Working | Train splats with GPU OpenSplat in the worker from task OpenSfM output and open them in the bundled SuperSplat viewer. |
+| P17 | In-App Help Center | Platform | Working | Searchable help topics linked from the user menu at `/help/`. |
 
 ## Runtime Processing Foundation
 
@@ -111,6 +115,8 @@ These are the standard WebODM processing stages. They remain the working runtime
 - `P13` is delivered with project design overlay APIs, persistent GeoJSON/Shapefile overlay rendering, permissions, and regression coverage.
 - `P14` is delivered with the `onedriveintake` management command, dataset fingerprinting, duplicate protection, and regression coverage.
 - `P15` is delivered with persistent monitoring runs, automatic survey pairing, resumable comparison generation, exact-pair AI review, report snapshots, and client-portal publication.
+- `P16` is delivered with a GPU OpenSplat build stage, shared NodeODM task data for OpenSfM discovery, dashboard Train/View Splat controls, and the bundled SuperSplat viewer.
+- `P17` is delivered with a login-protected `/help/` page, client-side topic search, and a user-menu link.
 - There is no unimplemented `Next` roadmap item at the moment; use the feature validation ledger and focused regression passes to decide the next hardening or product-polish task.
 - Use the feature validation ledger at `/feature-validations/` to mark completed features as `tested`, `untested`, `failing`, or `blocked` after every smoke test or regression pass.
 - `Working` means the stage is available in the fork today.

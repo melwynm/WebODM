@@ -30,7 +30,7 @@ deployments, install OpenSplat in the worker path or set
 Example:
 
 ```bash
-GAUSSIAN_SPLAT_TRAINER_COMMAND="/opt/opensplat/opensplat {input} -n {iterations} -o {output}"
+GAUSSIAN_SPLAT_TRAINER_COMMAND="/opt/opensplat/bin/opensplat {input} -n {iterations} -o {output}"
 ```
 
 The Docker worker defaults to a 2x image downscale to keep large image sets
@@ -42,4 +42,7 @@ The plugin expects a completed task with OpenSfM reconstruction files. Use the `
 NodeODM's `/var/www/data` is stored in the `nodeodmdata` volume and mounted
 read-only in the worker at `/var/www/data`. This lets the trainer use the
 OpenSfM reconstruction that NodeODM keeps outside WebODM's normal downloaded
-result archive.
+result archive. NodeODM deletes finished task data after its retention period
+(48 hours by default), so the first training run copies `reconstruction.json`,
+`camera_models.json`, and `reference_lla.json` into the task's own
+`assets/opensfm` folder. Retraining then works without the NodeODM copy.

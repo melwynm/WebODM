@@ -380,6 +380,17 @@ Workflow:
 
 If the model is missing, confirm that processing options generated the required model assets.
 
+### Gaussian Splats
+
+A Gaussian splat is a photorealistic 3D scene trained from a task's photos and camera positions.
+
+1. Process the dataset with the `Gaussian Splat Source` preset.
+2. When the task completes, select **Train Splat** on the task in the dashboard.
+3. Wait for training to finish. Progress shows on the task, and training runs on the worker's NVIDIA GPU.
+4. Select **View Splat** to open the scene in the interactive viewer, or download `gaussian_splat.ply` from the task assets.
+
+Training needs an NVIDIA GPU in the worker. The first training run keeps a copy of the task's reconstruction files, so you can retrain later even after the processing node has cleaned up its own task data. Tasks processed with other presets, or whose processing-node data was cleaned up before the first training run, must be reprocessed.
+
 ## 19. Stakeholder Reports
 
 Reports summarize project progress and review evidence for non-technical stakeholders.

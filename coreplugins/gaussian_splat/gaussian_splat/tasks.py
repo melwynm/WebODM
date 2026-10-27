@@ -26,6 +26,7 @@ ITERATION_RE = re.compile(r"(?:iter(?:ation)?\D*)?(\d+)\s*/\s*(\d+)", re.IGNOREC
 STEP_RE = re.compile(r"\bstep\s+(\d+)\b", re.IGNORECASE)
 PERCENT_RE = re.compile(r"\[\s*(\d+(?:\.\d+)?)\s*%\s*\]", re.IGNORECASE)
 IMAGE_EXTENSIONS = {".jpg", ".jpeg", ".tif", ".tiff", ".png"}
+PRESERVED_OPENSFM_FILES = ("reconstruction.json", "camera_models.json", "reference_lla.json")
 
 
 def _now_iso() -> str:
@@ -130,7 +131,11 @@ def _output_dir(task_obj: Task) -> Path:
 
 
 def _safe_link_or_copy(source: Path, dest: Path) -> None:
-    if dest.exists() or dest.is_symlink():
+    # A link left by an earlier run can dangle once its source is cleaned up;
+    # replace it instead of letting the trainer fail on a missing file.
+    if dest.is_symlink() and not dest.exists():
+        dest.unlink()
+    if dest.exists():
         return
 
     dest.parent.mkdir(parents=True, exist_ok=True)
@@ -159,7 +164,15 @@ def _find_opensfm_dir(task_obj: Task) -> Path:
     if nodeodm_root:
         shared_dir = Path(nodeodm_root) / str(task_obj.uuid) / "opensfm"
         if (shared_dir / "reconstruction.json").is_file():
-            return shared_dir
+            # NodeODM deletes finished task data after a retention period, so
+            # keep the small reconstruction files with the task's own assets
+            # to allow retraining later.
+            local_dir.mkdir(parents=True, exist_ok=True)
+            for filename in PRESERVED_OPENSFM_FILES:
+                source = shared_dir / filename
+                if source.is_file():
+                    shutil.copy2(source, local_dir / filename)
+            return local_dir
 
     raise RuntimeError(
         "No OpenSfM reconstruction was found for this task. Reprocess with the "

@@ -53,7 +53,7 @@ RUN git init . && \
     git checkout --detach FETCH_HEAD && \
     test "$(git rev-parse HEAD)" = "${OPENSPLAT_COMMIT}"
 
-RUN wget --no-check-certificate -nv \
+RUN wget -nv \
         "https://download.pytorch.org/libtorch/cu121/libtorch-cxx11-abi-shared-with-deps-${OPENSPLAT_TORCH_VERSION}%2Bcu121.zip" \
         -O /tmp/libtorch.zip && \
     unzip -q /tmp/libtorch.zip -d /opt && \

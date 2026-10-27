@@ -30,6 +30,8 @@ docker compose -f docker-compose.yml -f docker-compose.nodeodm.yml -f docker-com
 
 For manually supplied certificates, use `docker-compose.ssl-manual.yml` instead of `docker-compose.ssl.yml`.
 
+This fork's base `docker-compose.yml` targets an NVIDIA GPU host: the `yamlnodeodm` processing node and the `worker` (which runs OpenSplat for Gaussian splat training) both request `gpus: all`. The host needs the NVIDIA driver and the NVIDIA Container Toolkit, and the image's OpenSplat build targets CUDA architecture `89` (RTX 40 series) by default; set the `OPENSPLAT_CUDA_ARCHITECTURES` build argument for other GPUs. Hosts without an NVIDIA GPU cannot start the base stack unchanged.
+
 The production overlay adds container health checks and log rotation. It does not replace host monitoring; keep external uptime checks for `https://<host>/api/status/`.
 
 ## Environment

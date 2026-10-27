@@ -1,6 +1,7 @@
 import os
 from pathlib import Path
 import sys
+import shutil
 
 from django.contrib.auth.models import User
 from django.test import override_settings
@@ -112,3 +113,41 @@ class TestGaussianSplat(BootTestCase):
         self.assertTrue((input_dir / "images" / "image_001.jpg").is_file())
         image_list = (input_dir / "image_list.txt").read_text(encoding="utf-8").splitlines()
         self.assertEqual(image_list, [str(input_dir / "image_001.jpg")])
+        self.assertTrue(Path(task.assets_path("opensfm", "reconstruction.json")).is_file())
+
+    def test_retraining_survives_nodeodm_cleanup(self):
+        user = User.objects.get(username="testuser")
+        project = Project.objects.create(owner=user, name="Cleaned OpenSfM Project")
+        task = Task.objects.create(
+            project=project,
+            name="Cleaned OpenSfM Task",
+            status=status_codes.COMPLETED,
+        )
+
+        Path(task.task_path()).mkdir(parents=True, exist_ok=True)
+        Path(task.task_path("image_001.jpg")).write_bytes(b"fake image")
+
+        shared_root = Path(task.task_path("shared-nodeodm"))
+        opensfm_dir = shared_root / str(task.uuid) / "opensfm"
+        opensfm_dir.mkdir(parents=True, exist_ok=True)
+        (opensfm_dir / "reconstruction.json").write_text("[]", encoding="utf-8")
+
+        # Simulate a link left by an earlier run into NodeODM's volume.
+        input_dir = Path(task.assets_path("odm_gaussian_splat", "opensplat_input"))
+        input_dir.mkdir(parents=True, exist_ok=True)
+        (input_dir / "reconstruction.json").symlink_to(opensfm_dir / "reconstruction.json")
+
+        previous = os.environ.get("GAUSSIAN_SPLAT_NODEODM_DATA_ROOT")
+        os.environ["GAUSSIAN_SPLAT_NODEODM_DATA_ROOT"] = str(shared_root)
+        try:
+            prepare_opensplat_input(task)
+            shutil.rmtree(shared_root)
+            input_dir = prepare_opensplat_input(task)
+        finally:
+            if previous is None:
+                os.environ.pop("GAUSSIAN_SPLAT_NODEODM_DATA_ROOT", None)
+            else:
+                os.environ["GAUSSIAN_SPLAT_NODEODM_DATA_ROOT"] = previous
+
+        self.assertEqual((input_dir / "reconstruction.json").read_text(encoding="utf-8"), "[]")
+        self.assertTrue((input_dir / "opensfm" / "reconstruction.json").is_file())

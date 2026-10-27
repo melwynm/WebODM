@@ -111,6 +111,20 @@ PIPELINE_FEATURE_VALIDATIONS = (
         'test_notes': 'API and UI regressions cover automatic survey pairing, duplicate active-run protection, comparison generation, retry state, exact-pair AI review, report snapshots, publication, permissions, and tokenized client report access.',
         'maintenance_notes': 'Keep publication human-confirmed, preserve immutable report snapshots, and keep monitoring-run AI findings tied to the exact current and baseline tasks.',
     },
+    {
+        'key': 'gaussian-splat-training-viewer',
+        'name': 'Gaussian Splat Training and Viewer',
+        'area': 'P16',
+        'test_notes': 'Plugin regressions cover idle status, OpenSfM discovery from task assets or shared NodeODM data, image list generation, trainer command building, downscaling, and progress parsing. End-to-end check trains a splat with GPU OpenSplat in the worker and loads it in the bundled viewer.',
+        'maintenance_notes': 'Requires an NVIDIA GPU worker and tasks processed with OpenSfM output kept. Rebuild the image when OPENSPLAT_COMMIT or the libtorch version changes, and keep the SuperSplat license file with the bundled viewer.',
+    },
+    {
+        'key': 'in-app-help-center',
+        'name': 'In-App Help Center',
+        'area': 'P17',
+        'test_notes': 'View regressions cover login protection, page rendering, and the user-menu Help link.',
+        'maintenance_notes': 'Update help topics when a pipeline workflow changes its controls or location in the UI.',
+    },
 )
 
 COMMERCIAL_FEATURE_VALIDATIONS = (

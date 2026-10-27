@@ -193,22 +193,22 @@ class TestFeatureValidationApi(BootTestCase):
         call_command('reconcilefeaturevalidations', '--tested', '--user', self.admin_user.username)
 
         features = FeatureValidation.objects.order_by('area')
-        self.assertEqual(features.count(), 21)
+        self.assertEqual(features.count(), 23)
         self.assertEqual(
             set(features.exclude(area='Commercial').values_list('area', flat=True)),
-            {'P{}'.format(index) for index in range(1, 16)},
+            {'P{}'.format(index) for index in range(1, 18)},
         )
         self.assertEqual(FeatureValidation.objects.filter(area='Commercial').count(), 6)
         self.assertEqual(
             FeatureValidation.objects.filter(status=FeatureValidation.STATUS_TESTED).count(),
-            21,
+            23,
         )
         self.assertEqual(
             FeatureValidation.objects.filter(
                 status=FeatureValidation.STATUS_TESTED,
                 last_tested_at__isnull=False,
             ).count(),
-            21,
+            23,
         )
         self.assertTrue(
             FeatureValidation.objects.filter(
