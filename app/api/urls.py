@@ -15,7 +15,7 @@ from .monitoring import MonitoringCandidates, MonitoringCompare, MonitoringTiles
 from .issues import ProjectIssueViewSet
 from .design_overlays import ProjectDesignOverlayViewSet
 from .field_photos import ProjectFieldPhotoViewSet
-from .client_portal import ClientPortalAPIView, ClientPortalCommentsAPIView, ClientPortalTaskAssetsAPIView, \
+from .client_portal import ClientPortalAPIView, ClientPortalCommentsAPIView, ClientPortalMonitoringRunReportAPIView, ClientPortalTaskAssetsAPIView, \
     ClientPortalTaskQAAPIView, ClientPortalTaskSceneAPIView, ClientPortalTaskTexturedModelAPIView, \
     ProjectClientShareViewSet
 from .feature_validation import FeatureValidationViewSet
@@ -24,6 +24,7 @@ from .reports import ProjectProgressReport
 from .commercial_readiness import ProjectCommercialReadiness
 from .delivery_exports import ProjectDeliveryExport
 from .ai_issues import AIIssueDetection
+from .monitoring_runs import ProjectMonitoringRunViewSet
 from .airtwin import AirTwinTaskImportStatus, AirTwinTaskManifest
 from .workers import CheckTask, GetTaskResult
 from .status import APIStatus
@@ -43,6 +44,7 @@ tasks_router.register(r'issues', ProjectIssueViewSet, basename='projects-issues'
 tasks_router.register(r'design-overlays', ProjectDesignOverlayViewSet, basename='projects-design-overlays')
 tasks_router.register(r'field-photos', ProjectFieldPhotoViewSet, basename='projects-field-photos')
 tasks_router.register(r'client-shares', ProjectClientShareViewSet, basename='projects-client-shares')
+tasks_router.register(r'monitoring-runs', ProjectMonitoringRunViewSet, basename='projects-monitoring-runs')
 
 admin_router = routers.DefaultRouter()
 admin_router.register(r'admin/users', AdminUserViewSet, basename='admin-users')
@@ -85,6 +87,7 @@ urlpatterns = [
     re_path(r'projects/(?P<project_pk>[^/.]+)/ai/issue-detection$', AIIssueDetection.as_view()),
     re_path(r'client-shares/(?P<token>[^/.]+)/$', ClientPortalAPIView.as_view(), name='api_client_portal'),
     re_path(r'client-shares/(?P<token>[^/.]+)/comments/$', ClientPortalCommentsAPIView.as_view(), name='api_client_portal_comments'),
+    re_path(r'client-shares/(?P<token>[^/.]+)/monitoring-runs/(?P<run_pk>[^/.]+)/report/$', ClientPortalMonitoringRunReportAPIView.as_view(), name='api_client_monitoring_run_report'),
     re_path(r'client-shares/(?P<token>[^/.]+)/tasks/(?P<task_pk>[^/.]+)/3d/qa$', ClientPortalTaskQAAPIView.as_view(), name='api_client_portal_task_qa'),
     re_path(r'client-shares/(?P<token>[^/.]+)/tasks/(?P<task_pk>[^/.]+)/3d/scene$', ClientPortalTaskSceneAPIView.as_view(), name='api_client_portal_task_scene'),
     re_path(r'client-shares/(?P<token>[^/.]+)/tasks/(?P<task_pk>[^/.]+)/textured_model/$', ClientPortalTaskTexturedModelAPIView.as_view(), name='api_client_portal_task_textured_model'),

@@ -1,10 +1,12 @@
 import json
+from datetime import timedelta
 from unittest.mock import patch
 
 from django.contrib.auth.models import User
 from django.core.management import call_command
 from django.core.management.base import CommandError
 from django.test import Client
+from django.utils import timezone
 
 from app.models import FeatureValidation
 
@@ -191,22 +193,22 @@ class TestFeatureValidationApi(BootTestCase):
         call_command('reconcilefeaturevalidations', '--tested', '--user', self.admin_user.username)
 
         features = FeatureValidation.objects.order_by('area')
-        self.assertEqual(features.count(), 20)
+        self.assertEqual(features.count(), 21)
         self.assertEqual(
             set(features.exclude(area='Commercial').values_list('area', flat=True)),
-            {'P{}'.format(index) for index in range(1, 15)},
+            {'P{}'.format(index) for index in range(1, 16)},
         )
         self.assertEqual(FeatureValidation.objects.filter(area='Commercial').count(), 6)
         self.assertEqual(
             FeatureValidation.objects.filter(status=FeatureValidation.STATUS_TESTED).count(),
-            20,
+            21,
         )
         self.assertEqual(
             FeatureValidation.objects.filter(
                 status=FeatureValidation.STATUS_TESTED,
                 last_tested_at__isnull=False,
             ).count(),
-            20,
+            21,
         )
         self.assertTrue(
             FeatureValidation.objects.filter(
@@ -263,6 +265,48 @@ class TestFeatureValidationApi(BootTestCase):
         self.assertEqual(feature.status, FeatureValidation.STATUS_TESTED)
         self.assertEqual(feature.last_tested_by, self.admin_user)
         self.assertIsNotNone(feature.last_tested_at)
+
+    def test_reconcile_command_targets_and_refreshes_one_feature(self):
+        previous_tested_at = timezone.now() - timedelta(days=1)
+        target = FeatureValidation.objects.create(
+            key='mobile-field-photo-capture',
+            name='Mobile/Field Photo Capture',
+            area='P1',
+            status=FeatureValidation.STATUS_TESTED,
+            last_tested_at=previous_tested_at,
+        )
+        untouched = FeatureValidation.objects.create(
+            key='ai-assisted-issue-detection',
+            name='AI-Assisted Issue Detection',
+            area='P2',
+            status=FeatureValidation.STATUS_UNTESTED,
+        )
+
+        call_command(
+            'reconcilefeaturevalidations',
+            '--key',
+            target.key,
+            '--tested',
+            '--refresh-tested-at',
+            '--user',
+            self.admin_user.username,
+        )
+
+        target.refresh_from_db()
+        untouched.refresh_from_db()
+        self.assertGreater(target.last_tested_at, previous_tested_at)
+        self.assertEqual(target.last_tested_by, self.admin_user)
+        self.assertEqual(untouched.status, FeatureValidation.STATUS_UNTESTED)
+        self.assertEqual(FeatureValidation.objects.count(), 2)
+
+    def test_reconcile_command_requires_tested_status_to_refresh_timestamp(self):
+        with self.assertRaises(CommandError):
+            call_command(
+                'reconcilefeaturevalidations',
+                '--key',
+                'mobile-field-photo-capture',
+                '--refresh-tested-at',
+            )
 
     def test_reconcile_command_rejects_conflicting_status_options(self):
         with self.assertRaises(CommandError):

@@ -17,8 +17,8 @@ PIPELINE_FEATURE_VALIDATIONS = (
         'key': 'ai-assisted-issue-detection',
         'name': 'AI-Assisted Issue Detection',
         'area': 'P2',
-        'test_notes': 'API regression tests cover server-side OpenAI request wiring, missing API key handling, issue creation, and project permissions.',
-        'maintenance_notes': 'Keep API key handling server-side and preserve human review before closing AI-created issues.',
+        'test_notes': 'API and UI regressions cover server-side OpenAI wiring, bounded candidate parsing, failure handling, signed preview confirmation, retry idempotency, issue creation, and project permissions.',
+        'maintenance_notes': 'Keep API keys server-side, preserve preview-before-create behavior, and keep AI-created issues in human review.',
     },
     {
         'key': 'client-sharing-portal',
@@ -104,6 +104,13 @@ PIPELINE_FEATURE_VALIDATIONS = (
         'test_notes': 'OneDrive intake regressions and the staff Operations UI cover dry-run discovery, folder dataset packaging, duplicate fingerprint protection, import task creation, and no-process behavior.',
         'maintenance_notes': 'Use Administration > Operations for browser intake runs. Keep duplicate protection and minimum-age handling in place for synced folders.',
     },
+    {
+        'key': 'automated-monitoring-runs',
+        'name': 'Automated Monitoring Runs',
+        'area': 'P15',
+        'test_notes': 'API and UI regressions cover automatic survey pairing, duplicate active-run protection, comparison generation, retry state, exact-pair AI review, report snapshots, publication, permissions, and tokenized client report access.',
+        'maintenance_notes': 'Keep publication human-confirmed, preserve immutable report snapshots, and keep monitoring-run AI findings tied to the exact current and baseline tasks.',
+    },
 )
 
 COMMERCIAL_FEATURE_VALIDATIONS = (
@@ -173,11 +180,28 @@ def log_feature_validation_change(feature, user=None, previous_status=None):
         )
 
 
-def reconcile_pipeline_feature_validations(status=None, overwrite=False, user=None):
+def reconcile_pipeline_feature_validations(
+    status=None,
+    overwrite=False,
+    user=None,
+    keys=None,
+    refresh_tested_at=False,
+):
     from app.models import FeatureValidation
+
+    selected_keys = set(keys or ())
+    available_keys = {item['key'] for item in FEATURE_VALIDATIONS}
+    unknown_keys = selected_keys - available_keys
+    if unknown_keys:
+        raise ValueError(
+            "Unknown feature validation keys: {}".format(', '.join(sorted(unknown_keys)))
+        )
 
     results = []
     for item in FEATURE_VALIDATIONS:
+        if selected_keys and item['key'] not in selected_keys:
+            continue
+
         defaults = {
             'name': item['name'],
             'area': item['area'],
@@ -196,6 +220,7 @@ def reconcile_pipeline_feature_validations(status=None, overwrite=False, user=No
 
         changed = created
         if not created:
+            previous_status = feature.status
             for field in ('name', 'area'):
                 if getattr(feature, field) != item[field]:
                     setattr(feature, field, item[field])
@@ -213,7 +238,11 @@ def reconcile_pipeline_feature_validations(status=None, overwrite=False, user=No
             if user and status == FeatureValidation.STATUS_TESTED and feature.last_tested_by_id != user.id:
                 feature.last_tested_by = user
                 changed = True
-            if status == FeatureValidation.STATUS_TESTED and feature.last_tested_at is None:
+            if status == FeatureValidation.STATUS_TESTED and (
+                feature.last_tested_at is None
+                or previous_status != FeatureValidation.STATUS_TESTED
+                or refresh_tested_at
+            ):
                 feature.last_tested_at = timezone.now()
                 changed = True
 

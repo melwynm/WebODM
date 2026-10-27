@@ -1,7 +1,8 @@
 import os
 
 from django.core.exceptions import SuspiciousFileOperation, ValidationError
-from django.http import Http404
+from django.http import Http404, HttpResponse
+from rest_framework.renderers import BrowsableAPIRenderer, JSONRenderer, StaticHTMLRenderer
 from rest_framework import permissions, serializers, status, viewsets
 from rest_framework import exceptions
 from rest_framework.response import Response
@@ -14,6 +15,7 @@ from app.api.tasks import download_file_response
 from app.models.project_issue import validate_geojson_geometry
 from app.security import path_traversal_check
 from app.services.textured_model_qa import build_textured_model_qa
+from app.services.project_reports import build_project_progress_report, render_progress_report_html
 
 
 def get_active_share(token):
@@ -33,6 +35,31 @@ def get_share_task(share, task_pk):
         return models.Task.objects.get(pk=task_pk, project=share.project)
     except (models.Task.DoesNotExist, ValidationError):
         raise Http404
+
+
+def client_monitoring_run_payload(run, share=None):
+    snapshot = run.report_snapshot or {}
+    summary = snapshot.get('monitoring_run') or {}
+    report_url = '/api/client-shares/{}/monitoring-runs/{}/report/?format=html'.format(
+        share.token if share else run.client_share.token,
+        run.id,
+    )
+    return {
+        'id': str(run.id),
+        'status': run.status,
+        'current_task': {
+            'id': str(run.current_task_id),
+            'name': run.current_task.name or str(run.current_task_id),
+        },
+        'baseline_task': {
+            'id': str(run.baseline_task_id),
+            'name': run.baseline_task.name or str(run.baseline_task_id),
+        },
+        'issue_count': summary.get('issue_count', 0),
+        'comparison_generated_at': run.comparison_generated_at,
+        'published_at': run.published_at,
+        'report_url': report_url,
+    }
 
 
 class ProjectClientShareSerializer(serializers.ModelSerializer):
@@ -157,6 +184,11 @@ class ClientPortalAPIView(ClientPortalMixin, APIView):
         comments = models.ProjectClientComment.objects.filter(project=project, share=share).select_related(
             'task', 'issue'
         )
+        monitoring_runs = models.ProjectMonitoringRun.objects.filter(
+            project=project,
+            client_share=share,
+            status=models.ProjectMonitoringRun.STATUS_PUBLISHED,
+        ).select_related('current_task', 'baseline_task')
 
         return Response({
             'share': ProjectClientShareSerializer(share, context={'request': request}).data,
@@ -168,7 +200,35 @@ class ClientPortalAPIView(ClientPortalMixin, APIView):
                 context={'request': request, 'project': project},
             ).data,
             'comments': ProjectClientCommentSerializer(comments, many=True).data,
+            'monitoring_runs': [client_monitoring_run_payload(run, share) for run in monitoring_runs],
         })
+
+
+class ClientPortalMonitoringRunReportAPIView(ClientPortalMixin, APIView):
+    renderer_classes = (JSONRenderer, BrowsableAPIRenderer, StaticHTMLRenderer)
+
+    def get(self, request, token, run_pk):
+        share = self.get_share()
+        try:
+            run = models.ProjectMonitoringRun.objects.select_related(
+                'project', 'current_task', 'baseline_task'
+            ).get(
+                pk=run_pk,
+                project=share.project,
+                client_share=share,
+                status=models.ProjectMonitoringRun.STATUS_PUBLISHED,
+            )
+        except (models.ProjectMonitoringRun.DoesNotExist, ValidationError):
+            raise Http404
+
+        report = run.report_snapshot or build_project_progress_report(
+            run.project,
+            template=run.report_template,
+            monitoring_run=run,
+        )
+        if (request.query_params.get('format') or '').lower() == 'html':
+            return HttpResponse(render_progress_report_html(report), content_type='text/html; charset=utf-8')
+        return Response(report)
 
 
 class ClientPortalCommentsAPIView(ClientPortalMixin, APIView):

@@ -2,7 +2,13 @@ from django.contrib.auth import get_user_model
 from django.core.management.base import BaseCommand, CommandError
 
 from app.models import FeatureValidation
-from app.services.feature_validation import reconcile_pipeline_feature_validations
+from app.services.feature_validation import (
+    FEATURE_VALIDATIONS,
+    reconcile_pipeline_feature_validations,
+)
+
+
+FEATURE_KEYS = tuple(item['key'] for item in FEATURE_VALIDATIONS)
 
 
 class Command(BaseCommand):
@@ -30,12 +36,27 @@ class Command(BaseCommand):
             default='',
             help='Username to record as last tester when marking records tested.',
         )
+        parser.add_argument(
+            '--key',
+            action='append',
+            choices=FEATURE_KEYS,
+            dest='keys',
+            help='Only reconcile this feature key. Repeat to select multiple features.',
+        )
+        parser.add_argument(
+            '--refresh-tested-at',
+            action='store_true',
+            help='Refresh the validation timestamp. Requires a tested status.',
+        )
 
     def handle(self, *args, **options):
         if options['tested'] and options['status']:
             raise CommandError("--tested cannot be combined with --status.")
 
         status = FeatureValidation.STATUS_TESTED if options['tested'] else options['status']
+        if options['refresh_tested_at'] and status != FeatureValidation.STATUS_TESTED:
+            raise CommandError("--refresh-tested-at requires --tested or --status tested.")
+
         user = None
         if options['user']:
             try:
@@ -47,6 +68,8 @@ class Command(BaseCommand):
             status=status,
             overwrite=options['overwrite_notes'],
             user=user,
+            keys=options['keys'],
+            refresh_tested_at=options['refresh_tested_at'],
         )
         created = sum(1 for _feature, was_created, _changed in results if was_created)
         changed = sum(1 for _feature, was_created, was_changed in results if was_changed and not was_created)

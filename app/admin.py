@@ -23,7 +23,7 @@ from app.models import Profile
 from app.plugins import get_plugin_by_name, enable_plugin, disable_plugin, delete_plugin, valid_plugin, \
     get_plugins_persistent_path, clear_plugins_cache, init_plugins
 from .models import Project, Task, Setting, Theme, ProjectIssue, ProjectDesignOverlay, ProjectFieldPhoto, \
-    ProjectClientShare, ProjectClientComment, FeatureValidation, AirTwinImportState, AirTwinWebhookDelivery
+    ProjectClientShare, ProjectClientComment, ProjectMonitoringRun, FeatureValidation, AirTwinImportState, AirTwinWebhookDelivery
 from django import forms
 from codemirror2.widgets import CodeMirrorEditor
 from webodm import settings
@@ -129,6 +129,16 @@ class ProjectClientCommentAdmin(admin.ModelAdmin):
 
 
 admin.site.register(ProjectClientComment, ProjectClientCommentAdmin)
+
+
+class ProjectMonitoringRunAdmin(admin.ModelAdmin):
+    list_display = ('id', 'project', 'current_task', 'baseline_task', 'status', 'created_by', 'published_at')
+    list_filter = ('status', 'created_at', 'published_at')
+    search_fields = ('id', 'project__name', 'current_task__name', 'baseline_task__name', 'created_by__username')
+    readonly_fields = ('celery_task_id', 'report_snapshot', 'comparison_generated_at', 'published_at', 'created_at', 'updated_at')
+
+
+admin.site.register(ProjectMonitoringRun, ProjectMonitoringRunAdmin)
 
 
 class FeatureValidationAdmin(admin.ModelAdmin):

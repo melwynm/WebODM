@@ -86,6 +86,8 @@ REQUIRED_FILES = (
     ("templates", "3D model viewer", "app/templates/app/3d_model_display.html", "Restore the 3D viewer template."),
     ("templates", "Operations dashboard", "app/templates/app/operations.html", "Restore the staff operations dashboard."),
     ("templates", "API token settings page", "app/templates/app/account_token.html", "Restore the account token/settings page."),
+    ("frontend", "AI issue review panel", "app/static/app/js/components/AIIssueDetectionPanel.jsx", "Restore the project Issues AI review workflow."),
+    ("frontend", "Automated monitoring run panel", "app/static/app/js/components/MonitoringRunPanel.jsx", "Restore the project monitoring run workflow."),
     ("api", "AI issue detection API", "app/api/ai_issues.py", "Restore the AI issue detection API module."),
     ("api", "Client portal API", "app/api/client_portal.py", "Restore tokenized client portal API routes."),
     ("api", "Commercial readiness API", "app/api/commercial_readiness.py", "Restore project commercial readiness API routes."),
@@ -94,6 +96,7 @@ REQUIRED_FILES = (
     ("api", "Feature validation API", "app/api/feature_validation.py", "Restore feature validation API routes."),
     ("api", "Field photo API", "app/api/field_photos.py", "Restore field photo API routes."),
     ("api", "Monitoring API", "app/api/monitoring.py", "Restore monitoring timeline and compare API routes."),
+    ("api", "Automated monitoring run API", "app/api/monitoring_runs.py", "Restore persistent monitoring run orchestration and publication routes."),
     ("api", "Project issue API", "app/api/issues.py", "Restore project issue and annotation API routes."),
     ("api", "Project report API", "app/api/reports.py", "Restore stakeholder report API routes."),
     ("api", "Textured model QA API", "app/api/textured_model_qa.py", "Restore textured model QA API routes."),
@@ -114,6 +117,7 @@ REQUIRED_FILES = (
     ("services", "Monitoring payload service", "app/services/monitoring/payloads.py", "Restore monitoring API payload helpers."),
     ("services", "Monitoring product service", "app/services/monitoring/products.py", "Restore monitoring product orchestration."),
     ("services", "Monitoring readiness service", "app/services/monitoring/readiness.py", "Restore monitoring readiness checks."),
+    ("services", "Automated monitoring run service", "app/services/monitoring_runs.py", "Restore monitoring run pairing, queueing, retry, and publication logic."),
     ("services", "AirTwin integration service", "app/services/airtwin.py", "Restore AirTwin manifest validation and webhook delivery logic."),
     ("management", "Default NodeODM repair command", "app/management/commands/syncdefaultnodes.py", "Restore the default-node repair command."),
     ("management", "Commercial demo project command", "app/management/commands/createdemoprojects.py", "Restore synthetic commercial demo project generation command."),
@@ -127,6 +131,9 @@ REQUIRED_FILES = (
     ("tests", "Production readiness tests", "app/tests/test_production_readiness.py", "Restore production readiness regression tests."),
     ("tests", "Security review tests", "app/tests/test_security_review.py", "Restore security review regression tests."),
     ("tests", "AirTwin integration tests", "app/tests/test_airtwin.py", "Restore AirTwin manifest, validation, webhook, and API compatibility tests."),
+    ("tests", "AI issue review UI tests", "app/static/app/js/components/tests/AIIssueDetectionPanel.test.jsx", "Restore AI issue preview and confirmation UI tests."),
+    ("tests", "Automated monitoring run API tests", "app/tests/test_api_monitoring_runs.py", "Restore monitoring run workflow and publication regression tests."),
+    ("tests", "Automated monitoring run UI tests", "app/static/app/js/components/tests/MonitoringRunPanel.test.jsx", "Restore monitoring run dashboard regression tests."),
 )
 
 
@@ -151,11 +158,13 @@ REQUIRED_ROUTES = (
     ("routes", "Monitoring candidates API", "/api/projects/1/tasks/2/monitoring/candidates", "Restore monitoring candidates route."),
     ("routes", "Monitoring compare API", "/api/projects/1/tasks/2/monitoring/compare", "Restore monitoring compare route."),
     ("routes", "Monitoring timeline API", "/api/projects/1/monitoring/timeline", "Restore monitoring timeline route."),
+    ("routes", "Automated monitoring run API", "/api/projects/1/monitoring-runs/", "Restore persistent monitoring run routes."),
     ("routes", "Project progress report API", "/api/projects/1/reports/progress", "Restore stakeholder report route."),
     ("routes", "Project commercial readiness API", "/api/projects/1/commercial/readiness", "Restore project commercial readiness route."),
     ("routes", "Project delivery export API", "/api/projects/1/delivery/export", "Restore project client delivery bundle export route."),
     ("routes", "AI issue detection API", "/api/projects/1/ai/issue-detection", "Restore AI issue detection route."),
     ("routes", "Client portal API", "/api/client-shares/token/", "Restore tokenized client portal API route."),
+    ("routes", "Client monitoring report API", "/api/client-shares/token/monitoring-runs/2/report/", "Restore token-scoped published monitoring report access."),
     ("routes", "Client textured model QA API", "/api/client-shares/token/tasks/2/3d/qa", "Restore tokenized client 3D QA route."),
     ("routes", "Client textured model asset API", "/api/client-shares/token/tasks/2/textured_model/", "Restore tokenized client model asset route."),
 )
@@ -168,6 +177,7 @@ REQUIRED_MODELS = (
     ("models", "Project design overlay model", "app.ProjectDesignOverlay", "Restore the ProjectDesignOverlay model and migrations."),
     ("models", "Project client share model", "app.ProjectClientShare", "Restore the ProjectClientShare model and migrations."),
     ("models", "Project commercial readiness model", "app.ProjectCommercialReadiness", "Restore the ProjectCommercialReadiness model and migrations."),
+    ("models", "Project monitoring run model", "app.ProjectMonitoringRun", "Restore persistent monitoring run state and migrations."),
     ("models", "AirTwin delivery model", "app.AirTwinWebhookDelivery", "Restore durable AirTwin webhook delivery tracking and migrations."),
     ("models", "AirTwin import state model", "app.AirTwinImportState", "Restore AirTwin acknowledgment, retry state, and retention protection."),
 )

@@ -2,6 +2,7 @@ from django.utils import timezone
 from django.utils.html import conditional_escape
 
 from app import models
+from app.services.monitoring import ensure_monitoring_products, monitoring_pair_readiness, render_layer_payload
 from nodeodm import status_codes
 
 
@@ -127,7 +128,41 @@ def _commercial_evidence(project, tasks, issues):
     }
 
 
-def build_project_progress_report(project, template=None):
+def _monitoring_run_payload(run):
+    readiness = monitoring_pair_readiness(run.current_task, run.baseline_task)
+    comparison = None
+    if readiness["cache"]["ready"]:
+        metadata = ensure_monitoring_products(run.current_task, run.baseline_task)
+        comparison = render_layer_payload(run.current_task, run.baseline_task, metadata)
+
+    run_issues = list(models.ProjectIssue.objects.filter(
+        project=run.project,
+        properties__monitoring_run_id=str(run.id),
+    ).order_by("-created_at", "-id"))
+    return {
+        "id": str(run.id),
+        "status": run.status,
+        "current_task": _task_payload(run.current_task),
+        "baseline_task": _task_payload(run.baseline_task),
+        "comparison_ready": readiness["cache"]["ready"],
+        "comparison_generated_at": _iso(run.comparison_generated_at),
+        "published_at": _iso(run.published_at),
+        "terrain_products": readiness["terrain_products"],
+        "alignment": comparison.get("alignment") if comparison else None,
+        "issue_count": len(run_issues),
+        "issues": [
+            {
+                "id": issue.id,
+                "title": issue.title,
+                "status": issue.status,
+                "priority": issue.priority,
+            }
+            for issue in run_issues
+        ],
+    }
+
+
+def build_project_progress_report(project, template=None, monitoring_run=None):
     tasks = list(project.task_set.all().order_by("-created_at", "-id"))
     issues = list(project.issues.select_related("task", "created_by", "assigned_to").order_by("-created_at", "-id"))
     template_key = normalize_report_template(project, template)
@@ -183,6 +218,7 @@ def build_project_progress_report(project, template=None):
             for issue in issues
             if issue.status not in (models.ProjectIssue.STATUS_CLOSED, models.ProjectIssue.STATUS_RESOLVED)
         ][:12],
+        "monitoring_run": _monitoring_run_payload(monitoring_run) if monitoring_run is not None else None,
     }
 
 
@@ -238,6 +274,31 @@ def render_progress_report_html(report):
         for item in report_template["caveats"]
     )
 
+    monitoring_section = ""
+    monitoring_run = report.get("monitoring_run")
+    if monitoring_run:
+        current_task = monitoring_run["current_task"]
+        baseline_task = monitoring_run["baseline_task"]
+        terrain_products = monitoring_run.get("terrain_products") or {}
+        terrain_labels = [
+            label
+            for key, label in (("dsm_delta", "DSM delta"), ("dtm_delta", "DTM delta"))
+            if terrain_products.get(key)
+        ]
+        terrain_summary = ", ".join(terrain_labels) or "Orthophoto change only"
+        monitoring_section = f"""
+      <section class="block">
+      <p class="eyebrow">Change over time</p>
+      <h2>Monitoring Review</h2>
+      <div class="note-grid">
+        <div class="note"><strong>{esc(current_task['name'])}</strong><span>Current survey</span></div>
+        <div class="note"><strong>{esc(baseline_task['name'])}</strong><span>Baseline survey</span></div>
+        <div class="note"><strong class="num">{monitoring_run['issue_count']}</strong><span>Review issues</span></div>
+      </div>
+      <p class="data-line">Comparison ready: {esc('Yes' if monitoring_run['comparison_ready'] else 'No')} &middot; {esc(terrain_summary)}</p>
+      </section>
+        """
+
     return f"""<!doctype html>
 <html>
 <head>
@@ -245,35 +306,62 @@ def render_progress_report_html(report):
   <title>{esc(project['name'])} {esc(report_template['title'])}</title>
   <style>
     :root {{
-      color: #172033;
-      background: #f6f8fb;
-      font-family: Arial, Helvetica, sans-serif;
+      --paper: #f2f5f1;
+      --panel: #ffffff;
+      --ink: #1e2b26;
+      --muted: #5c6b63;
+      --line: #dbe3da;
+      --line-soft: #e9eee8;
+      --pine: #22604a;
+      --pine-deep: #17493a;
+      --pine-tint: #e4efe8;
+      --mono: ui-monospace, "Cascadia Mono", Consolas, "Liberation Mono", monospace;
+      color: var(--ink);
+      background: var(--paper);
+      font-family: "Segoe UI", -apple-system, "Helvetica Neue", Arial, sans-serif;
     }}
     body {{ margin: 0; padding: 32px; }}
-    .report {{ max-width: 1040px; margin: 0 auto; background: #fff; border: 1px solid #d8dee9; }}
-    header {{ padding: 28px 32px; border-bottom: 1px solid #d8dee9; }}
-    h1 {{ margin: 0 0 8px; font-size: 30px; }}
-    h2 {{ margin: 28px 0 12px; font-size: 18px; }}
-    p {{ margin: 0; color: #526076; line-height: 1.45; }}
-    main {{ padding: 0 32px 32px; }}
-    .actions {{ display: flex; justify-content: flex-end; gap: 8px; margin-bottom: 18px; }}
-    button {{ background: #0b63ce; color: #fff; border: 0; padding: 10px 14px; border-radius: 4px; font-weight: 700; }}
+    .report {{ max-width: 1040px; margin: 0 auto; background: var(--panel); border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }}
+    header {{ position: relative; padding: 32px 36px 24px; border-bottom: 2px solid var(--ink); overflow: hidden; }}
+    header svg {{ position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }}
+    header > * {{ position: relative; }}
+    h1 {{ margin: 0 0 8px; font-size: 30px; font-weight: 650; letter-spacing: -0.02em; }}
+    h2 {{ margin: 0 0 12px; font-size: 18px; font-weight: 650; letter-spacing: -0.01em; }}
+    .eyebrow {{ color: var(--pine); font-family: var(--mono); font-size: 11px; font-weight: 600; letter-spacing: 0.14em; margin: 0 0 4px; text-transform: uppercase; }}
+    p {{ margin: 0; color: var(--muted); line-height: 1.5; }}
+    .data-line {{ font-family: var(--mono); font-size: 12px; margin-top: 10px; }}
+    main {{ padding: 4px 36px 32px; }}
+    .block {{ margin-top: 28px; break-inside: avoid; }}
+    .actions {{ display: flex; justify-content: flex-end; gap: 8px; max-width: 1040px; margin: 0 auto 16px; }}
+    button {{ background: var(--pine); color: #fff; border: 1px solid var(--pine-deep); padding: 10px 16px; border-radius: 6px; font-weight: 600; font-size: 14px; cursor: pointer; }}
+    button:hover, button:focus {{ background: var(--pine-deep); }}
+    :focus-visible {{ outline: 2px solid var(--pine); outline-offset: 2px; }}
     .summary {{ display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-top: 24px; }}
-    .metric {{ border: 1px solid #d8dee9; padding: 16px; }}
-    .metric strong {{ display: block; font-size: 28px; }}
-    .metric span {{ color: #526076; font-size: 12px; text-transform: uppercase; }}
+    .metric {{ border: 1px solid var(--line); border-radius: 6px; padding: 16px; }}
+    .metric strong {{ display: block; font-family: var(--mono); font-size: 28px; font-weight: 600; }}
+    .metric span {{ color: var(--muted); font-family: var(--mono); font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; }}
     .note-grid {{ display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-top: 16px; }}
-    .note {{ border: 1px solid #d8dee9; padding: 12px; }}
-    .note strong {{ display: block; font-size: 20px; }}
-    ul {{ margin: 8px 0 0; padding-left: 20px; line-height: 1.5; }}
+    .note {{ border: 1px solid var(--line); border-radius: 6px; padding: 14px; }}
+    .note strong {{ display: block; font-size: 17px; font-weight: 650; }}
+    .note strong.num {{ font-family: var(--mono); font-size: 24px; }}
+    .note span {{ color: var(--muted); font-family: var(--mono); font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; }}
+    ul {{ margin: 8px 0 0; padding-left: 20px; line-height: 1.6; color: var(--ink); }}
     table {{ width: 100%; border-collapse: collapse; }}
-    th, td {{ text-align: left; border-bottom: 1px solid #d8dee9; padding: 10px 8px; vertical-align: top; }}
-    th {{ background: #eef2f7; font-size: 12px; text-transform: uppercase; }}
-    footer {{ padding: 18px 32px; border-top: 1px solid #d8dee9; color: #526076; font-size: 12px; }}
+    th, td {{ text-align: left; border-bottom: 1px solid var(--line-soft); padding: 10px 8px; vertical-align: top; }}
+    th {{ background: var(--pine-tint); color: var(--pine-deep); font-family: var(--mono); font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; }}
+    tbody tr:nth-child(even) td {{ background: #fafbf9; }}
+    footer {{ padding: 18px 36px; border-top: 1px solid var(--line); color: var(--muted); font-family: var(--mono); font-size: 11.5px; }}
+    @media (max-width: 720px) {{
+      body {{ padding: 16px; }}
+      .summary {{ grid-template-columns: repeat(2, 1fr); }}
+      .note-grid {{ grid-template-columns: 1fr; }}
+    }}
     @media print {{
       body {{ background: #fff; padding: 0; }}
-      .report {{ border: 0; }}
+      .report {{ border: 0; border-radius: 0; }}
       .actions {{ display: none; }}
+      header svg {{ display: none; }}
+      table, .note-grid, .summary {{ break-inside: avoid; }}
     }}
   </style>
 </head>
@@ -283,10 +371,17 @@ def render_progress_report_html(report):
   </div>
   <article class="report">
     <header>
+      <svg viewBox="0 0 1040 140" preserveAspectRatio="none" aria-hidden="true" focusable="false">
+        <g fill="none" stroke="#22604a" stroke-opacity="0.14" stroke-width="1.2">
+          <path d="M-10 126 C 150 92, 280 138, 440 102 S 750 50, 1050 94" />
+          <path d="M-10 102 C 170 66, 310 114, 470 78 S 770 26, 1050 70" />
+          <path d="M-10 78 C 190 44, 340 92, 500 56 S 790 8, 1050 46" />
+        </g>
+      </svg>
+      <p class="eyebrow">{esc(report_template['label'])}</p>
       <h1>{esc(project['name'])}</h1>
-      <p>{esc(report_template['label'])}</p>
       <p>{esc(project['description'] or report_template['description'])}</p>
-      <p>Generated {esc(report['generated_at'])}</p>
+      <p class="data-line">Generated {esc(report['generated_at'])}</p>
     </header>
     <main>
       <section class="summary">
@@ -295,26 +390,39 @@ def render_progress_report_html(report):
         <div class="metric"><strong>{summary['tasks']['processing']}</strong><span>Processing</span></div>
         <div class="metric"><strong>{summary['issues'].get('open', 0)}</strong><span>Open issues</span></div>
       </section>
+      {monitoring_section}
+      <section class="block">
+      <p class="eyebrow">What to look at</p>
       <h2>Client Review Focus</h2>
       <p>{esc(report_template['description'])}</p>
       <ul>{focus_rows}</ul>
       <div class="note-grid">
-        <div class="note"><strong>{evidence['completed_orthomosaic_tasks']}</strong><span>Completed orthomosaics</span></div>
-        <div class="note"><strong>{evidence['design_overlay_count']}</strong><span>Design overlays</span></div>
-        <div class="note"><strong>{evidence['field_photo_count']}</strong><span>Field photos</span></div>
+        <div class="note"><strong class="num">{evidence['completed_orthomosaic_tasks']}</strong><span>Completed orthomosaics</span></div>
+        <div class="note"><strong class="num">{evidence['design_overlay_count']}</strong><span>Design overlays</span></div>
+        <div class="note"><strong class="num">{evidence['field_photo_count']}</strong><span>Field photos</span></div>
       </div>
+      </section>
+      <section class="block">
+      <p class="eyebrow">Survey results</p>
       <h2>Latest Deliverables</h2>
       <table>
         <thead><tr><th>Task</th><th>Status</th><th>Created</th><th>Assets</th></tr></thead>
         <tbody>{task_rows}</tbody>
       </table>
+      </section>
+      <section class="block">
+      <p class="eyebrow">Needs attention</p>
       <h2>Open Issues And Annotations</h2>
       <table>
         <thead><tr><th>Title</th><th>Type</th><th>Priority</th><th>Status</th><th>Task</th></tr></thead>
         <tbody>{issue_rows}</tbody>
       </table>
+      </section>
+      <section class="block">
+      <p class="eyebrow">Read before relying on results</p>
       <h2>Commercial Caveats</h2>
       <ul>{caveat_rows}</ul>
+      </section>
     </main>
     <footer>Share this page with logged-in stakeholders, or use Print / Save PDF for an offline report.</footer>
   </article>

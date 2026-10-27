@@ -7,6 +7,7 @@ import ImportTaskPanel from './ImportTaskPanel';
 const ProjectIssuesPanel = React.lazy(() => import(
   /* webpackChunkName: "project-issues-panel" */ './ProjectIssuesPanel'
 ));
+import MonitoringRunPanel from './MonitoringRunPanel';
 import UploadProgressBar from './UploadProgressBar';
 import ErrorMessage from './ErrorMessage';
 import EditProjectDialog from './EditProjectDialog';
@@ -44,6 +45,7 @@ class ProjectListItem extends React.Component {
       refreshing: false,
       importing: false,
       showIssues: false,
+      showMonitoringRuns: false,
       buttons: [],
       sortKey: "-created_at",
       filterTags: [],
@@ -64,6 +66,7 @@ class ProjectListItem extends React.Component {
 
     this.toggleTaskList = this.toggleTaskList.bind(this);
     this.toggleIssues = this.toggleIssues.bind(this);
+    this.toggleMonitoringRuns = this.toggleMonitoringRuns.bind(this);
     this.closeUploadError = this.closeUploadError.bind(this);
     this.cancelUpload = this.cancelUpload.bind(this);
     this.handleCancel = this.handleCancel.bind(this);
@@ -139,6 +142,10 @@ class ProjectListItem extends React.Component {
 
   toggleIssues(){
     this.setState({showIssues: !this.state.showIssues});
+  }
+
+  toggleMonitoringRuns(){
+    this.setState({showMonitoringRuns: !this.state.showMonitoringRuns});
   }
 
   componentDidMount(){
@@ -862,6 +869,13 @@ class ProjectListItem extends React.Component {
               {_("Issues")} <i className={'fa fa-caret-' + (this.state.showIssues ? 'down' : 'right')}></i>
             </a>
 
+            {canEdit ? [
+              <i key="monitoring-icon" className='fa fa-route'></i>,
+              <a key="monitoring-text" href="javascript:void(0);" onClick={this.toggleMonitoringRuns}>
+                {_("Monitoring")} <i className={'fa fa-caret-' + (this.state.showMonitoringRuns ? 'down' : 'right')}></i>
+              </a>
+            ] : ""}
+
             <i className='fa fa-file-pdf'></i>
             <a href="javascript:void(0);" onClick={this.viewProgressReport}>
               {_("Report")}
@@ -918,6 +932,10 @@ class ProjectListItem extends React.Component {
                 canEdit={this.hasPermission("change")}
               />
             </React.Suspense>
+          : ""}
+
+          {this.state.showMonitoringRuns ?
+            <MonitoringRunPanel projectId={this.state.data.id} />
           : ""}
 
           {this.state.showTaskList ? 
