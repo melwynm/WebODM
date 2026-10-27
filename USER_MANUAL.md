@@ -252,12 +252,14 @@ Important limits:
 Workflow:
 
 1. Confirm the administrator has configured the OpenAI API key and model in Settings or environment.
-2. Open the project.
-3. Run AI-assisted issue detection from the project workflow.
-4. Review each candidate.
-5. Keep useful issues and close or delete incorrect items.
+2. Open the project dashboard and expand `Issues`.
+3. Select `AI Review`.
+4. Choose the image source, optional task, and image count, then select `Preview`.
+5. Review the bounded candidate list and select `Create review issues` to confirm the exact preview.
+6. Move confirmed work through the normal issue statuses and close or delete incorrect items.
 
 If AI review reports no available images, confirm that the project has field photos or a task with a usable orthophoto preview.
+Preview confirmation expires after 15 minutes; run the preview again if it expires.
 
 ## 13. Object Detection
 
@@ -329,7 +331,25 @@ Recommended workflow:
 6. Launch compare.
 7. Record useful findings as issues or include them in a report.
 
-## 16. DSM/DTM Delta And Volume Review
+## 16. Automated Monitoring Runs
+
+Automated monitoring runs combine survey comparison, AI-assisted review, reporting, and client publication into one resumable project workflow.
+
+Workflow:
+
+1. Open the project dashboard and expand `Monitoring`.
+2. Confirm the suggested current and baseline surveys, or select another ready pair.
+3. Select `Start review run`.
+4. Wait for comparison generation, or use `Retry` if the run reports a controlled failure.
+5. Open the map to inspect the aligned imagery and change products.
+6. Optionally select `AI review`, inspect the signed preview, and confirm `Create review issues`.
+7. Open the monitoring report and review the selected survey pair and issue evidence.
+8. Select `Publish` only after human review.
+9. Open the client portal link and send it through a trusted channel.
+
+The workflow reuses a cached comparison when one already exists. Publication stores a report snapshot and reuses an active client share when possible; otherwise it creates a read-only share for the monitoring review. Retrying the same active survey pair resumes the existing run instead of creating a duplicate.
+
+## 17. DSM/DTM Delta And Volume Review
 
 Terrain delta products are available when both compared tasks include matching DEM assets.
 
@@ -346,7 +366,7 @@ Important limits:
 - Use RTK/GCP-backed captures for serious measurement workflows.
 - Treat volume outputs as review evidence unless validated against survey-grade methods.
 
-## 17. 3D Model Review
+## 18. 3D Model Review
 
 Completed tasks can include a 3D model, point cloud, textured model, or related assets.
 
@@ -360,7 +380,7 @@ Workflow:
 
 If the model is missing, confirm that processing options generated the required model assets.
 
-## 18. Stakeholder Reports
+## 19. Stakeholder Reports
 
 Reports summarize project progress and review evidence for non-technical stakeholders.
 
@@ -392,7 +412,7 @@ Delivery bundles also include `commercial_disclaimers.md` so client handoffs car
 
 Reports are intended to be readable by clients and project managers without direct map tooling.
 
-## 19. Client Sharing Portal
+## 20. Client Sharing Portal
 
 Client sharing gives external users tokenized access without creating WebODM user accounts.
 
@@ -418,7 +438,7 @@ Security notes:
 - Do not send share URLs through public channels.
 - Prefer expiring shares for every commercial client handoff.
 
-## 20. OneDrive Folder Intake
+## 21. OneDrive Folder Intake
 
 OneDrive intake creates import tasks from a synced folder.
 
@@ -452,7 +472,7 @@ Operational notes:
 - Use `--min-age` to avoid importing files that are still syncing.
 - Use `--no-process` when you want to create tasks without starting workers.
 
-## 21. Operations Page
+## 22. Operations Page
 
 Administrators can use `/operations/` for operational checks and intake workflows.
 
@@ -465,7 +485,7 @@ The Operations page includes:
 
 If platform audit reports missing or error items, stop upgrades or client operations until the cause is understood.
 
-## 22. Demo Projects
+## 23. Demo Projects
 
 Administrators can create synthetic commercial demo projects for sales, onboarding, and internal training:
 
@@ -481,7 +501,7 @@ The command creates or updates three projects:
 
 Each demo project includes synthetic task assets, a package-specific commercial readiness sign-off, a reviewer client share with an expiry date, and sample review evidence. Demo projects are not customer data and should be kept separate from paid client work.
 
-## 23. Feature Validation Ledger
+## 24. Feature Validation Ledger
 
 The feature validation ledger is available at `/feature-validations/`.
 
@@ -510,7 +530,7 @@ python manage.py reconcilefeaturevalidations --tested --overwrite-notes --user <
 
 Only use `--tested` after a real validation pass.
 
-## 24. Production Readiness
+## 25. Production Readiness
 
 Before paid pilots or production launch, administrators should run:
 
@@ -534,7 +554,7 @@ The expected launch posture is:
 
 See `PRODUCTION_HARDENING.md` and `SECURITY_REVIEW.md` for details.
 
-## 25. API Token
+## 26. API Token
 
 Users can manage their API token at `/account/token/`.
 
@@ -562,7 +582,7 @@ Do not delete a task before it shows **AirTwin imported** unless the import is b
 intentionally abandoned. See `AIRTWIN_INTEGRATION.md` for API, webhook, retry,
 networking, geospatial, and retention setup.
 
-## 26. Troubleshooting
+## 27. Troubleshooting
 
 ### The Site Does Not Load
 
@@ -654,7 +674,7 @@ Check:
 - `WO_ONEDRIVE_INTAKE_DIR` allows the selected path.
 - The files are not still syncing.
 
-## 27. Commercial Use Checklist
+## 28. Commercial Use Checklist
 
 Before using the tool with a paying client:
 
@@ -677,7 +697,7 @@ Before using the tool with a paying client:
 
 The commercial readiness checklist combines system checks and manual sign-off. System checks confirm required deliverables such as orthophotos, DSM/DTM assets, design overlays, expiring client shares, reports, and open issue status. Manual sign-off confirms deliverables, human review, report wording, client-share scope, and legal/commercial caveats.
 
-## 28. Glossary
+## 29. Glossary
 
 ### AI-Assisted Issue Detection
 
@@ -698,6 +718,10 @@ Staff-maintained record of feature status, evidence, and maintenance notes.
 ### Monitoring Compare
 
 Workflow that compares two completed tasks and generates change review layers.
+
+### Monitoring Run
+
+Persistent review workflow that pairs current and baseline surveys, generates or reuses comparison products, records AI-assisted findings, snapshots a report, and publishes through a client share.
 
 ### NodeODM
 

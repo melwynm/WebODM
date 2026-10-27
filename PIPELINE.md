@@ -1,7 +1,10 @@
 # Priority Pipeline
 
-Last updated: 2026-05-20
+Last updated: 2026-07-12
 
+Maintenance note 2026-07-11: P1 mobile/field photo capture passed focused API and platform-audit regressions; feature validation reconciliation now supports key-scoped updates and explicit tested-timestamp refreshes.
+Maintenance note 2026-07-11: P2 AI-assisted issue detection now has a project Issues UI with source/task selection, bounded candidate previews, signed confirmation, idempotent creation, and controlled provider-failure handling.
+Maintenance note 2026-07-12: P15 automated monitoring runs now orchestrate survey pairing, cached comparison generation, change-heatmap AI review, report snapshots, and client-portal publication through a persistent review workflow.
 Maintenance note 2026-05-21: admin setting changelist controls, action bars, and paginators now use the shared shell theme tokens so they remain readable in both dark and light mode.
 Maintenance note 2026-05-21: dog detection now stays on the existing GeoDeep/WebODM object-detection path, adds GSD-aware dog-size filtering, and can promote detections into reviewable project issues from the map UI.
 Maintenance note 2026-05-29: deer detection and counting now use the same object-detection workflow, with class-specific GSD-aware size filtering and map counts/review issues.
@@ -33,7 +36,7 @@ The next item is the first stage marked `Next` in the priority roadmap.
 
 Roadmap implementation reconciliation and QA hardening
 
-P1 through P14 have working implementation slices. The next priority is to use the feature validation ledger, platform audit, and focused regression tests to mark which working slices are tested, untested, failing, or blocked.
+P1 through P15 have working implementation slices. The next priority is to use the feature validation ledger, platform audit, and focused regression tests to mark which working slices are tested, untested, failing, or blocked.
 
 ## Priority Roadmap
 
@@ -53,6 +56,7 @@ P1 through P14 have working implementation slices. The next priority is to use t
 | P12 | Stakeholder Reports | Workflow | Working | Packages progress, QA, and change evidence into reports that non-technical stakeholders can review. |
 | P13 | Design/BIM/Plan Overlays | Workflow | Working | Lets project teams compare reality against design, BIM, or plan references directly on the 2D map. |
 | P14 | OneDrive Folder Task Intake | Workflow | Working | Streamlines repeated task creation from a configured OneDrive-synced folder. |
+| P15 | Automated Monitoring Runs | Workflow | Working | Turns repeated surveys into one resumable compare, review, report, and client-publication workflow. |
 
 ## Working Product Foundation
 
@@ -70,6 +74,7 @@ These workflow and platform capabilities are already available and should be pro
 | P12 | Stakeholder Reports | Workflow | Working | Export project progress as stakeholder-friendly web reports with print-to-PDF support. |
 | P13 | Design/BIM/Plan Overlays | Workflow | Working | Store project design overlays and render supported GeoJSON/Shapefile references on 2D maps. |
 | P14 | OneDrive Folder Task Intake | Workflow | Working | Create import tasks from a configured OneDrive-synced folder via the `onedriveintake` management command. |
+| P15 | Automated Monitoring Runs | Workflow | Working | Pair ready surveys, reuse or generate comparison products, attach AI-reviewed issues, snapshot a report, and publish through a client share. |
 
 ## Runtime Processing Foundation
 
@@ -105,6 +110,7 @@ These are the standard WebODM processing stages. They remain the working runtime
 - `P12` is delivered with stakeholder progress report APIs, printable HTML reports, dashboard links, and regression coverage.
 - `P13` is delivered with project design overlay APIs, persistent GeoJSON/Shapefile overlay rendering, permissions, and regression coverage.
 - `P14` is delivered with the `onedriveintake` management command, dataset fingerprinting, duplicate protection, and regression coverage.
+- `P15` is delivered with persistent monitoring runs, automatic survey pairing, resumable comparison generation, exact-pair AI review, report snapshots, and client-portal publication.
 - There is no unimplemented `Next` roadmap item at the moment; use the feature validation ledger and focused regression passes to decide the next hardening or product-polish task.
 - Use the feature validation ledger at `/feature-validations/` to mark completed features as `tested`, `untested`, `failing`, or `blocked` after every smoke test or regression pass.
 - `Working` means the stage is available in the fork today.
@@ -123,6 +129,9 @@ These are the standard WebODM processing stages. They remain the working runtime
 - 2026-05-18 P7-P9 delivered monitoring readiness metadata for compare candidates, timeline tasks, cache state, and DSM/DTM terrain-delta availability.
 - 2026-05-18 pipeline reconciliation confirmed P10-P14 already have working implementation slices and updated the roadmap table to match the codebase.
 - 2026-05-20 QA hardening added `reconcilefeaturevalidations`, reconciled P1-P14 into the feature validation ledger as tested, and verified feature validation, platform audit, textured-model QA, project issue/report, and monitoring regression coverage.
+- 2026-07-11 P1 QA reconciliation verified field-photo create/list/delete behavior, file and location validation, project permissions, and all 98 platform-audit surfaces. Key-scoped reconciliation refreshed only the P1 ledger timestamp after 21 focused regressions passed.
+- 2026-07-11 P2 implementation added preview-and-confirm AI Review controls to the project Issues panel, bounded untrusted model output, signed exact-candidate confirmation, idempotent retry handling, and focused API/UI regression coverage.
+- 2026-07-12 P15 added automated monitoring runs that connect existing timeline, comparison, AI issue, stakeholder report, and client-share capabilities behind one dashboard workflow with retry and publication state.
 - 2026-05-20 UI coverage hardening added a staff Operations page so platform audit and OneDrive folder intake can be used from the browser, and the platform audit now protects that route and template.
 - 2026-05-25 production hardening added `PRODUCTION_HARDENING.md`, `docker-compose.production.yml`, `.env.production.example`, and `productionreadiness` to gate commercial pilot deployments on HTTPS, stable secrets, backups, persistence, runtime health, and platform audit.
 - 2026-05-25 security hardening added `SECURITY_REVIEW.md`, API throttle defaults, `securityreview`, and OneDrive intake root enforcement to gate commercial client access on sensitive-surface checks.

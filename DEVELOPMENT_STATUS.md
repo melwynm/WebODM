@@ -37,6 +37,31 @@ This file tracks the current state of this fork so future work can start from th
 - Refreshed only the exercised P2, P3, P6, P7-P12, and P15 feature-validation records as tested; other validation timestamps were left unchanged
 - Rebuilt the shared local web/worker image, collected current static assets, applied it to both services, and verified WebODM 2.9.2, the public status endpoint, current migrations, worker startup, and served Dashboard bundles
 
+### P15 Automated Monitoring Runs
+
+- Added persistent project monitoring runs with automatic newest-versus-previous survey selection, duplicate active-run protection, comparison job tracking, failure state, and retry
+- Added a project dashboard Monitoring panel for survey selection, comparison progress, map/report access, exact-pair AI review, issue confirmation, run history, and publication
+- Extended AI review to inspect generated change heatmaps and bind signed candidate confirmation to the exact monitoring run, current task, and baseline task
+- Added immutable report snapshots at publication and automatic reuse or creation of an active read-only client share
+- Added published monitoring reviews and token-scoped report access to the client portal
+- Added focused backend and frontend regression coverage, migration checks, production bundle verification, and platform-audit protection
+
+### P2 AI Review Workflow
+
+- Added an editor-only AI Review panel to project Issues with field-photo, task, orthophoto, and image-count controls
+- Added preview-first candidate review and 15-minute signed confirmation so issue creation uses the exact preview without a second model call
+- Bounded model-generated candidates and text, normalized confidence and classifications, and converted malformed responses and provider timeouts into controlled errors
+- Made signed confirmation idempotent so retries cannot duplicate project issues, and stored model, response, and confirmation metadata on created issues
+- Passed 31 focused backend regressions, five frontend tests, and the complete frontend build
+
+### P1 QA Reconciliation
+
+- Verified mobile/field photo create, list, delete, file validation, location validation, and project permission behavior
+- Added key-scoped feature validation reconciliation so focused QA can update one or more selected ledger records without changing unrelated features
+- Added an explicit tested-timestamp refresh option and regression coverage for targeted updates and invalid refresh requests
+- Passed 21 focused feature validation, field photo, and platform audit tests; the executable platform audit also passed all 98 protected surfaces
+- Refreshed only the live P1 ledger record after the successful pass
+
 ### MCP Server Synchronization
 
 - Updated the WebODM MCP server to v1.1.0 with `@modelcontextprotocol/sdk` 1.29.0 and `form-data` 4.0.6

@@ -1,6 +1,6 @@
 ---
 name: webodm-pipeline
-description: Safe-work contract and repo map for pipeline/roadmap work in this WebODM fork. Use whenever a task mentions "the pipeline", "next item", P1-P14, monitoring, feature validation, commercial readiness, AirTwin, or object detection — before opening code.
+description: Safe-work contract and repo map for pipeline/roadmap work in this WebODM fork. Use whenever a task mentions "the pipeline", "next item", P1-P15, monitoring, feature validation, commercial readiness, AirTwin, or object detection — before opening code.
 ---
 
 # WebODM Fork — Pipeline Work Contract
@@ -25,7 +25,7 @@ description: Safe-work contract and repo map for pipeline/roadmap work in this W
 ## Non-negotiable gotchas
 
 1. **Platform audit registration.** Any new root doc, template, API module, service module, route, model, or setting that should survive upgrades MUST be registered in `app/services/platform_audit.py`. `python manage.py platformaudit` exits non-zero on missing surfaces — CI/ops gates depend on it.
-2. **Feature validation ledger counts.** `reconcilefeaturevalidations` maintains exactly 20 records (P1–P14 + 6 commercial). `app/tests/test_api_feature_validation.py` asserts that exact count — adding a ledger record requires updating the reconciliation service, the command help text, AND the test.
+2. **Feature validation ledger counts.** `reconcilefeaturevalidations` maintains exactly 21 records (P1–P15 + 6 commercial). `app/tests/test_api_feature_validation.py` asserts that exact count — adding a ledger record requires updating the reconciliation service, the command help text, AND the test.
 3. **Project permission count drift.** Adding a permission to `Project.Meta.permissions` requires a migration and breaks any test asserting a fixed `get_perms` length (this bit `test_api_projects.py` when `acknowledge_airtwin_import` was added). Assert on a subset of permission names, never a count.
 4. **Plugin builds go stale.** After touching plugin frontend sources, run `python manage.py rebuildplugins`; stale-source detection exists but verify the bundle regenerated.
 5. **Tests run in Docker.** `docker exec webapp python manage.py test app.tests.<module> --keepdb`. Do not try to run the Django suite on the Windows host.
