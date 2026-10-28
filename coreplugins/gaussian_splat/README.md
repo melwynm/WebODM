@@ -37,7 +37,7 @@ The Docker worker defaults to a 2x image downscale to keep large image sets
 within typical desktop RAM and VRAM limits. Override it when needed with
 `GAUSSIAN_SPLAT_DOWNSCALE_FACTOR` (1 keeps the original resolution).
 
-The plugin expects a completed task with OpenSfM reconstruction files. Use the `Gaussian Splat Source` preset for best results.
+The plugin expects a completed task with OpenSfM reconstruction files. Use the `Gaussian Splat Source` preset for best results: it raises feature extraction and matching quality for accurate camera poses, and leaves dense point cloud and mesh settings at defaults because OpenSplat trains from the sparse reconstruction and the photos only.
 
 NodeODM's `/var/www/data` is stored in the `nodeodmdata` volume and mounted
 read-only in the worker at `/var/www/data`. This lets the trainer use the

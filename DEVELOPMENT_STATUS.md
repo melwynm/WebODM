@@ -19,6 +19,14 @@ This file tracks the current state of this fork so future work can start from th
 
 ## Recently Completed
 
+### Gaussian Splat Source Preset Memory Fix
+
+- The preset requested an ultra dense point cloud, octree depth 12, and a 2M-face 3D mesh, which ran out of memory in meshing on a ~15 GB host with only 40 images. OpenSplat trains from the sparse OpenSfM reconstruction and photos, so the preset now keeps ultra feature extraction, FLANN matching with 8 neighbors, triangulation SfM, and 30,000 minimum features, and leaves dense point cloud and mesh settings at WebODM defaults
+- The 486-image splat from 2026-08-30 had been processed with custom low-quality options, not this preset; the preset had never completed on this host before the change
+- Verified: a 120-image task with the updated preset completed in about 18 minutes with NodeODM peaking at 11.1 GiB of 15.25 GiB, then trained a 225 MB splat with CUDA OpenSplat in about 5 minutes that renders cleanly in the bundled viewer
+- Added a regression test that keeps dense and mesh overrides out of the preset; corrected the user manual, which said tasks from other presets could not be trained
+
+
 ### Monitoring Run Module Boundary Fix
 
 - `app/services/monitoring_runs.py` no longer imports `worker.tasks`; the monitoring-run API passes `enqueue_monitoring_compare` into `create_monitoring_run` and `retry_monitoring_run`, keeping services independent of Celery as `MODULE_BOUNDARIES.md` requires

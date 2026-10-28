@@ -10,7 +10,7 @@ from django.contrib.auth.models import User
 from django.test import override_settings
 from nodeodm import status_codes
 
-from app.models import Project, Task
+from app.models import Preset, Project, Task
 from app.tests.classes import BootTestCase
 from app.tests.utils import clear_test_media_root
 from coreplugins.gaussian_splat.gaussian_splat.tasks import (
@@ -48,6 +48,18 @@ class TestGaussianSplat(BootTestCase):
         self.assertEqual(status["status"], "idle")
         self.assertEqual(status["progress"], 0)
         self.assertIsNone(status["celery_task_id"])
+
+    def test_source_preset_keeps_dense_and_mesh_settings_light(self):
+        preset = Preset.objects.get(name="Gaussian Splat Source", system=True)
+        options = {option["name"]: option["value"] for option in preset.options}
+
+        # Splat training uses only the sparse reconstruction; ultra point
+        # clouds and deep meshes ran out of memory on a 16 GB host.
+        self.assertEqual(options["feature-quality"], "ultra")
+        self.assertNotIn("pc-quality", options)
+        self.assertNotIn("mesh-octree-depth", options)
+        self.assertNotIn("mesh-size", options)
+        self.assertNotIn("use-3dmesh", options)
 
     def test_stale_running_job_can_be_requeued(self):
         user = User.objects.get(username="testuser")

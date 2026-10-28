@@ -291,17 +291,16 @@ def add_default_presets():
                                                               {'name': 'dtm', 'value': True},
                                                               {'name': '3d-tiles', 'value': True}]})
         Preset.objects.update_or_create(name='Gaussian Splat Source', system=True,
-                                        defaults={'description': 'Highest-detail reconstruction source preset for Gaussian Splat post-processing. Produces ultra-quality point cloud, camera shots, and textured model assets for an external splat trainer.',
+                                        # OpenSplat trains from the sparse OpenSfM reconstruction and the
+                                        # photos, so spend effort on camera accuracy and keep dense point
+                                        # cloud and mesh settings at defaults that fit desktop memory.
+                                        defaults={'description': 'Accurate camera reconstruction for Gaussian Splat training. Uses dense feature matching for precise camera poses while keeping point cloud and mesh settings light enough for desktop GPUs and RAM.',
                                                   'options': [{'name': 'auto-boundary', 'value': True},
                                                               {'name': 'sfm-algorithm', 'value': 'triangulation'},
                                                               {'name': 'matcher-type', 'value': 'flann'},
                                                               {'name': 'matcher-neighbors', 'value': 8},
                                                               {'name': 'feature-quality', 'value': 'ultra'},
                                                               {'name': 'min-num-features', 'value': '30000'},
-                                                              {'name': 'pc-quality', 'value': 'ultra'},
-                                                              {'name': 'use-3dmesh', 'value': True},
-                                                              {'name': 'mesh-octree-depth', 'value': '12'},
-                                                              {'name': 'mesh-size', 'value': '2000000'},
                                                               {'name': 'gltf', 'value': True},
                                                               {'name': 'pc-las', 'value': True}]})
         Preset.objects.update_or_create(name='Volume Analysis', system=True,

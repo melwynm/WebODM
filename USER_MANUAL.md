@@ -384,12 +384,12 @@ If the model is missing, confirm that processing options generated the required 
 
 A Gaussian splat is a photorealistic 3D scene trained from a task's photos and camera positions.
 
-1. Process the dataset with the `Gaussian Splat Source` preset.
+1. Process the dataset with the `Gaussian Splat Source` preset. It spends processing effort on accurate camera positions, which matter most for splat quality, and keeps the point cloud and 3D mesh at standard quality so processing fits in desktop memory.
 2. When the task completes, select **Train Splat** on the task in the dashboard.
 3. Wait for training to finish. Progress shows on the task, and training runs on the worker's NVIDIA GPU.
 4. Select **View Splat** to open the scene in the interactive viewer, or download `gaussian_splat.ply` from the task assets.
 
-Training needs an NVIDIA GPU in the worker. The first training run keeps a copy of the task's reconstruction files, so you can retrain later even after the processing node has cleaned up its own task data. Tasks processed with other presets, or whose processing-node data was cleaned up before the first training run, must be reprocessed.
+Training needs an NVIDIA GPU in the worker. The first training run keeps a copy of the task's reconstruction files, so you can retrain later even after the processing node has cleaned up its own task data. Tasks processed with other presets can also be trained, though camera accuracy may be lower. A task must be reprocessed if its processing-node data was cleaned up (after 48 hours by default) before its first training run.
 
 ## 19. Stakeholder Reports
 
