@@ -75,7 +75,9 @@ def monitoring_run_issues(run):
     ).select_related("task", "created_by", "assigned_to")
 
 
-def queue_monitoring_run(run):
+def queue_monitoring_run(run, *, enqueue_comparison):
+    # The caller supplies the worker dispatch so this service stays independent
+    # of Celery; it receives (current_task_id, baseline_task_id, run_id, attempt_id).
     readiness = monitoring_pair_readiness(run.current_task, run.baseline_task)
     if not readiness["can_compare"]:
         run.status = models.ProjectMonitoringRun.STATUS_FAILED
@@ -101,11 +103,11 @@ def queue_monitoring_run(run):
 
     def dispatch_comparison():
         try:
-            from worker import tasks as worker_tasks
-
-            worker_tasks.generate_monitoring_compare.apply_async(
-                args=(str(run.current_task_id), str(run.baseline_task_id), str(run.id)),
-                task_id=attempt_id,
+            enqueue_comparison(
+                str(run.current_task_id),
+                str(run.baseline_task_id),
+                str(run.id),
+                attempt_id,
             )
         except Exception as exc:
             models.ProjectMonitoringRun.objects.filter(
@@ -145,6 +147,8 @@ def create_monitoring_run(
     current_task_id=None,
     baseline_task_id=None,
     report_template=None,
+    *,
+    enqueue_comparison,
 ):
     current_task, baseline_task, readiness = select_monitoring_pair(
         project,
@@ -175,11 +179,11 @@ def create_monitoring_run(
         comparison_generated_at=timezone.now() if readiness["cache"]["ready"] else None,
         created_by=user,
     )
-    return queue_monitoring_run(run), True
+    return queue_monitoring_run(run, enqueue_comparison=enqueue_comparison), True
 
 
 @transaction.atomic
-def retry_monitoring_run(run):
+def retry_monitoring_run(run, *, enqueue_comparison):
     _lock_project(run.project_id)
     run = models.ProjectMonitoringRun.objects.select_for_update().select_related(
         "current_task", "baseline_task"
@@ -190,7 +194,7 @@ def retry_monitoring_run(run):
         return run
     if _active_pair_runs(run).exclude(pk=run.pk).exists():
         raise MonitoringRunError("Another monitoring run is already active for these tasks.")
-    return queue_monitoring_run(run)
+    return queue_monitoring_run(run, enqueue_comparison=enqueue_comparison)
 
 
 def _active_client_share(project, share_id=None):

@@ -21,6 +21,14 @@ from app.services.monitoring_runs import (
     retry_monitoring_run,
 )
 from app.services.project_reports import REPORT_TEMPLATES, build_project_progress_report, render_progress_report_html
+from worker import tasks as worker_tasks
+
+
+def enqueue_monitoring_compare(current_task_id, baseline_task_id, run_id, attempt_id):
+    worker_tasks.generate_monitoring_compare.apply_async(
+        args=(current_task_id, baseline_task_id, run_id),
+        task_id=attempt_id,
+    )
 
 
 class MonitoringRunCreateSerializer(serializers.Serializer):
@@ -176,6 +184,7 @@ class ProjectMonitoringRunViewSet(viewsets.ModelViewSet):
                 current_task_id=serializer.validated_data.get("current_task"),
                 baseline_task_id=serializer.validated_data.get("baseline_task"),
                 report_template=serializer.validated_data.get("report_template"),
+                enqueue_comparison=enqueue_monitoring_compare,
             )
         except MonitoringRunError as exc:
             raise exceptions.ValidationError(str(exc))
@@ -187,7 +196,7 @@ class ProjectMonitoringRunViewSet(viewsets.ModelViewSet):
     def retry(self, request, project_pk=None, pk=None):
         run = self.get_object()
         try:
-            run = retry_monitoring_run(run)
+            run = retry_monitoring_run(run, enqueue_comparison=enqueue_monitoring_compare)
         except MonitoringRunError as exc:
             raise exceptions.ValidationError(str(exc))
         return Response(self.get_serializer(run).data)

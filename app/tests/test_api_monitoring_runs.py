@@ -152,6 +152,7 @@ class TestMonitoringRunApi(BootTransactionTestCase):
     @mock.patch("app.services.monitoring_runs.monitoring_pair_readiness")
     @mock.patch("worker.tasks.generate_monitoring_compare.apply_async")
     def test_rolled_back_retry_is_not_dispatched(self, apply_async, readiness):
+        from app.api.monitoring_runs import enqueue_monitoring_compare
         from app.services.monitoring_runs import retry_monitoring_run
 
         readiness.return_value = {
@@ -169,7 +170,7 @@ class TestMonitoringRunApi(BootTransactionTestCase):
 
         with self.assertRaises(RuntimeError):
             with transaction.atomic():
-                retry_monitoring_run(run)
+                retry_monitoring_run(run, enqueue_comparison=enqueue_monitoring_compare)
                 raise RuntimeError("roll back")
 
         apply_async.assert_not_called()
@@ -180,6 +181,7 @@ class TestMonitoringRunApi(BootTransactionTestCase):
     @mock.patch("app.services.monitoring_runs.monitoring_pair_readiness")
     @mock.patch("worker.tasks.generate_monitoring_compare.apply_async")
     def test_concurrent_starts_reuse_one_active_run(self, apply_async, readiness):
+        from app.api.monitoring_runs import enqueue_monitoring_compare
         from app.services.monitoring_runs import create_monitoring_run
 
         readiness.return_value = {
@@ -202,6 +204,7 @@ class TestMonitoringRunApi(BootTransactionTestCase):
                     user,
                     current_task_id=current_id,
                     baseline_task_id=baseline_id,
+                    enqueue_comparison=enqueue_monitoring_compare,
                 )
                 return str(run.id), created
             finally:

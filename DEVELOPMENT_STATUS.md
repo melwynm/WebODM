@@ -1,6 +1,6 @@
 # Development Status
 
-Last updated: 2026-10-27
+Last updated: 2026-10-28
 
 ## Purpose
 
@@ -18,6 +18,13 @@ This file tracks the current state of this fork so future work can start from th
 - Reduce operational issues in local Docker and NodeODM setups
 
 ## Recently Completed
+
+### Monitoring Run Module Boundary Fix
+
+- `app/services/monitoring_runs.py` no longer imports `worker.tasks`; the monitoring-run API passes `enqueue_monitoring_compare` into `create_monitoring_run` and `retry_monitoring_run`, keeping services independent of Celery as `MODULE_BOUNDARIES.md` requires
+- `test_module_boundaries.test_services_do_not_import_worker_layer` passes again (it had failed since commit `bc18b026`); 34 boundary, monitoring-run, platform-audit, and feature-validation tests pass and the platform audit reports 118/118
+- Refreshed the P6 and P15 feature-validation records after this pass
+
 
 ### P16 Gaussian Splat and P17 Help Center Registration
 
