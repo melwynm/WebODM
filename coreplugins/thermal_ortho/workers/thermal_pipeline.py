@@ -161,6 +161,31 @@ def detect_input_summary(task_root):
     }
 
 
+def _input_counts(task, summary):
+    return {
+        'rgb_images': summary['rgb_images'],
+        'thermal_images': summary['thermal_images'],
+        'scanned_images_count': getattr(task, 'images_count', None),
+    }
+
+
+def remember_input_counts(task, summary):
+    """
+    Persist the RGB/thermal counts so status requests do not rescan the
+    task's images (each unsuffixed image costs an exiftool call).
+    """
+    return write_pipeline_status(task, _input_counts(task, summary))
+
+
+def ensure_input_counts(task, stored=None):
+    stored = read_pipeline_status(task) if stored is None else stored
+    missing = stored.get('rgb_images') is None or stored.get('thermal_images') is None
+    changed = 'scanned_images_count' in stored and stored['scanned_images_count'] != getattr(task, 'images_count', None)
+    if missing or changed:
+        return remember_input_counts(task, detect_input_summary(task.task_path()))
+    return stored
+
+
 def is_pipeline_active(task):
     """
     True when a thermal job for this task is queued or running according to
@@ -178,16 +203,16 @@ def enqueue_thermal_pipeline(task, camera_type='auto', trigger='manual', summary
 
     # Write the queued state before dispatching: the worker may start (and in
     # eager mode, finish) inside the dispatch call, and must not be overwritten.
-    write_pipeline_status(task, {
+    queued = {
         'state': 'queued',
         'progress': 0,
         'message': 'Queued thermal processing.',
         'celery_task_id': None,
         'error': None,
         'trigger': trigger,
-        'rgb_images': summary['rgb_images'],
-        'thermal_images': summary['thermal_images'],
-    })
+    }
+    queued.update(_input_counts(task, summary))
+    write_pipeline_status(task, queued)
     try:
         celery_result = run_function_async(run_thermal_pipeline, task.id, camera_type=camera_type, with_progress=True)
     except Exception as exc:
@@ -314,12 +339,9 @@ def build_status_payload(task):
     output_available = os.path.isfile(output_path)
     preview_available = os.path.isfile(preview_path)
 
-    if stored.get('rgb_images') is None or stored.get('thermal_images') is None:
-        summary = detect_input_summary(task.task_path())
-        stored.setdefault('rgb_images', summary['rgb_images'])
-        stored.setdefault('thermal_images', summary['thermal_images'])
+    stored = ensure_input_counts(task, stored)
 
-    supported = output_available or stored.get('thermal_images', 0) > 0
+    supported =output_available or stored.get('thermal_images', 0) > 0
     can_process = task.status == 40 and stored.get('thermal_images', 0) > 0 and stored.get('rgb_images', 0) > 0
 
     if output_available and stored.get('state') not in ('queued', 'running', 'failed'):
@@ -458,13 +480,13 @@ def execute_thermal_pipeline(task_id, camera_type='auto', progress_callback=None
 
     task = Task.objects.get(pk=task_id)
     summary = detect_input_summary(task.task_path())
-    write_pipeline_status(task, {
+    running = {
         'state': 'running',
         'progress': 0,
         'message': 'Scanning task imagery.',
-        'rgb_images': summary['rgb_images'],
-        'thermal_images': summary['thermal_images'],
-    })
+    }
+    running.update(_input_counts(task, summary))
+    write_pipeline_status(task, running)
 
     try:
         if summary['thermal_images'] == 0:
@@ -508,6 +530,7 @@ def execute_thermal_pipeline(task_id, camera_type='auto', progress_callback=None
             weight = _estimate_nadir_weight(rgb_path)
             aligned_thermals.append({
                 'array': aligned,
+                'native_shape': tuple(celsius.shape),
                 'bounds': bounds,
                 'crs': 'EPSG:4326',
                 'weight': weight,

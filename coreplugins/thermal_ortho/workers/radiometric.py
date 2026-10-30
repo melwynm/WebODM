@@ -1,5 +1,6 @@
 import json
 import os
+import shlex
 import subprocess
 import tempfile
 
@@ -8,6 +9,22 @@ import rasterio
 
 
 THERMAL_NODATA = -9999.0
+
+# DJI R-JPEGs (M2EA, M3T, H20T/H20N, M30T) keep their radiometric data in a
+# proprietary segment that only DJI's Thermal SDK can decode. Point this at the
+# SDK's dji_irp sample binary, or give a full command template using {input}
+# and {output}; the output must be row-major float32 Celsius values.
+DJI_IRP_COMMAND_ENV = 'THERMAL_DJI_IRP_COMMAND'
+DJI_IRP_DEFAULT_ARGS = ['-s', '{input}', '-a', 'measure', '-o', '{output}', '--measurefmt', 'float32']
+JPEG_EXTENSIONS = ('.jpg', '.jpeg', '.rjpeg')
+
+# A radiometric TIFF should decode to plausible temperatures almost everywhere;
+# anything below this is a visual export, not temperature data.
+MIN_PLAUSIBLE_FRACTION = 0.9
+
+
+class UnsupportedThermalImage(RuntimeError):
+    pass
 
 
 def _run_exiftool(args, image_path=None):
@@ -113,40 +130,119 @@ def decode_flir(image_path):
     return celsius, profile
 
 
-def decode_dji(image_path):
-    raw_path = _extract_embedded_raw(image_path) if os.path.splitext(image_path)[1].lower() in ('.jpg', '.jpeg') else None
-    source_path = raw_path or image_path
+def _dji_irp_command(input_path, output_path):
+    configured = (os.environ.get(DJI_IRP_COMMAND_ENV) or '').strip()
+    if not configured:
+        return None
+
+    parts = shlex.split(configured)
+    if not any('{input}' in part for part in parts):
+        parts = parts + DJI_IRP_DEFAULT_ARGS
+
+    return [part.replace('{input}', input_path).replace('{output}', output_path) for part in parts]
+
+
+def _image_size(image_path):
+    from PIL import Image
+
+    with Image.open(image_path) as image:
+        return image.size  # (width, height)
+
+
+def decode_dji_rjpeg(image_path):
+    """
+    Decode a DJI R-JPEG through the DJI Thermal SDK's dji_irp tool.
+    """
+    fd, raw_path = tempfile.mkstemp(suffix='.raw')
+    os.close(fd)
 
     try:
-        raw, profile = _read_single_band_raster(source_path)
+        command = _dji_irp_command(image_path, raw_path)
+        if command is None:
+            raise UnsupportedThermalImage(
+                f'{os.path.basename(image_path)} is a DJI R-JPEG, which needs the DJI Thermal SDK to read '
+                f'temperatures. Set {DJI_IRP_COMMAND_ENV} to the dji_irp binary, export radiometric TIFFs '
+                'from DJI Thermal Analysis Tool instead, or process the thermal frames on their own with '
+                'the Thermal preset.'
+            )
+
+        result = subprocess.run(command, capture_output=True, text=True)
+        if result.returncode != 0:
+            raise RuntimeError(f'dji_irp failed for {os.path.basename(image_path)}: {result.stderr.strip() or result.stdout.strip()}')
+
+        width, height = _image_size(image_path)
+        values = np.fromfile(raw_path, dtype='<f4')
+        if values.size != width * height:
+            raise RuntimeError(
+                f'dji_irp returned {values.size} temperature values for {os.path.basename(image_path)}, '
+                f'expected {width * height} ({width}x{height}).'
+            )
+        celsius = values.reshape((height, width)).astype(np.float32)
     finally:
-        if raw_path and os.path.isfile(raw_path):
+        if os.path.isfile(raw_path):
             os.remove(raw_path)
 
-    candidates = [
-        (raw / 10.0) - 273.15,
-        (raw / 100.0) - 273.15,
-        raw / 10.0,
-    ]
+    celsius[~np.isfinite(celsius)] = THERMAL_NODATA
+    profile = {'driver': 'GTiff', 'width': width, 'height': height, 'count': 1, 'dtype': 'float32'}
+    return celsius, profile
 
-    best = candidates[0]
-    best_score = -1
-    for candidate in candidates:
-        valid = np.isfinite(candidate) & (candidate > -80.0) & (candidate < 250.0)
-        score = int(valid.sum())
-        if score > best_score:
-            best = candidate
-            best_score = score
+
+def _plausible_fraction(celsius):
+    valid = np.isfinite(celsius) & (celsius > -80.0) & (celsius < 250.0)
+    return float(valid.sum()) / max(celsius.size, 1)
+
+
+def decode_dji_tiff(image_path):
+    """
+    Decode a radiometric TIFF (for example a DJI Thermal Analysis Tool export):
+    float values are taken as Celsius, integer values as deci/centi-Kelvin or
+    deci-Celsius. Visual (multi-band or implausible) exports are refused.
+    """
+    with rasterio.open(image_path) as src:
+        if src.count != 1:
+            raise UnsupportedThermalImage(
+                f'{os.path.basename(image_path)} has {src.count} bands and is not a radiometric TIFF.'
+            )
+        raw = src.read(1).astype(np.float32)
+        profile = src.profile.copy()
+        nodata = src.nodata
+        is_integer = np.issubdtype(src.dtypes[0], np.integer)
+
+    if nodata is not None:
+        raw[raw == nodata] = np.nan
+
+    if is_integer:
+        candidates = [(raw / 10.0) - 273.15, (raw / 100.0) - 273.15, raw / 10.0]
+        best = max(candidates, key=_plausible_fraction)
+    else:
+        best = raw
+
+    if _plausible_fraction(best) < MIN_PLAUSIBLE_FRACTION:
+        raise UnsupportedThermalImage(
+            f'{os.path.basename(image_path)} does not contain plausible temperature values; '
+            'export a radiometric TIFF rather than a visual one.'
+        )
 
     celsius = best.astype(np.float32)
     celsius[~np.isfinite(celsius)] = THERMAL_NODATA
     return celsius, profile
 
 
+def decode_dji(image_path):
+    extension = os.path.splitext(image_path)[1].lower()
+    if extension in JPEG_EXTENSIONS:
+        return decode_dji_rjpeg(image_path)
+    return decode_dji_tiff(image_path)
+
+
 def decode_radiometric(image_path, camera_type='auto'):
-    metadata = read_exif_metadata(image_path, tags=['Make', 'Model'])
+    metadata = read_exif_metadata(image_path, tags=['Make', 'Model', 'PlanckR1'])
     if camera_type == 'auto':
-        camera_type = detect_camera_type(image_path, metadata)
+        if metadata.get('PlanckR1') not in (None, ''):
+            # FLIR radiometric container, also used by the DJI Zenmuse XT.
+            camera_type = 'flir'
+        else:
+            camera_type = detect_camera_type(image_path, metadata)
 
     if camera_type == 'flir':
         return decode_flir(image_path)

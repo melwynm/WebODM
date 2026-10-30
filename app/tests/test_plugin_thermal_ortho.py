@@ -3,18 +3,31 @@ import builtins
 import inspect
 import json
 import os
+import sys
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from types import SimpleNamespace
 from unittest import mock
 
+import numpy as np
+import rasterio
 from django.contrib.auth.models import User
+from PIL import Image
+from rasterio.transform import from_bounds
 from nodeodm import status_codes
 
 from app.models import Project, Task
 from app.tests.classes import BootTestCase
 from app.tests.utils import clear_test_media_root
 from coreplugins.thermal_ortho.workers import thermal_pipeline
+from coreplugins.thermal_ortho.workers.radiometric import (
+    DJI_IRP_COMMAND_ENV,
+    THERMAL_NODATA,
+    UnsupportedThermalImage,
+    decode_dji,
+    decode_radiometric,
+)
+from coreplugins.thermal_ortho.workers.thermal_texturing import blend_thermal_orthomosaic
 from coreplugins.thermal_ortho.workers.thermal_pipeline import (
     STALE_WORKER_SECONDS,
     STATUS_FILE,
@@ -294,3 +307,147 @@ class TestThermalOrthoPlugin(BootTestCase):
         self.assertEqual('failed', stored['state'])
         self.assertIn('broker down', stored['error'])
         self.assertFalse(is_pipeline_active(task))
+
+    # --- Cached input counts -------------------------------------------------
+
+    def test_status_requests_scan_the_images_once(self):
+        task = self._create_task()
+        self._write_images(task, ['DJI_0001_W.JPG', 'DJI_0001_T.JPG'])
+
+        with mock.patch.object(thermal_pipeline, 'detect_input_summary', wraps=thermal_pipeline.detect_input_summary) as detect:
+            first = build_status_payload(task)
+            second = build_status_payload(task)
+
+        self.assertEqual(1, detect.call_count)
+        self.assertEqual((1, 1), (first['rgb_images'], first['thermal_images']))
+        self.assertEqual((1, 1), (second['rgb_images'], second['thermal_images']))
+        self.assertEqual(task.images_count, read_pipeline_status(task)['scanned_images_count'])
+
+    def test_status_rescans_when_the_task_image_count_changes(self):
+        task = self._create_task()
+        self._write_images(task, ['DJI_0001_W.JPG', 'DJI_0001_T.JPG'])
+        self.assertEqual(1, build_status_payload(task)['thermal_images'])
+
+        self._write_images(task, ['DJI_0002_W.JPG', 'DJI_0002_T.JPG'])
+        task.images_count = 4
+        task.save()
+
+        self.assertEqual(2, build_status_payload(task)['thermal_images'])
+
+    # --- DJI decoding --------------------------------------------------------
+
+    def _write_jpeg(self, path, size=(4, 3)):
+        Image.new('RGB', size, color=(200, 30, 30)).save(path, 'JPEG')
+
+    def test_dji_rjpeg_is_refused_without_the_thermal_sdk(self):
+        task = self._create_task()
+        path = task.task_path('DJI_0001_T.JPG')
+        self._write_jpeg(path)
+
+        with mock.patch.dict(os.environ, {DJI_IRP_COMMAND_ENV: ''}):
+            with self.assertRaises(UnsupportedThermalImage) as raised:
+                decode_dji(path)
+
+        self.assertIn(DJI_IRP_COMMAND_ENV, str(raised.exception))
+
+    def test_dji_rjpeg_decodes_through_a_configured_dji_irp_command(self):
+        task = self._create_task()
+        path = task.task_path('DJI_0001_T.JPG')
+        self._write_jpeg(path, size=(4, 3))
+
+        script = Path(task.task_path('fake_dji_irp.py'))
+        script.write_text(
+            "import struct, sys\n"
+            "assert sys.argv[sys.argv.index('-s') + 1].endswith('DJI_0001_T.JPG')\n"
+            "out = sys.argv[sys.argv.index('-o') + 1]\n"
+            "open(out, 'wb').write(struct.pack('<12f', *[20.0 + i for i in range(12)]))\n",
+            encoding='utf-8',
+        )
+
+        with mock.patch.dict(os.environ, {DJI_IRP_COMMAND_ENV: '{} {}'.format(sys.executable, script)}):
+            celsius, profile = decode_dji(path)
+
+        self.assertEqual((3, 4), celsius.shape)
+        self.assertAlmostEqual(20.0, float(celsius[0, 0]), places=4)
+        self.assertAlmostEqual(31.0, float(celsius[2, 3]), places=4)
+        self.assertEqual((4, 3), (profile['width'], profile['height']))
+
+    def test_visual_tiff_export_is_refused(self):
+        task = self._create_task()
+        path = task.task_path('DJI_0001_T.tif')
+        data = np.random.default_rng(1).integers(0, 255, size=(3, 8, 8), dtype=np.uint8)
+        with rasterio.open(path, 'w', driver='GTiff', width=8, height=8, count=3, dtype='uint8') as dst:
+            dst.write(data)
+
+        with self.assertRaises(UnsupportedThermalImage):
+            decode_dji(path)
+
+    def test_radiometric_tiff_temperatures_are_kept(self):
+        task = self._create_task()
+        float_path = task.task_path('DJI_0001_T.tif')
+        with rasterio.open(float_path, 'w', driver='GTiff', width=8, height=8, count=1, dtype='float32') as dst:
+            dst.write(np.full((8, 8), 31.5, dtype=np.float32), 1)
+
+        celsius, _profile = decode_dji(float_path)
+        self.assertAlmostEqual(31.5, float(celsius.mean()), places=3)
+
+        deci_kelvin_path = task.task_path('DJI_0002_T.tif')
+        with rasterio.open(deci_kelvin_path, 'w', driver='GTiff', width=8, height=8, count=1, dtype='uint16') as dst:
+            dst.write(np.full((8, 8), 3046, dtype=np.uint16), 1)  # 304.6 K
+
+        celsius, _profile = decode_dji(deci_kelvin_path)
+        self.assertAlmostEqual(31.45, float(celsius.mean()), delta=0.01)
+
+    def test_flir_container_is_decoded_as_flir_even_on_dji_cameras(self):
+        metadata = {'Make': 'DJI', 'Model': 'ZENMUSE XT', 'PlanckR1': 17096.453}
+        with mock.patch('coreplugins.thermal_ortho.workers.radiometric.read_exif_metadata', return_value=metadata):
+            with mock.patch('coreplugins.thermal_ortho.workers.radiometric.decode_flir', return_value=('flir', {})) as flir:
+                self.assertEqual(('flir', {}), decode_radiometric('/tmp/DJI_0001.jpg'))
+
+        flir.assert_called_once_with('/tmp/DJI_0001.jpg')
+
+    # --- Blending ------------------------------------------------------------
+
+    def test_blending_downsamples_to_thermal_resolution_and_averages_overlaps(self):
+        task = self._create_task()
+        reference = Path(task.assets_path('odm_orthophoto', 'odm_orthophoto.tif'))
+        reference.parent.mkdir(parents=True, exist_ok=True)
+        # 1000x1000 reference at 1e-6 degrees per pixel.
+        ref_transform = from_bounds(10.0, 45.0, 10.001, 45.001, 1000, 1000)
+        with rasterio.open(str(reference), 'w', driver='GTiff', width=1000, height=1000, count=4, dtype='uint8',
+                           crs='EPSG:4326', transform=ref_transform) as dst:
+            dst.write(np.zeros((4, 1000, 1000), dtype=np.uint8))
+
+        def frame(value, left, right, bottom, top):
+            return {
+                'array': np.full((10, 10), value, dtype=np.float32),
+                'native_shape': (10, 10),
+                'bounds': {'left': left, 'right': right, 'bottom': bottom, 'top': top},
+                'crs': 'EPSG:4326',
+                'weight': 1.0,
+            }
+
+        # Each 10x10 frame spans 0.0005 degrees: 5e-5 degrees per pixel, 50x the reference GSD.
+        frames = [
+            frame(20.0, 10.0, 10.0005, 45.0005, 45.001),
+            frame(30.0, 10.00025, 10.00075, 45.0005, 45.001),
+        ]
+        output_path = task.assets_path('thermal_orthophoto', 'thermal_orthophoto.tif')
+
+        result = blend_thermal_orthomosaic(frames, str(reference), output_path)
+
+        self.assertEqual(50, result['scale'])
+        self.assertEqual((20, 20), result['shape'])
+        with rasterio.open(output_path) as src:
+            self.assertEqual((20, 20), (src.height, src.width))
+            self.assertEqual(('LWIR',), src.descriptions)
+            self.assertEqual(THERMAL_NODATA, src.nodata)
+            data = src.read(1)
+
+        self.assertAlmostEqual(20.0, float(data[2, 2]), places=3)   # first frame only
+        self.assertAlmostEqual(25.0, float(data[2, 7]), places=3)   # overlap, averaged
+        self.assertAlmostEqual(30.0, float(data[2, 12]), places=3)  # second frame only
+        self.assertEqual(THERMAL_NODATA, float(data[15, 15]))      # untouched
+        self.assertEqual(20.0, result['stats']['min'])
+        self.assertEqual(30.0, result['stats']['max'])
+        self.assertTrue(Path(result['preview_path']).is_file())

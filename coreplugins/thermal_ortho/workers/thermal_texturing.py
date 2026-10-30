@@ -1,13 +1,47 @@
+import math
 import os
 
 import numpy as np
 import rasterio
 from PIL import Image
-from rasterio.transform import from_bounds
-from rasterio.warp import Resampling, reproject
+from rasterio.transform import Affine, from_bounds
+from rasterio.warp import Resampling, reproject, transform_bounds
 from rio_tiler.colormap import cmap as color_maps
 
 from coreplugins.thermal_ortho.workers.radiometric import THERMAL_NODATA
+
+
+def _frame_bounds_in(frame, dst_crs):
+    bounds = frame['bounds']
+    return transform_bounds(
+        frame.get('crs', 'EPSG:4326'), dst_crs,
+        bounds['left'], bounds['bottom'], bounds['right'], bounds['top'],
+    )
+
+
+def choose_output_scale(aligned_thermals, ref_transform, ref_crs):
+    """
+    Thermal sensors are far coarser than the RGB camera, so the output grid is
+    the reference grid downsampled to the native thermal ground resolution.
+    Returns an integer factor >= 1.
+    """
+    ref_gsd = min(abs(ref_transform.a), abs(ref_transform.e))
+    if ref_gsd <= 0:
+        return 1
+
+    gsds = []
+    for frame in aligned_thermals:
+        native_shape = frame.get('native_shape') or frame['array'].shape
+        if not native_shape or native_shape[1] <= 0:
+            continue
+        left, _bottom, right, _top = _frame_bounds_in(frame, ref_crs)
+        gsds.append((right - left) / float(native_shape[1]))
+
+    if not gsds:
+        return 1
+
+    thermal_gsd = float(np.median(gsds))
+    return max(1, int(math.floor(thermal_gsd / ref_gsd)))
 
 
 def compute_temperature_stats(celsius_array):
@@ -54,22 +88,39 @@ def blend_thermal_orthomosaic(aligned_thermals, reference_orthophoto_path, outpu
         ref_height = reference.height
         ref_width = reference.width
 
-    accumulator = np.zeros((ref_height, ref_width), dtype=np.float64)
-    weights = np.zeros((ref_height, ref_width), dtype=np.float64)
+    scale = choose_output_scale(aligned_thermals, ref_transform, ref_crs)
+    out_transform = ref_transform * Affine.scale(scale)
+    out_height = max(1, int(math.ceil(ref_height / float(scale))))
+    out_width = max(1, int(math.ceil(ref_width / float(scale))))
+
+    accumulator = np.zeros((out_height, out_width), dtype=np.float32)
+    weights = np.zeros((out_height, out_width), dtype=np.float32)
+    inverse = ~out_transform
 
     for frame in aligned_thermals:
         source = frame['array']
         bounds = frame['bounds']
         weight = float(frame.get('weight', 1.0))
-        destination = np.full((ref_height, ref_width), THERMAL_NODATA, dtype=np.float32)
 
+        # Only the part of the output grid this frame can touch is allocated.
+        left, bottom, right, top = _frame_bounds_in(frame, ref_crs)
+        col_min, row_min = inverse * (left, top)
+        col_max, row_max = inverse * (right, bottom)
+        col_off = max(0, int(math.floor(min(col_min, col_max))) - 1)
+        row_off = max(0, int(math.floor(min(row_min, row_max))) - 1)
+        col_end = min(out_width, int(math.ceil(max(col_min, col_max))) + 1)
+        row_end = min(out_height, int(math.ceil(max(row_min, row_max))) + 1)
+        if col_end <= col_off or row_end <= row_off:
+            continue
+
+        destination = np.full((row_end - row_off, col_end - col_off), THERMAL_NODATA, dtype=np.float32)
         transform = from_bounds(bounds['left'], bounds['bottom'], bounds['right'], bounds['top'], source.shape[1], source.shape[0])
         reproject(
             source=source,
             destination=destination,
             src_transform=transform,
             src_crs=frame.get('crs', 'EPSG:4326'),
-            dst_transform=ref_transform,
+            dst_transform=out_transform * Affine.translation(col_off, row_off),
             dst_crs=ref_crs,
             src_nodata=THERMAL_NODATA,
             dst_nodata=THERMAL_NODATA,
@@ -77,10 +128,12 @@ def blend_thermal_orthomosaic(aligned_thermals, reference_orthophoto_path, outpu
         )
 
         valid = np.isfinite(destination) & (destination > -9000.0)
-        accumulator[valid] += destination[valid] * weight
-        weights[valid] += weight
+        window_acc = accumulator[row_off:row_end, col_off:col_end]
+        window_weights = weights[row_off:row_end, col_off:col_end]
+        window_acc[valid] += destination[valid] * weight
+        window_weights[valid] += weight
 
-    output = np.full((ref_height, ref_width), THERMAL_NODATA, dtype=np.float32)
+    output = np.full((out_height, out_width), THERMAL_NODATA, dtype=np.float32)
     valid = weights > 0
     output[valid] = (accumulator[valid] / weights[valid]).astype(np.float32)
 
@@ -88,6 +141,9 @@ def blend_thermal_orthomosaic(aligned_thermals, reference_orthophoto_path, outpu
         'driver': 'GTiff',
         'dtype': rasterio.float32,
         'count': 1,
+        'width': out_width,
+        'height': out_height,
+        'transform': out_transform,
         'compress': 'deflate',
         'tiled': True,
         'blockxsize': 256,
@@ -111,4 +167,6 @@ def blend_thermal_orthomosaic(aligned_thermals, reference_orthophoto_path, outpu
         'output_path': output_path,
         'preview_path': preview_path,
         'stats': stats,
+        'scale': scale,
+        'shape': (out_height, out_width),
     }

@@ -25,7 +25,12 @@ def thermal_ortho_on_task_completed(sender, task_id, **kwargs):
         return
 
     from app.models import Task
-    from .workers.thermal_pipeline import detect_input_summary, enqueue_thermal_pipeline, is_pipeline_active
+    from .workers.thermal_pipeline import (
+        detect_input_summary,
+        enqueue_thermal_pipeline,
+        is_pipeline_active,
+        remember_input_counts,
+    )
 
     try:
         task = Task.objects.get(pk=task_id)
@@ -33,6 +38,7 @@ def thermal_ortho_on_task_completed(sender, task_id, **kwargs):
         return
 
     summary = detect_input_summary(task.task_path())
+    remember_input_counts(task, summary)
     if summary['thermal_images'] == 0 or summary['rgb_images'] == 0:
         return
 
