@@ -1,6 +1,6 @@
 # Development Status
 
-Last updated: 2026-10-28
+Last updated: 2026-10-30
 
 ## Purpose
 
@@ -18,6 +18,13 @@ This file tracks the current state of this fork so future work can start from th
 - Reduce operational issues in local Docker and NodeODM setups
 
 ## Recently Completed
+
+### Local Image Rebuild (2026-10-30)
+
+- Rebuilt `webodm_webapp_local` from commit `75565645` and recreated `webapp` and `worker`; the previous image is tagged `webodm_webapp_local:pre-2026-10-30` for rollback
+- First full build of the OpenSplat stage since removing `--no-check-certificate`: the 2.5 GB libtorch archive downloaded over verified HTTPS, OpenSplat 1.1.5 (commit `4eb1c5e`) compiled, and the image check found no missing libraries
+- Verified container code matches the commit, the worker sees the RTX 4070 and runs OpenSplat, Celery is online, migrations are current, the platform audit reports 118/118, 66 focused tests pass (boundaries, monitoring runs, Gaussian splat, presets, feature validation, platform audit, help, AI issues, thermal ortho), and the dashboard bundle, help script, and splat plugin assets are served
+
 
 ### Gaussian Splat Source Preset Memory Fix
 
